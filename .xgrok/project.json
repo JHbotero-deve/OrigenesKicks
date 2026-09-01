@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "setup": "integrated",
+  "languages": [
+    "JavaScript/TypeScript"
+  ],
+  "stacks": [
+    "Node.js",
+    "HTTP API"
+  ],
+  "markers": [
+    "package.json"
+  ],
+  "packageName": "origenes-kicks",
+  "suggestedRun": "npm run dev",
+  "createdAt": "2026-09-01T02:01:20.852Z",
+  "tool": "xgrok"
+}

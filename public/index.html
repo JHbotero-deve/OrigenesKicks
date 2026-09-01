@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orígenes Kicks - Tienda de Zapatos</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Orígenes Kicks</h1>
+            <nav>
+                <ul>
+                    <li><a href="#inicio">Inicio</a></li>
+                    <li><a href="#productos">Productos</a></li>
+                    <li><a href="#nosotros">Nosotros</a></li>
+                    <li><a href="#contacto">Contacto</a></li>
+                </ul>
+            </nav>
+            <div class="header-actions">
+                <button class="cart-button" id="cartButton" aria-label="Carrito">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count">0</span>
+                </button>
+                <button class="auth-button" id="authButton" aria-label="Cuenta">
+                    <i class="fas fa-user"></i>
+                    <span>Cuenta</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero" id="inicio">
+            <div class="container">
+                <h2>Calzado que cuenta tu historia</h2>
+                <p>Descubre nuestra colección exclusiva de zapatos para cada momento de tu vida. Calidad y estilo en cada paso.</p>
+                <a href="#productos" class="btn-primary">Ver Colección</a>
+            </div>
+        </section>
+
+        <section class="featured" id="productos">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Nuestros Productos</h2>
+                    <div class="filters">
+                        <button class="filter-btn active" data-filter="all">Todos</button>
+                        <button class="filter-btn" data-filter="deportivo">Deportivos</button>
+                        <button class="filter-btn" data-filter="casual">Casuales</button>
+                        <button class="filter-btn" data-filter="formal">Formales</button>
+                        <button class="filter-btn" data-filter="bota">Botas</button>
+                    </div>
+                </div>
+                
+                <div class="products-grid" id="productsGrid">
+                    <!-- Productos cargados dinámicamente -->
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Cargando productos...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="container">
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <i class="fas fa-shield-alt"></i>
+                        <h3>Compra Segura</h3>
+                        <p>Facturación electrónica válida ante la DIAN</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-truck"></i>
+                        <h3>Envío a Domicilio</h3>
+                        <p>Recibe tus zapatos en la puerta de tu casa</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-undo"></i>
+                        <h3>Cambios Fáciles</h3>
+                        <p>30 días para cambios y devoluciones</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-credit-card"></i>
+                        <h3>Pago Flexible</h3>
+                        <p>Contra entrega, transferencia o Nequi</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer id="contacto">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Orígenes Kicks</h3>
+                    <p>Calzado de calidad para cada paso de tu vida.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Contacto</h3>
+                    <p><i class="fas fa-map-marker-alt"></i> Calle Principal #123, Bogotá</p>
+                    <p><i class="fas fa-phone"></i> +57 300 123 4567</p>
+                    <p><i class="fas fa-envelope"></i> info@origeneskicks.com</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Síguenos</h3>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+            <p class="copyright">&copy; 2025 Orígenes Kicks. Todos los derechos reservados. | Facturación Electrónica DIAN</p>
+        </div>
+    </footer>
+
+    <!-- MODAL DE AUTENTICACIÓN -->
+    <div class="modal" id="authModal">
+        <div class="modal-content modal-sm">
+            <button class="modal-close" data-close="authModal">&times;</button>
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Iniciar Sesión</button>
+                <button class="auth-tab" data-tab="register">Registrarse</button>
+            </div>
+            
+            <form id="loginForm" class="auth-form">
+                <h2>Bienvenido de vuelta</h2>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" name="password" required>
+                </div>
+                <button type="submit" class="btn-primary btn-block">Iniciar Sesión</button>
+            </form>
+            
+            <form id="registerForm" class="auth-form" style="display:none;">
+                <h2>Crear Cuenta</h2>
+                <div class="form-group">
+                    <label>Nombre completo</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña (mín. 6 caracteres)</label>
+                    <input type="password" name="password" minlength="6" required>
+                </div>
+                <button type="submit" class="btn-primary btn-block">Registrarse</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DEL CARRITO -->
+    <div class="modal" id="cartModal">
+        <div class="modal-content">
+            <button class="modal-close" data-close="cartModal">&times;</button>
+            <h2><i class="fas fa-shopping-cart"></i> Tu Carrito</h2>
+            
+            <div class="cart-items" id="cartItems">
+                <p class="empty-cart">Tu carrito está vacío</p>
+            </div>
+            
+            <div class="cart-footer" id="cartFooter" style="display:none;">
+                <div class="cart-totals">
+                    <div class="total-row">
+                        <span>Subtotal:</span>
+                        <span id="cartSubtotal">$0</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Envío:</span>
+                        <span id="cartShipping">A calcular</span>
+                    </div>
+                    <div class="total-row total-grand">
+                        <span>Total:</span>
+                        <span id="cartTotal">$0</span>
+                    </div>
+                </div>
+                <button class="btn-primary btn-block" id="checkoutButton">
+                    <i class="fas fa-lock"></i> Proceder al Pago Seguro
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CHECKOUT / PAGO -->
+    <div class="modal" id="checkoutModal">
+        <div class="modal-content modal-lg">
+            <button class="modal-close" data-close="checkoutModal">&times;</button>
+            
+            <div class="checkout-steps">
+                <div class="step active" data-step="1">
+                    <span class="step-num">1</span>
+                    <span class="step-label">Datos</span>
+                </div>
+                <div class="step" data-step="2">
+                    <span class="step-num">2</span>
+                    <span class="step-label">Envío</span>
+                </div>
+                <div class="step" data-step="3">
+                    <span class="step-num">3</span>
+                    <span class="step-label">Pago</span>
+                </div>
+            </div>
+            
+            <!-- Paso 1: Datos del cliente -->
+            <form id="checkoutStep1" class="checkout-form">
+                <h2>Datos de Facturación</h2>
+                <p class="form-notice">
+                    <i class="fas fa-shield-alt"></i>
+                    Tus datos están protegidos y solo se usan para facturación electrónica.
+                </p>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo de Documento *</label>
+                        <select name="customerIdType" required>
+                            <option value="CC">Cédula de Ciudadanía</option>
+                            <option value="NIT">NIT</option>
+                            <option value="CE">Cédula de Extranjería</option>
+                            <option value="PASAPORTE">Pasaporte</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Número de Documento *</label>
+                        <input type="text" name="customerId" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Nombre Completo / Razón Social *</label>
+                    <input type="text" name="customerName" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" name="customerEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono *</label>
+                        <input type="tel" name="customerPhone" required>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" data-close="checkoutModal">Cancelar</button>
+                    <button type="button" class="btn-primary" id="nextToStep2">Siguiente <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </form>
+            
+            <!-- Paso 2: Envío -->
+            <form id="checkoutStep2" class="checkout-form" style="display:none;">
+                <h2>Información de Envío</h2>
+                
+                <div class="form-group">
+                    <label>Dirección de entrega *</label>
+                    <input type="text" name="shippingAddress" placeholder="Calle 123 #45-67" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Ciudad *</label>
+                        <input type="text" name="shippingCity" value="Bogotá" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Departamento</label>
+                        <input type="text" name="shippingDepartment" value="Cundinamarca">
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="backToStep1"><i class="fas fa-arrow-left"></i> Atrás</button>
+                    <button type="button" class="btn-primary" id="nextToStep3">Siguiente <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </form>
+            
+            <!-- Paso 3: Pago -->
+            <form id="checkoutStep3" class="checkout-form" style="display:none;">
+                <h2>Método de Pago</h2>
+                
+                <div class="payment-methods">
+                    <label class="payment-method">
+                        <input type="radio" name="paymentMethod" value="CONTRA_ENTREGA" checked>
+                        <div class="payment-info">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <strong>Contra Entrega</strong>
+                            <span>Paga cuando recibas tu pedido</span>
+                        </div>
+                    </label>
+                    
+                    <label class="payment-method">
+                        <input type="radio" name="paymentMethod" value="TRANSFERENCIA">
+                        <div class="payment-info">
+                            <i class="fas fa-university"></i>
+                            <strong>Transferencia Bancaria</strong>
+                            <span>Bancolombia, Davivienda, etc.</span>
+                        </div>
+                    </label>
+                    
+                    <label class="payment-method">
+                        <input type="radio" name="paymentMethod" value="NEQUI">
+                        <div class="payment-info">
+                            <i class="fas fa-mobile-alt"></i>
+                            <strong>Nequi / Daviplata</strong>
+                            <span>Pago desde tu celular</span>
+                        </div>
+                    </label>
+                    
+                    <label class="payment-method">
+                        <input type="radio" name="paymentMethod" value="EFECTIVO">
+                        <div class="payment-info">
+                            <i class="fas fa-store"></i>
+                            <strong>Pago en Tienda</strong>
+                            <span>Recoge y paga en nuestro local</span>
+                        </div>
+                    </label>
+                </div>
+                
+                <div class="order-summary">
+                    <h3>Resumen del Pedido</h3>
+                    <div id="checkoutSummary"></div>
+                    <div class="summary-total">
+                        <span>Total a pagar:</span>
+                        <strong id="checkoutTotal">$0</strong>
+                    </div>
+                </div>
+                
+                <p class="legal-notice">
+                    <i class="fas fa-file-invoice"></i>
+                    Al confirmar, se generará tu <strong>factura electrónica</strong> con CUFE válido ante la DIAN.
+                </p>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="backToStep2"><i class="fas fa-arrow-left"></i> Atrás</button>
+                    <button type="button" class="btn-primary" id="confirmOrder">
+                        <i class="fas fa-check-circle"></i> Confirmar Pedido
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN DE PEDIDO -->
+    <div class="modal" id="confirmationModal">
+        <div class="modal-content modal-sm">
+            <div class="confirmation-content">
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h2>¡Pedido Confirmado!</h2>
+                <p>Tu pedido ha sido registrado exitosamente.</p>
+                
+                <div class="invoice-info" id="invoiceInfo">
+                    <p><strong>Número de Factura:</strong> <span id="invoiceNumber"></span></p>
+                    <p><strong>CUFE:</strong> <span id="invoiceCufe" class="cufe-code"></span></p>
+                </div>
+                
+                <div class="confirmation-actions">
+                    <button class="btn-secondary" id="viewInvoice">
+                        <i class="fas fa-file-pdf"></i> Ver Factura
+                    </button>
+                    <button class="btn-primary" data-close="confirmationModal">
+                        <i class="fas fa-home"></i> Volver a la Tienda
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR DE TOASTS -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

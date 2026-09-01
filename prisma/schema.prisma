@@ -1,0 +1,290 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// --- CONFIGURACIÓN DE LA TIENDA (para facturación DIAN) ---
+
+model StoreConfig {
+  id          String   @id @default(uuid())
+  businessName String   // Razón social
+  nit          String   // NIT de la empresa
+  regime      String   @default("SIMPLIFICADO") // COMUN, SIMPLIFICADO
+  address     String
+  city        String
+  department  String   @default("Cundinamarca")
+  phone       String?
+  email       String?
+  logoUrl     String?
+  
+  // Prefijo para facturación (ej: "FK" para "FACTURA-KICKS")
+  invoicePrefix String @default("FK")
+  
+  // Resolución DIAN (para facturación electrónica)
+  dianResolution String?
+  dianFrom       Int?  // Número inicial разрешения
+  dianTo         Int?  // Número final разрешения
+  dianDate       DateTime?
+  
+  // Configuración de impuestos
+  defaultTaxRate Decimal @default(19.0) // IVA por defecto 19%
+  
+  // Secuencia de facturación (incremental)
+  lastInvoiceNumber Int @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// --- SEGURIDAD Y USUARIOS ---
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @default(CLIENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  apartados         Apartado[]
+  pedidos           Pedido[]
+  abonosVerificados Abono[]   @relation("VerifiedBy")
+}
+
+enum Role {
+  CLIENT
+  SELLER
+  DELIVERY
+  ADMIN
+}
+
+// --- INVENTARIO Y PRODUCTOS ---
+
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  basePrice   Decimal
+  category    String?
+  active      Boolean   @default(true)
+  imageUrl    String?   // URL de imagen del producto
+  sku         String?   // Código interno del producto
+  taxRate     Decimal?  // Tasa de impuesto especial (null = usa la default)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  variants    Variant[]
+}
+
+model Variant {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size      String   // Talla (ej: "38", "40", "M", "L")
+  color     String   // Color (ej: "Blanco/Azul")
+  stock     Int      @default(0)
+  sku       String   @unique
+  
+  // Relaciones con movimientos
+  pedidoItems   PedidoItem[]
+  apartadoItems ApartadoItem[]
+}
+
+// --- SISTEMA DE PEDIDOS ---
+
+model Pedido {
+  id            String       @id @default(uuid())
+  clientId      String
+  client        User         @relation(fields: [clientId], references: [id])
+  totalAmount   Decimal
+  status        PedidoStatus @default(RECIBIDO)
+  paymentMethod String       // CONTRA_ENTREGA, TRANSFERENCIA, EFECTIVO, NEQUI, DAVIPLATA
+  notes         String?      // Notas del pedido
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  items         PedidoItem[]
+  envio         Envio?
+  invoice       Factura?
+}
+
+enum PedidoStatus {
+  RECIBIDO
+  CONFIRMADO
+  PROCESANDO
+  DESPACHADO
+  ENTREGADO
+  RECHAZADO
+  CANCELADO
+}
+
+model PedidoItem {
+  id        String   @id @default(uuid())
+  pedidoId  String
+  pedido    Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  variantId String
+  variant   Variant  @relation(fields: [variantId], references: [id])
+  quantity  Int
+  unitPrice Decimal  // Precio al momento de la compra (sin IVA)
+}
+
+model Envio {
+  id              String      @id @default(uuid())
+  pedidoId        String      @unique
+  pedido          Pedido      @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  address         String
+  city            String
+  department      String?     @default("Cundinamarca")
+  phone           String?     // Teléfono de contacto
+  trackingNumber  String?
+  deliveryDate    DateTime?
+  status          EnvioStatus @default(PENDIENTE)
+  notes           String?
+}
+
+enum EnvioStatus {
+  PENDIENTE
+  EN_RUTA
+  ENTREGADO
+  FALLIDO
+  RETORNADO
+}
+
+// --- FACTURACIÓN ELECTRÓNICA (DIAN) ---
+
+model Factura {
+  id              String    @id @default(uuid())
+  
+  // Número de factura (consecutivo)
+  invoiceNumber   Int       // Número: 1, 2, 3...
+  prefix          String    // Prefijo: "FK"
+  fullNumber      String    // "FK-00001"
+  
+  // Datos del cliente (para facturación, no se muestra en público)
+  customerName    String    // Nombre o Razón Social
+  customerIdType  String    // CC, NIT, CE, PASAPORTE
+  customerId      String    // Número de documento
+  customerEmail   String?
+  customerPhone   String?
+  customerAddress String?
+  
+  // Totales
+  subtotal        Decimal   // Subtotal sin IVA
+  taxAmount       Decimal   // Monto del IVA
+  totalAmount     Decimal   // Total a pagar
+  
+  // Impuestos desglosados
+  taxDetails      String?   // JSON: [{"rate": 19, "base": 100000, "amount": 19000}]
+  
+  // Métodos de pago
+  paymentMethod   String    // CONTADO, CREDITO
+  paymentDueDate  DateTime? // Fecha límite de pago (si es a crédito)
+  
+  // CUFE - Código Único de Factura Electrónica (SHA-384)
+  cufe            String?
+  cufeQrCode      String?   // URL o datos del QR para validación
+  
+  // Estado de la factura
+  status          FacturaStatus @default(PENDIENTE)
+  
+  // Referencia al pedido
+  pedidoId        String    @unique
+  pedido          Pedido    @relation(fields: [pedidoId], references: [id])
+  
+  // Timestamps
+  issueDate       DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Notas adicionales
+  notes           String?
+  
+  // Relación con items
+  items           FacturaItem[]
+}
+
+enum FacturaStatus {
+  PENDIENTE      // Pendiente de validación
+  VALIDADA       // Con CUFE generado (lista para enviar a DIAN)
+  ENVIADA        // Enviada a la DIAN
+  ACEPTADA       // Aceptada por la DIAN
+  RECHAZADA      // Rechazada (requiere corrección)
+  ANULADA        // Factura anulada
+}
+
+model FacturaItem {
+  id            String   @id @default(uuid())
+  facturaId     String
+  factura       Factura  @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+  
+  // Información del producto
+  productName   String   // Nombre del producto
+  productSku    String?  // SKU del producto
+  description   String?  // Descripción adicional
+  
+  // Cantidades y precios
+  quantity      Int
+  unitPrice     Decimal  // Precio unitario sin IVA
+  taxRate       Decimal  // Tasa de IVA (0, 5, 19)
+  taxAmount     Decimal  // Monto del IVA por item
+  lineTotal     Decimal  // Total de la línea (con IVA)
+  
+  // Dimensiones (para zapatos)
+  size          String?  // Talla
+  color         String?  // Color
+}
+
+// --- SISTEMA DE APARTADOS (LAYAWAY) ---
+
+model Apartado {
+  id          String         @id @default(uuid())
+  clientId    String
+  client      User           @relation(fields: [clientId], references: [id])
+  totalAmount Decimal
+  balanceDue  Decimal        // Saldo pendiente
+  status      ApartadoStatus @default(PENDIENTE)
+  dueDate     DateTime       // Fecha límite de pago
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  items       ApartadoItem[]
+  abonos      Abono[]
+}
+
+enum ApartadoStatus {
+  PENDIENTE
+  COMPLETADO
+  EXPIRADO
+  CANCELADO
+}
+
+model ApartadoItem {
+  id         String   @id @default(uuid())
+  apartadoId String
+  apartado   Apartado @relation(fields: [apartadoId], references: [id], onDelete: Cascade)
+  variantId  String
+  variant    Variant  @relation(fields: [variantId], references: [id])
+  quantity   Int
+  unitPrice  Decimal
+}
+
+model Abono {
+  id           String   @id @default(uuid())
+  apartadoId   String
+  apartado     Apartado @relation(fields: [apartadoId], references: [id], onDelete: Cascade)
+  amount       Decimal
+  paymentRef   String?  // Referencia de transferencia (Nequi, Daviplata, etc.)
+  verified     Boolean  @default(false)
+  verifiedById String?
+  verifiedBy   User?    @relation("VerifiedBy", fields: [verifiedById], references: [id])
+  createdAt    DateTime @default(now())
+}
