@@ -6,41 +6,38 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // --- CONFIGURACIÓN DE LA TIENDA (para facturación DIAN) ---
 
 model StoreConfig {
   id          String   @id @default(uuid())
-  businessName String   // Razón social
-  nit          String   // NIT de la empresa
-  regime      String   @default("SIMPLIFICADO") // COMUN, SIMPLIFICADO
+  businessName String   @map("business_name")
+  nit          String
+  regime      String   @default("SIMPLIFICADO")
   address     String
   city        String
   department  String   @default("Cundinamarca")
   phone       String?
   email       String?
-  logoUrl     String?
+  logoUrl     String?  @map("logo_url")
   
-  // Prefijo para facturación (ej: "FK" para "FACTURA-KICKS")
-  invoicePrefix String @default("FK")
+  invoicePrefix String @default("FK") @map("invoice_prefix")
+  dianResolution String? @map("dian_resolution")
+  dianFrom       Int?    @map("dian_from")
+  dianTo         Int?    @map("dian_to")
+  dianDate       DateTime? @map("dian_date")
   
-  // Resolución DIAN (para facturación electrónica)
-  dianResolution String?
-  dianFrom       Int?  // Número inicial разрешения
-  dianTo         Int?  // Número final разрешения
-  dianDate       DateTime?
+  defaultTaxRate Decimal @default(19.0) @map("default_tax_rate")
+  lastInvoiceNumber Int @default(0) @map("last_invoice_number")
   
-  // Configuración de impuestos
-  defaultTaxRate Decimal @default(19.0) // IVA por defecto 19%
-  
-  // Secuencia de facturación (incremental)
-  lastInvoiceNumber Int @default(0)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  @@map("store_configs")
 }
 
 // --- SEGURIDAD Y USUARIOS ---
@@ -51,13 +48,14 @@ model User {
   name      String
   password  String
   role      Role     @default(CLIENT)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
 
-  // Relaciones
   apartados         Apartado[]
   pedidos           Pedido[]
   abonosVerificados Abono[]   @relation("VerifiedBy")
+
+  @@map("users")
 }
 
 enum Role {
@@ -70,51 +68,72 @@ enum Role {
 // --- INVENTARIO Y PRODUCTOS ---
 
 model Product {
-  id          String    @id @default(uuid())
-  name        String
-  description String?
-  basePrice   Decimal
-  category    String?
-  active      Boolean   @default(true)
-  imageUrl    String?   // URL de imagen del producto
-  sku         String?   // Código interno del producto
-  taxRate     Decimal?  // Tasa de impuesto especial (null = usa la default)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            String    @id @default(uuid())
+  name          String
+  description   String?
+  basePrice     Decimal   @map("base_price")
+  discountPrice Decimal?  @map("discount_price")
+  category      String?
+  active        Boolean   @default(true)
+  isSpecial     Boolean   @default(false) @map("is_special")
+  salesCount    Int       @default(0)     @map("sales_count")
+  imageUrl      String?   @map("image_url")
+  sku           String?
+  taxRate       Decimal?  @map("tax_rate")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt      @map("updated_at")
 
   variants    Variant[]
+  @@map("products")
 }
 
 model Variant {
   id        String   @id @default(uuid())
-  productId String
+  productId String   @map("product_id")
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  size      String   // Talla (ej: "38", "40", "M", "L")
-  color     String   // Color (ej: "Blanco/Azul")
+  size      String
+  color     String
   stock     Int      @default(0)
   sku       String   @unique
   
-  // Relaciones con movimientos
   pedidoItems   PedidoItem[]
   apartadoItems ApartadoItem[]
+  inventoryLogs InventoryLog[]
+  @@map("product_variants")
+}
+
+model InventoryLog {
+  id          String   @id @default(uuid())
+  variantId   String   @map("variant_id")
+  variant     Variant  @relation(fields: [variantId], references: [id])
+  changeType  String   @map("change_type")
+  quantity    Int
+  reason      String
+  performedBy String   @map("performed_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("inventory_logs")
 }
 
 // --- SISTEMA DE PEDIDOS ---
 
 model Pedido {
   id            String       @id @default(uuid())
-  clientId      String
+  clientId      String       @map("client_id")
   client        User         @relation(fields: [clientId], references: [id])
-  totalAmount   Decimal
+  totalAmount   Decimal      @map("total_amount")
   status        PedidoStatus @default(RECIBIDO)
-  paymentMethod String       // CONTRA_ENTREGA, TRANSFERENCIA, EFECTIVO, NEQUI, DAVIPLATA
-  notes         String?      // Notas del pedido
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  paymentMethod String       @map("payment_method")
+  notes         String?
+  expiresAt     DateTime?    @map("expires_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt      @map("updated_at")
 
   items         PedidoItem[]
   envio         Envio?
   invoice       Factura?
+
+  @@map("orders")
 }
 
 enum PedidoStatus {
@@ -129,26 +148,30 @@ enum PedidoStatus {
 
 model PedidoItem {
   id        String   @id @default(uuid())
-  pedidoId  String
+  pedidoId  String   @map("pedido_id")
   pedido    Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  variantId String
+  variantId String   @map("variant_id")
   variant   Variant  @relation(fields: [variantId], references: [id])
   quantity  Int
-  unitPrice Decimal  // Precio al momento de la compra (sin IVA)
+  unitPrice Decimal  @map("unit_price")
+
+  @@map("order_items")
 }
 
 model Envio {
   id              String      @id @default(uuid())
-  pedidoId        String      @unique
+  pedidoId        String      @unique @map("pedido_id")
   pedido          Pedido      @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
   address         String
   city            String
   department      String?     @default("Cundinamarca")
-  phone           String?     // Teléfono de contacto
-  trackingNumber  String?
-  deliveryDate    DateTime?
+  phone           String?
+  trackingNumber  String?     @map("tracking_number")
+  deliveryDate    DateTime?   @map("delivery_date")
   status          EnvioStatus @default(PENDIENTE)
   notes           String?
+
+  @@map("shippings")
 }
 
 enum EnvioStatus {
@@ -163,101 +186,80 @@ enum EnvioStatus {
 
 model Factura {
   id              String    @id @default(uuid())
-  
-  // Número de factura (consecutivo)
-  invoiceNumber   Int       // Número: 1, 2, 3...
-  prefix          String    // Prefijo: "FK"
-  fullNumber      String    // "FK-00001"
-  
-  // Datos del cliente (para facturación, no se muestra en público)
-  customerName    String    // Nombre o Razón Social
-  customerIdType  String    // CC, NIT, CE, PASAPORTE
-  customerId      String    // Número de documento
-  customerEmail   String?
-  customerPhone   String?
-  customerAddress String?
-  
-  // Totales
-  subtotal        Decimal   // Subtotal sin IVA
-  taxAmount       Decimal   // Monto del IVA
-  totalAmount     Decimal   // Total a pagar
-  
-  // Impuestos desglosados
-  taxDetails      String?   // JSON: [{"rate": 19, "base": 100000, "amount": 19000}]
-  
-  // Métodos de pago
-  paymentMethod   String    // CONTADO, CREDITO
-  paymentDueDate  DateTime? // Fecha límite de pago (si es a crédito)
-  
-  // CUFE - Código Único de Factura Electrónica (SHA-384)
+  invoiceNumber   Int       @map("invoice_number")
+  prefix          String
+  fullNumber      String    @map("full_number")
+  customerName    String    @map("customer_name")
+  customerIdType  String    @map("customer_id_type")
+  customerId      String    @map("customer_id")
+  customerEmail   String?   @map("customer_email")
+  customerPhone   String?   @map("customer_phone")
+  customerAddress String?   @map("customer_address")
+  subtotal        Decimal
+  taxAmount       Decimal   @map("tax_amount")
+  totalAmount     Decimal   @map("total_amount")
+  taxDetails      String?   @map("tax_details")
+  paymentMethod   String    @map("payment_method")
+  paymentDueDate  DateTime? @map("payment_due_date")
   cufe            String?
-  cufeQrCode      String?   // URL o datos del QR para validación
-  
-  // Estado de la factura
+  cufeQrCode      String?   @map("cufe_qr_code")
   status          FacturaStatus @default(PENDIENTE)
-  
-  // Referencia al pedido
-  pedidoId        String    @unique
+  pedidoId        String    @unique @map("pedido_id")
   pedido          Pedido    @relation(fields: [pedidoId], references: [id])
-  
-  // Timestamps
-  issueDate       DateTime  @default(now())
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
-  // Notas adicionales
+  issueDate       DateTime  @default(now()) @map("issue_date")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt      @map("updated_at")
   notes           String?
   
-  // Relación con items
   items           FacturaItem[]
+
+  @@map("invoices")
 }
 
 enum FacturaStatus {
-  PENDIENTE      // Pendiente de validación
-  VALIDADA       // Con CUFE generado (lista para enviar a DIAN)
-  ENVIADA        // Enviada a la DIAN
-  ACEPTADA       // Aceptada por la DIAN
-  RECHAZADA      // Rechazada (requiere corrección)
-  ANULADA        // Factura anulada
+  PENDIENTE
+  VALIDADA
+  ENVIADA
+  ACEPTADA
+  RECHAZADA
+  ANULADA
 }
 
 model FacturaItem {
   id            String   @id @default(uuid())
-  facturaId     String
+  facturaId     String   @map("factura_id")
   factura       Factura  @relation(fields: [facturaId], references: [id], onDelete: Cascade)
-  
-  // Información del producto
-  productName   String   // Nombre del producto
-  productSku    String?  // SKU del producto
-  description   String?  // Descripción adicional
-  
-  // Cantidades y precios
+  productName   String   @map("product_name")
+  productSku    String?  @map("product_sku")
+  description   String?
   quantity      Int
-  unitPrice     Decimal  // Precio unitario sin IVA
-  taxRate       Decimal  // Tasa de IVA (0, 5, 19)
-  taxAmount     Decimal  // Monto del IVA por item
-  lineTotal     Decimal  // Total de la línea (con IVA)
+  unitPrice     Decimal  @map("unit_price")
+  taxRate       Decimal  @map("tax_rate")
+  taxAmount     Decimal  @map("tax_amount")
+  lineTotal     Decimal  @map("line_total")
+  size          String?
+  color         String?
   
-  // Dimensiones (para zapatos)
-  size          String?  // Talla
-  color         String?  // Color
+  @@map("invoice_items")
 }
 
 // --- SISTEMA DE APARTADOS (LAYAWAY) ---
 
 model Apartado {
   id          String         @id @default(uuid())
-  clientId    String
+  clientId    String         @map("client_id")
   client      User           @relation(fields: [clientId], references: [id])
-  totalAmount Decimal
-  balanceDue  Decimal        // Saldo pendiente
+  totalAmount Decimal        @map("total_amount")
+  balanceDue  Decimal        @map("balance_due")
   status      ApartadoStatus @default(PENDIENTE)
-  dueDate     DateTime       // Fecha límite de pago
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  dueDate     DateTime       @map("due_date")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt      @map("updated_at")
 
   items       ApartadoItem[]
   abonos      Abono[]
+
+  @@map("layaways")
 }
 
 enum ApartadoStatus {
@@ -269,22 +271,26 @@ enum ApartadoStatus {
 
 model ApartadoItem {
   id         String   @id @default(uuid())
-  apartadoId String
+  apartadoId String   @map("apartado_id")
   apartado   Apartado @relation(fields: [apartadoId], references: [id], onDelete: Cascade)
-  variantId  String
+  variantId  String   @map("variant_id")
   variant    Variant  @relation(fields: [variantId], references: [id])
   quantity   Int
-  unitPrice  Decimal
+  unitPrice  Decimal  @map("unit_price")
+
+  @@map("layaway_items")
 }
 
 model Abono {
   id           String   @id @default(uuid())
-  apartadoId   String
+  apartadoId   String   @map("apartado_id")
   apartado     Apartado @relation(fields: [apartadoId], references: [id], onDelete: Cascade)
   amount       Decimal
-  paymentRef   String?  // Referencia de transferencia (Nequi, Daviplata, etc.)
+  paymentRef   String?  @map("payment_ref")
   verified     Boolean  @default(false)
-  verifiedById String?
+  verifiedById String?  @map("verified_by_id")
   verifiedBy   User?    @relation("VerifiedBy", fields: [verifiedById], references: [id])
-  createdAt    DateTime @default(now())
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("layaway_payments")
 }
