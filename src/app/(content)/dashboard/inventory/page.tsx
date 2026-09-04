@@ -8,7 +8,7 @@ import { ManualRemovalForm } from "@/features/dashboard/ManualRemovalForm";
 export const dynamic = 'force-dynamic';
 
 export default async function InventoryPage() {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return <div>No autorizado</div>;

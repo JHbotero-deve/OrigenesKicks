@@ -91,7 +91,7 @@ export async function createOrder(data: {
  * Solo ADMIN o SELLER pueden realizar esta acción.
  */
 export async function approveOrder(pedidoId: string): Promise<{ success: boolean; pedido?: any; error?: string }> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return { success: false, error: "No autorizado" };
@@ -211,7 +211,7 @@ export async function manualInventoryRemoval(data: {
   quantity: number;
   reason: string;
 }): Promise<{ success: boolean; error?: string }> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return { success: false, error: "No autorizado" };
