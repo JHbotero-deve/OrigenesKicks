@@ -22,7 +22,7 @@ git push -u origin main
    - **Build Command**: `npx prisma generate && next build`
    - **Publish directory**: `.next`
 4. **IMPORTANTE: Variables de Entorno**
-   Ve a *Site Settings > Environment Variables* y agrega estas claves (copia los valores de tu `.env.local`):
+   Ve a *Site Settings > Environment Variables* y agrega estas claves (copia los valores de t`.env.local`):
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `DATABASE_URL` (Usa el puerto 6543 de Supabase)
@@ -30,10 +30,10 @@ git push -u origin main
 
 ## 3. Configurar Dominio Propio
 
-Para usar **OrigenesKicks.app**:
+Para usar **OrigenesKicks**:
 1. En Netlify, ve a **Domain Management**.
 2. Haz clic en **Add Custom Domain** y escribe `origeneskicks.app`.
-3. Sigue los pasos para configurar los DNS en tu registrador de dominios.
+3. sigue los pasos para configurar los DNS en tu registrador de dominios.
 
 ## 4. Sincronizar Base de Datos
 Una vez configuradas las variables en Netlify, ejecuta este comando en tu PC local para asegurarte de que Supabase tenga las últimas tablas:
