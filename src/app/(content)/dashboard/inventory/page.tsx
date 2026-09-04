@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ManualRemovalForm } from "@/features/dashboard/ManualRemovalForm";
 
 export default async function InventoryPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return <div>No autorizado</div>;

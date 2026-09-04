@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 
 export default async function OrdersPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return <div>No autorizado</div>;

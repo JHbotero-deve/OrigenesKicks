@@ -14,9 +14,9 @@ export async function createOrder(data: {
   paymentMethod: string;
   totalAmount: number;
   shippingAddress?: { address: string; city: string; phone: string };
-}) {
+}): Promise<{ success: boolean; pedidoId?: string; error?: string }> {
   try {
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // 1. Crear el Pedido
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 24);
@@ -35,7 +35,6 @@ export async function createOrder(data: {
               unitPrice: item.unitPrice
             }))
           },
-          // Si hay datos de envío, crear el registro de Envio
           ...(data.shippingAddress && {
             envio: {
               create: {
@@ -49,7 +48,7 @@ export async function createOrder(data: {
         }
       });
 
-      // 2. Reducir el stock de cada variante (sacar de la vitrina)
+      // 2. Reducir el stock y registrar logs
       for (const item of data.items) {
         const variant = await tx.variant.findUnique({
           where: { id: item.variantId }
@@ -64,7 +63,6 @@ export async function createOrder(data: {
           data: { stock: { decrement: item.quantity } }
         });
 
-        // Registrar la reserva en el Log de Inventario
         await tx.inventoryLog.create({
           data: {
             variantId: item.variantId,
@@ -76,13 +74,12 @@ export async function createOrder(data: {
         });
       }
 
-      // 3. Simular envío de constancia al cliente
-      console.log(`[MAIL] Enviando constancia de reserva para el pedido ${pedido.id} a ${data.clientId}`);
-      // Aquí se integraría Resend, SendGrid o AWS SES
-
-      revalidatePath('/products');
       return { success: true, pedidoId: pedido.id };
     });
+
+    console.log(`[MAIL] Enviando constancia a ${data.clientId}`);
+    revalidatePath('/products');
+    return result;
   } catch (error: any) {
     console.error("Error al crear pedido:", error.message);
     return { success: false, error: error.message };
@@ -94,7 +91,7 @@ export async function createOrder(data: {
  * Solo ADMIN o SELLER pueden realizar esta acción.
  */
 export async function approveOrder(pedidoId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return { success: false, error: "No autorizado" };
@@ -214,7 +211,7 @@ export async function manualInventoryRemoval(data: {
   quantity: number;
   reason: string;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return { success: false, error: "No autorizado" };
