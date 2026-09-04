@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'Zustand/middleware';
+import { persist } from 'zustand/middleware';
 import { CartStore, CartItem } from '@/types/cart';
 
 export const useCartStore = create<CartStore>()(
