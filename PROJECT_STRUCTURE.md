@@ -21,19 +21,19 @@ src/
 ├── services/               # Capa de datos (Llamadas a API externa o interna)
 ├── types/                  # Definiciones de TypeScript
 ├── contexts/               # Contextos de React (Auth, Carrito)
-├── stores/                 # Estado global (Zustand)
+├── stores/                 # Estado global (Stand)
 └── hooks/                  # Hooks personalizados
 ```
 
 ## Convenciones de Desarrollo
 
-| Capa | Responsabilidad |
-| :--- | :--- |
-| **app/** | Definición de rutas y manejo de peticiones. |
-| **features/** | Componentes complejos que pertenecen a un dominio específico. |
-| **lib/actions.ts** | Mutaciones de datos seguras (Server Actions). |
-| **services/** | Encapsulación de fetch/axios para obtener datos. |
-| **types/index.ts** | Punto central de exportación de interfaces. |
+| Capa               | Responsabilidad                                               |
+|:-------------------|:--------------------------------------------------------------|
+| **app/**           | Definición de rutas y manejo de peticiones.                   |
+| **features/**      | Componentes complejos que pertenecen a un dominio específico. |
+| **lib/actions.ts** | Mutaciones de datos seguras (Server Actions).                 |
+| **services/**      | Encapsulación de fetch/axios para obtener datos.              |
+| **types/index.ts** | Punto central de exportación de interfaces.                   |
 
 ## Path Aliases
 Usa siempre importaciones absolutas para mayor claridad:
