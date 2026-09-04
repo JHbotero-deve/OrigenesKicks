@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 
 export default function DashboardPage() {
-  const { user, isLoading, signOut } = useAuth();
+  const { user, dbUser, isLoading, signOut } = useAuth();
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Cargando...</div>;

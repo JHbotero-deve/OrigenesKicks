@@ -90,7 +90,7 @@ export async function createOrder(data: {
  * Aprueba una venta. El producto queda marcado definitivamente como vendido.
  * Solo ADMIN o SELLER pueden realizar esta acción.
  */
-export async function approveOrder(pedidoId: string) {
+export async function approveOrder(pedidoId: string): Promise<{ success: boolean; pedido?: any; error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -210,7 +210,7 @@ export async function manualInventoryRemoval(data: {
   variantId: string;
   quantity: number;
   reason: string;
-}) {
+}): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
