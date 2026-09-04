@@ -4,8 +4,8 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  # Estos valores son solo para engañar al build, los reales irán en el panel de Netlify
-  NEXT_PUBLIC_SUPABASE_URL = "https://placeholder.supabase.co"
+  # URL real integrada para evitar errores de prerenderizado
+  NEXT_PUBLIC_SUPABASE_URL = "https://asrtfxhapplxfdbqexic.supabase.co"
   NEXT_PUBLIC_SUPABASE_ANON_KEY = "placeholder"
 
 [[plugins]]
