@@ -4,6 +4,8 @@ import { approveOrder } from "@/lib/actions";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 
+export const dynamic = 'force-dynamic';
+
 export default async function OrdersPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

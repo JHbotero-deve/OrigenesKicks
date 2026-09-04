@@ -4,6 +4,8 @@ import { SpecialOffersSection } from "@/features/products/SpecialOffersSection";
 import prisma from "@/lib/db";
 import { releaseExpiredReservations } from "@/lib/actions";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProductsPage() {
   // Ejecutamos la limpieza de reservas expiradas al cargar la vitrina
   await releaseExpiredReservations();
