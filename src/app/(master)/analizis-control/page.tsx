@@ -1,143 +1,231 @@
-import prisma from "@/lib/db";
-import { Button } from "@/components/ui/Button";
+"use client";
+
+import React, { useState } from 'react';
 import {
-  ShieldCheck,
-  Cpu,
-  Globe,
+  LayoutDashboard,
+  Package,
+  Users,
+  BarChart3,
+  Bell,
+  Mail,
+  Settings,
+  Search,
   Plus,
+  MoreHorizontal,
+  ArrowUpRight,
+  TrendingUp,
   Activity,
-  Database,
-  Terminal,
-  Zap
-} from "lucide-react";
+  Zap,
+  Crown
+} from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
-export const dynamic = 'force-dynamic';
-
-export default async function AnalizisMasterPanel() {
-  const instances = await prisma.appInstance.findMany({
-    include: { stores: true },
-    orderBy: { createdAt: 'desc' }
-  });
+export default function AnalizisCorePanel() {
+  const [activeTab, setActiveTab] = useState('Dashboard');
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-12 font-sans selection:bg-blue-500">
-      {/* Header AnalizisEstudio */}
-      <header className="flex justify-between items-center mb-16">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.4)]">
-            <Cpu size={24} className="text-white" />
+    <div className="min-h-screen bg-[#0F0F12] text-[#E0E0E6] flex font-sans">
+
+      {/* 1. SIDEBAR - ESTILO CORE PANEL */}
+      <aside className="w-72 bg-[#16161D] border-r border-white/5 flex flex-col p-6 h-screen sticky top-0">
+        <div className="flex items-center gap-3 mb-12 px-2">
+          <div className="w-10 h-10 bg-[#5E5CE6] rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(94,92,230,0.3)]">
+            <span className="font-black italic text-xl">A</span>
           </div>
+          <h1 className="font-black uppercase tracking-tighter text-xl italic">CORE PANEL</h1>
+        </div>
+
+        <nav className="flex-1 space-y-8">
           <div>
-            <h1 className="text-2xl font-black tracking-tighter uppercase italic leading-none">AnalizisEstudio</h1>
-            <p className="text-[10px] text-blue-400 font-bold uppercase tracking-[0.3em] mt-1">SaaS Core Engine v2.0</p>
-          </div>
-        </div>
-
-        <div className="flex gap-4">
-          <div className="bg-[#111] border border-white/10 px-4 py-2 rounded-xl flex items-center gap-3">
-             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-             <span className="text-[10px] font-black uppercase tracking-widest text-white/50">Systems Online</span>
-          </div>
-          <Button className="bg-blue-600 hover:bg-blue-500 text-white font-black uppercase italic text-xs px-8 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.3)]">
-            <Plus size={16} className="mr-2" /> Nueva App
-          </Button>
-        </div>
-      </header>
-
-      {/* Stats Generales */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-        <div className="bg-[#0a0a0a] border border-white/5 p-6 rounded-2xl hover:border-blue-500/30 transition-all group">
-          <Activity className="text-blue-500 mb-4 group-hover:scale-110 transition-transform" size={20} />
-          <p className="text-[10px] font-black text-white/40 uppercase mb-1">Clientes Activos</p>
-          <p className="text-3xl font-black italic">{instances.length}</p>
-        </div>
-        <div className="bg-[#0a0a0a] border border-white/5 p-6 rounded-2xl">
-          <Database className="text-cyan-500 mb-4" size={20} />
-          <p className="text-[10px] font-black text-white/40 uppercase mb-1">Total de Sedes</p>
-          <p className="text-3xl font-black italic">{instances.reduce((acc, i) => acc + i.stores.length, 0)}</p>
-        </div>
-        <div className="bg-[#0a0a0a] border border-white/5 p-6 rounded-2xl">
-          <Zap className="text-yellow-500 mb-4" size={20} />
-          <p className="text-[10px] font-black text-white/40 uppercase mb-1">Uptime 24/7</p>
-          <p className="text-3xl font-black italic text-green-500">99.9%</p>
-        </div>
-        <div className="bg-[#0a0a0a] border border-white/5 p-6 rounded-2xl">
-          <Terminal className="text-purple-500 mb-4" size={20} />
-          <p className="text-[10px] font-black text-white/40 uppercase mb-1">Server Status</p>
-          <p className="text-3xl font-black italic text-blue-400">Stable</p>
-        </div>
-      </div>
-
-      {/* Lista de Aplicaciones Vendidas */}
-      <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
-        <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/5">
-          <h2 className="font-black uppercase italic tracking-tighter text-xl">Gestión de Instancias Clientes</h2>
-          <div className="text-[10px] font-bold text-blue-400 uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
-            Control de Acceso Total
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-[#050505] text-[10px] font-black uppercase text-white/30 border-b border-white/5">
-              <tr>
-                <th className="p-6">Negocio / Identidad</th>
-                <th className="p-6">Propietario (Email)</th>
-                <th className="p-6">Plan</th>
-                <th className="p-6">Estado</th>
-                <th className="p-6">Sedes</th>
-                <th className="p-6 text-right">Acciones de Control</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5 font-medium">
-              {instances.map((instance) => (
-                <tr key={instance.id} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="p-6">
-                    <p className="font-black uppercase italic text-blue-400">{instance.businessName}</p>
-                    <p className="text-[9px] text-white/40 mt-1">{instance.subdomain || 'instance_id: ' + instance.id.slice(0,8)}</p>
-                  </td>
-                  <td className="p-6 text-sm">{instance.ownerEmail}</td>
-                  <td className="p-6">
-                    <span className="bg-white/5 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                      {instance.planType}
-                    </span>
-                  </td>
-                  <td className="p-6">
-                    <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase ${
-                      instance.status === 'ACTIVE' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'
-                    }`}>
-                      {instance.status === 'ACTIVE' ? '✅ Activo' : '🚫 Suspendido'}
-                    </span>
-                  </td>
-                  <td className="p-6 text-center font-black italic">{instance.stores.length}</td>
-                  <td className="p-6 text-right space-x-2">
-                    <Button variant="outline" size="sm" className="border-white/10 hover:bg-white/5 text-[10px] uppercase font-black">Gestionar</Button>
-                    <Button size="sm" className="bg-red-600/20 hover:bg-red-600 text-red-600 hover:text-white text-[10px] uppercase font-black transition-all">Suspender</Button>
-                  </td>
-                </tr>
+            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4 px-2">Menu</p>
+            <div className="space-y-1">
+              {['Dashboard', 'Products', 'Clients', 'Analytics'].map(item => (
+                <button
+                  key={item}
+                  onClick={() => setActiveTab(item)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
+                    activeTab === item ? 'bg-[#5E5CE6] text-white' : 'text-white/40 hover:bg-white/5 hover:text-white'
+                  }`}
+                >
+                  {item === 'Dashboard' && <LayoutDashboard size={18} />}
+                  {item === 'Products' && <Package size={18} />}
+                  {item === 'Clients' && <Users size={18} />}
+                  {item === 'Analytics' && <BarChart3 size={18} />}
+                  {item}
+                </button>
               ))}
+            </div>
+          </div>
 
-              {instances.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="p-20 text-center text-white/20 uppercase font-black italic tracking-widest">
-                    No has desplegado aplicaciones aún. <br/>
-                    <span className="text-blue-500/50 text-[10px]">Utiliza el comando "Nueva App" para iniciar un negocio.</span>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          <div>
+            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4 px-2">Insights</p>
+            <div className="space-y-1 text-white/40">
+              <button className="w-full flex items-center justify-between px-4 py-3 hover:text-white transition-colors">
+                <div className="flex items-center gap-3 font-bold text-sm"><Bell size={18} /> Notification</div>
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+              </button>
+              <button className="w-full flex items-center gap-3 px-4 py-3 hover:text-white transition-colors font-bold text-sm"><Mail size={18} /> Message</button>
+              <button className="w-full flex items-center gap-3 px-4 py-3 hover:text-white transition-colors font-bold text-sm"><Settings size={18} /> Settings</button>
+            </div>
+          </div>
+        </nav>
 
-      {/* Footer Técnico */}
-      <footer className="mt-16 flex justify-between items-center text-[9px] font-bold text-white/20 uppercase tracking-[0.3em]">
-        <div className="flex items-center gap-4">
-          <Globe size={14} />
-          <span>AnalizisEstudio Global Infrastructure</span>
+        {/* PRO UPGRADE CARD */}
+        <div className="bg-gradient-to-br from-[#1E1E2A] to-[#252538] p-6 rounded-3xl border border-white/5 mt-auto relative overflow-hidden">
+          <div className="relative z-10">
+            <p className="text-xs font-black uppercase italic mb-2 tracking-widest">Upgrade to Pro</p>
+            <p className="text-[10px] text-white/40 mb-6 leading-tight">Get unlimited access to all AnalyzisEstudio features.</p>
+            <Button className="w-full bg-[#5E5CE6] hover:bg-[#706EE6] text-white rounded-2xl py-6 font-black uppercase italic text-[10px] flex items-center justify-center gap-2">
+              <Crown size={14} /> Upgrade Now
+            </Button>
+          </div>
+          <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-[#5E5CE6]/10 rounded-full blur-2xl"></div>
         </div>
-        <span>&copy; 2026 Developed by AnalizisEstudio</span>
-      </footer>
+      </aside>
+
+      {/* 2. MAIN CONTENT */}
+      <main className="flex-1 p-10 overflow-y-auto">
+
+        {/* TOP BAR */}
+        <header className="flex justify-between items-center mb-12">
+          <div className="relative w-96">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+            <input
+              type="text"
+              placeholder="Hello Olivia, Welcome back!"
+              className="w-full bg-[#16161D] border border-white/5 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-[#5E5CE6] transition-all font-bold text-sm text-white/80"
+            />
+          </div>
+          <div className="flex items-center gap-6">
+             <div className="flex items-center gap-2 bg-[#16161D] border border-white/5 px-4 py-2 rounded-xl">
+               <span className="text-[10px] font-black uppercase text-white/40">EN</span>
+             </div>
+             <div className="w-10 h-10 bg-[#16161D] rounded-full border border-white/5 flex items-center justify-center">
+                <Bell size={18} className="text-white/40" />
+             </div>
+             <div className="flex items-center gap-3 bg-[#16161D] border border-white/5 pl-2 pr-6 py-2 rounded-full">
+                <div className="w-8 h-8 bg-blue-500 rounded-full"></div>
+                <span className="text-xs font-black uppercase italic tracking-tighter">My Account</span>
+             </div>
+          </div>
+        </header>
+
+        {/* STATS ROW */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+          {[
+            { label: 'Total Revenue', val: '$52,000', inc: '+8.33%', color: 'text-[#4CD964]' },
+            { label: 'Conversion Rate', val: '3.5%', inc: '+16.67%', color: 'text-[#4CD964]' },
+            { label: 'Renewals', val: '1,200', inc: '-4.35%', color: 'text-[#FF3B30]' },
+            { label: 'Subscribers', val: '650', inc: '+12%', color: 'text-[#4CD964]' },
+          ].map((s, i) => (
+            <div key={i} className="bg-[#16161D] p-6 rounded-3xl border border-white/5 relative group">
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">{s.label}</p>
+                <MoreHorizontal size={16} className="text-white/20" />
+              </div>
+              <p className="text-2xl font-black italic text-white mb-2">{s.val}</p>
+              <p className={`text-[10px] font-bold ${s.color}`}>
+                {s.inc} <span className="text-white/20 ml-1">from last week</span>
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* MIDDLE SECTION - CHARTS */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+
+          {/* LINE CHART - ORDERS */}
+          <div className="lg:col-span-2 bg-[#16161D] p-8 rounded-[2.5rem] border border-white/5">
+            <div className="flex justify-between items-center mb-10">
+              <h3 className="text-lg font-black uppercase italic tracking-tighter">Order Flow</h3>
+              <select className="bg-transparent border border-white/10 rounded-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest outline-none">
+                <option>Current Week</option>
+              </select>
+            </div>
+
+            <div className="h-64 relative flex items-end">
+               {/* Simulación de Curva Neón */}
+               <svg className="w-full h-full" viewBox="0 0 400 100">
+                  <path d="M0 80 Q 50 20, 100 70 T 200 30 T 300 80 T 400 40" fill="none" stroke="#5E5CE6" strokeWidth="4" className="drop-shadow-[0_0_10px_#5E5CE6]" />
+                  <path d="M0 90 Q 50 40, 100 80 T 200 50 T 300 90 T 400 60" fill="none" stroke="#BF5AF2" strokeWidth="2" strokeDasharray="4" className="opacity-50" />
+               </svg>
+               <div className="absolute top-10 left-1/4 bg-white text-black text-[10px] font-black px-3 py-1 rounded shadow-2xl">
+                 $27.256.390
+               </div>
+            </div>
+            <div className="flex justify-between mt-6 text-[8px] font-black text-white/20 uppercase tracking-[0.3em]">
+               <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+            </div>
+          </div>
+
+          {/* TEAM MEMBERS */}
+          <div className="bg-[#16161D] p-8 rounded-[2.5rem] border border-white/5 flex flex-col">
+            <div className="flex justify-between items-center mb-10">
+              <h3 className="text-lg font-black uppercase italic tracking-tighter">Team Member</h3>
+              <span className="text-[10px] font-black text-[#5E5CE6]">Recent</span>
+            </div>
+            <div className="space-y-6 flex-1">
+              {[
+                { name: 'Rissa Pearson', role: 'UI Designer', img: 'bg-orange-500' },
+                { name: 'Michael Chen', role: 'Dev Backend', img: 'bg-blue-500' },
+                { name: 'Camilo Kicks', role: 'Inventory', img: 'bg-green-500' },
+                { name: 'Paula Herrera', role: 'Support', img: 'bg-purple-500' },
+              ].map((m, i) => (
+                <div key={i} className="flex items-center justify-between group cursor-pointer">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-full ${m.img}`}></div>
+                    <div>
+                      <p className="text-xs font-black uppercase italic text-white/90">{m.name}</p>
+                      <p className="text-[9px] text-white/30 font-bold uppercase">{m.role}</p>
+                    </div>
+                  </div>
+                  <MoreHorizontal size={16} className="text-white/20 group-hover:text-white transition-colors" />
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" className="mt-8 border-white/5 text-[9px] font-black uppercase italic hover:bg-white hover:text-black">
+              See Details
+            </Button>
+          </div>
+        </div>
+
+        {/* BOTTOM SECTION - PROJECTS & OVERVIEW */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+
+          {/* PROJECT CARDS */}
+          {['Orígenes Kicks', 'StreetWear Pro', 'Zapatos Local'].map((p, i) => (
+            <div key={i} className="bg-[#16161D] p-6 rounded-[2rem] border border-white/5 hover:border-[#5E5CE6]/30 transition-all">
+               <h4 className="font-black uppercase italic text-sm mb-1">{p}</h4>
+               <p className="text-[9px] text-white/30 font-bold uppercase mb-6 tracking-widest">Active SaaS Instance</p>
+               <div className="flex items-center gap-3">
+                  <div className="flex -space-x-2">
+                    <div className="w-6 h-6 rounded-full bg-blue-500 border-2 border-[#16161D]"></div>
+                    <div className="w-6 h-6 rounded-full bg-purple-500 border-2 border-[#16161D]"></div>
+                  </div>
+                  <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">4 hrs ago</span>
+               </div>
+            </div>
+          ))}
+
+          {/* PROJECT OVERVIEW (Circular Progress) */}
+          <div className="bg-[#16161D] p-6 rounded-[2rem] border border-white/5 flex flex-col justify-center items-center relative overflow-hidden">
+             <div className="relative w-32 h-32 mb-4">
+                <svg className="w-full h-full transform -rotate-90">
+                   <circle cx="64" cy="64" r="50" stroke="rgba(255,255,255,0.05)" strokeWidth="8" fill="none" />
+                   <circle cx="64" cy="64" r="50" stroke="#5E5CE6" strokeWidth="8" fill="none" strokeDasharray="314" strokeDashoffset="100" />
+                   <circle cx="64" cy="64" r="40" stroke="#BF5AF2" strokeWidth="6" fill="none" strokeDasharray="251" strokeDashoffset="150" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                   <Zap size={20} className="text-[#5E5CE6]" />
+                </div>
+             </div>
+             <p className="font-black uppercase italic text-[10px] tracking-widest">System Load</p>
+             <p className="text-xl font-black italic text-white mt-1">78%</p>
+          </div>
+
+        </div>
+
+      </main>
     </div>
   );
 }

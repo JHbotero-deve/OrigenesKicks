@@ -5,7 +5,7 @@ import { Product } from '@/types/product';
 import { useCartStore } from '@/stores/useCartStore';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import { X, Rotate3d, ShoppingBag } from 'lucide-react';
+import { X, Rotate3d, ShoppingBag, Eye } from 'lucide-react';
 import { Product3DViewer } from '@/components/products/Product3DViewer';
 
 interface ProductListProps {
@@ -31,55 +31,57 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                 </div>
               )}
 
-              {/* Imagen con Link */}
-              <div className="block relative aspect-square overflow-hidden rounded-[2rem] bg-gray-50 mb-6">
-                {product.imageUrl && (
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-700 drop-shadow-xl p-4"
-                  />
-                )}
+              {/* ENLACE GIGANTE (Toda la parte superior es clickeable) */}
+              <Link href={productPath} className="block group/link flex-1">
+                <div className="relative aspect-square overflow-hidden rounded-[2rem] bg-gray-50 mb-6">
+                  {product.imageUrl && (
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-700 drop-shadow-xl p-4"
+                    />
+                  )}
 
-                {/* Acciones sobre la imagen */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 gap-2">
-                   <Link href={productPath} className="bg-white text-black px-4 py-2 rounded-full font-black uppercase italic text-[9px] shadow-2xl border-2 border-black hover:bg-black hover:text-white transition-all">
-                     Ver Detalles
-                   </Link>
-                   {product.model3dUrl && (
-                     <button
-                       onClick={() => setQuickViewProduct(product)}
-                       className="bg-orange-600 text-white px-4 py-2 rounded-full font-black uppercase italic text-[9px] shadow-2xl flex items-center gap-1 hover:bg-orange-700"
-                     >
-                       <Rotate3d size={14} /> Mover 3D
-                     </button>
-                   )}
+                  {/* Overlay visual al pasar el mouse */}
+                  <div className="absolute inset-0 bg-black/0 group-hover/link:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover/link:opacity-100">
+                    <div className="bg-white text-black px-6 py-3 rounded-full font-black uppercase italic text-[10px] shadow-2xl border-2 border-black flex items-center gap-2 transform -rotate-2">
+                      <Eye size={14} /> Ver en Detalle
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              {/* Info */}
-              <div className="flex-1 px-2">
-                <Link href={productPath}>
-                  <h3 className="font-black uppercase italic text-lg leading-tight hover:text-orange-600 transition-colors cursor-pointer mb-2">
+                <div className="px-2">
+                  <h3 className="font-black uppercase italic text-lg leading-tight group-hover/link:text-orange-600 transition-colors mb-2">
                     {product.name}
                   </h3>
-                </Link>
-                <p className="text-gray-400 text-[10px] font-bold uppercase mb-4 tracking-widest">{product.category || 'Calzado Nacional'}</p>
+                  <p className="text-gray-400 text-[10px] font-bold uppercase mb-4 tracking-widest">{product.category || 'Calzado Nacional'}</p>
 
-                <div className="flex items-center gap-2 mb-6">
-                  {product.discountPrice ? (
-                    <>
-                      <span className="text-2xl font-black text-red-600 italic">${Number(product.discountPrice).toLocaleString()}</span>
-                      <span className="text-sm text-gray-400 line-through font-bold">${Number(product.basePrice).toLocaleString()}</span>
-                    </>
-                  ) : (
-                    <span className="text-2xl font-black text-black italic">${Number(product.basePrice).toLocaleString()}</span>
-                  )}
+                  <div className="flex items-center gap-2 mb-6">
+                    {product.discountPrice ? (
+                      <>
+                        <span className="text-2xl font-black text-red-600 italic">${Number(product.discountPrice).toLocaleString()}</span>
+                        <span className="text-sm text-gray-400 line-through font-bold">${Number(product.basePrice).toLocaleString()}</span>
+                      </>
+                    ) : (
+                      <span className="text-2xl font-black text-black italic">${Number(product.basePrice).toLocaleString()}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </Link>
 
-              {/* Selector Rápido de Talla */}
-              <div className="space-y-3 mt-auto pt-4 border-t border-gray-100">
+              {/* Botón 3D Rápido (Fuera del link para no interferir) */}
+              {product.model3dUrl && (
+                <button
+                  onClick={() => setQuickViewProduct(product)}
+                  className="absolute bottom-[110px] right-8 bg-orange-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-xl hover:bg-black transition-all z-20 animate-bounce"
+                  title="Ver en 3D"
+                >
+                  <Rotate3d size={20} />
+                </button>
+              )}
+
+              {/* Selector Rápido de Talla (Parte Inferior) */}
+              <div className="space-y-3 mt-4 pt-4 border-t border-gray-100">
                 <div className="flex justify-between items-center">
                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Tallas Nacionales 🇨🇴</p>
                   <span className="text-[8px] font-black text-orange-600 uppercase italic">Horma Real</span>
@@ -91,6 +93,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                       disabled={variant.stock <= 0}
                       onClick={(e) => {
                         e.preventDefault();
+                        e.stopPropagation();
                         addItem({
                           variantId: variant.id,
                           name: product.name,
@@ -108,7 +111,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                     </button>
                   ))}
                   {product.variants?.length > 3 && (
-                    <Link href={productPath} className="text-[9px] font-black text-orange-600 flex items-center italic hover:underline">
+                    <Link href={productPath} className="text-[9px] font-black text-orange-600 flex items-center italic hover:underline ml-auto">
                       +{product.variants.length - 3} más
                     </Link>
                   )}
@@ -131,15 +134,12 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
             </button>
 
             <div className="grid grid-cols-1 md:grid-cols-2">
-              {/* Visor 3D Real */}
               <div className="h-[400px] md:h-[600px] bg-gray-50 border-r border-gray-100">
                 <Product3DViewer
                   modelUrl={quickViewProduct.model3dUrl}
                   posterUrl={quickViewProduct.imageUrl}
                 />
               </div>
-
-              {/* Info Rápida */}
               <div className="p-10 flex flex-col justify-center bg-white">
                 <span className="bg-yellow-400 text-black text-[9px] font-black px-3 py-1 rounded-full uppercase italic mb-4 inline-block w-fit">
                   🇨🇴 Fábrica Nacional
@@ -147,29 +147,14 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                 <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-gray-900 leading-none mb-4">
                   {quickViewProduct.name}
                 </h2>
-                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6">
-                  {quickViewProduct.gender} • {quickViewProduct.category}
-                </p>
                 <p className="text-gray-500 font-medium italic mb-8 leading-tight">
-                  Interactúa con el modelo 3D a la izquierda. Gíralo, míralo por debajo y convéncete de la calidad de nuestros pegues.
+                  Interactúa con el modelo 3D a la izquierda. Gíralo y convéncete de la calidad de nuestros pegues.
                 </p>
-
-                <div className="flex justify-between items-end mb-10">
-                  <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase">Precio del Barrio</p>
-                    <p className="text-4xl font-black italic text-gray-900">${Number(quickViewProduct.basePrice).toLocaleString()}</p>
-                  </div>
-                </div>
-
                 <Link href={`/products/${quickViewProduct.id}`} className="w-full">
-                  <Button className="w-full py-6 bg-black text-white font-black italic uppercase text-xs rounded-2xl flex items-center justify-center gap-3">
+                  <Button className="w-full py-6 bg-black text-white font-black uppercase italic text-xs rounded-2xl flex items-center justify-center gap-3">
                     <ShoppingBag size={18} /> Ver tallas y Comprar
                   </Button>
                 </Link>
-
-                <p className="text-[9px] text-center text-gray-400 mt-6 font-bold uppercase tracking-widest">
-                  Respaldo por AnalizisEstudio • Calidad Orígenes Kicks
-                </p>
               </div>
             </div>
           </div>

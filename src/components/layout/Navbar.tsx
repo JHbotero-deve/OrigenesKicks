@@ -24,7 +24,7 @@ export const Navbar: React.FC = () => {
   const navItems = [
     { name: 'VITRINA', href: '/products', icon: Package },
     { name: 'MIS PEDIDOS', href: '/dashboard/orders', icon: Sparkles, authRequired: true },
-    { name: 'AUTENTICIDAD', href: '/posventa', icon: ShieldCheck },
+    { name: 'RASTREAR PEDIDO', href: '/posventa', icon: ShieldCheck },
   ];
 
   return (

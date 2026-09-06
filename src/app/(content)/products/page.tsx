@@ -14,7 +14,9 @@ export default async function ProductsPage() {
 
   const allProducts = await prisma.product.findMany({
     where: { active: true },
-    include: { variants: true },
+    include: { variants: {
+      include: { store: true }
+    } },
     orderBy: { salesCount: 'desc' },
   });
 
