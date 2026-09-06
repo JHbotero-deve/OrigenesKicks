@@ -58,15 +58,18 @@ export const CartDrawer: React.FC = () => {
 
   return (
     <>
-      <Button variant="outline" onClick={() => setIsOpen(true)} className="relative border-2 border-black font-black italic uppercase text-xs">
-        <ShoppingCart className="w-4 h-4 mr-2" />
-        Mi Carrito
+      <button
+        onClick={() => setIsOpen(true)}
+        className="flex items-center gap-3 bg-[#1a1a1a] text-white px-6 py-2.5 rounded-2xl hover:bg-black transition-all shadow-xl active:scale-95 group relative"
+      >
+        <ShoppingBag size={18} className="text-orange-500 group-hover:rotate-12 transition-transform" />
+        <span className="text-[11px] font-black uppercase italic tracking-wider">Carrito</span>
         {items.length > 0 && (
-          <span className="absolute -top-2 -right-2 bg-orange-600 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center border-2 border-white">
+          <span className="absolute -top-1.5 -right-1.5 bg-orange-600 text-white text-[9px] rounded-full w-5 h-5 flex items-center justify-center border-2 border-white font-black shadow-lg animate-bounce">
             {items.length}
           </span>
         )}
-      </Button>
+      </button>
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">

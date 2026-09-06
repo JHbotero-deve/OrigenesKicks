@@ -1,9 +1,12 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Product } from '@/types/product';
 import { useCartStore } from '@/stores/useCartStore';
 import { Button } from '@/components/ui/Button';
+import Link from 'next/link';
+import { X, Rotate3d, ShoppingBag } from 'lucide-react';
+import { Product3DViewer } from '@/components/products/Product3DViewer';
 
 interface ProductListProps {
   products: Product[];
@@ -11,67 +14,167 @@ interface ProductListProps {
 
 export const ProductList: React.FC<ProductListProps> = ({ products }) => {
   const addItem = useCartStore(state => state.addItem);
+  const [quickViewProduct, setQuickViewProduct] = useState<any>(null);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-      {products.map(product => (
-        <div key={product.id} className="border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-          {product.salesCount > 10 && (
-            <div className="absolute top-2 right-[-35px] bg-black text-white text-[8px] font-black py-1 px-10 transform rotate-45 z-10 uppercase tracking-widest">
-              Los Más Pedidos
-            </div>
-          )}
-          {product.imageUrl && (
-            <img src={product.imageUrl} alt={product.name} className="w-full h-48 object-cover rounded-md mb-4" />
-          )}
-          <h3 className="font-bold text-lg">{product.name}</h3>
-          <p className="text-gray-600 text-sm mb-2">{product.description}</p>
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        {products.map(product => {
+          const productPath = `/products/${product.id}`;
 
-          <div className="flex items-center gap-2 mb-4">
-            {product.discountPrice ? (
-              <>
-                <span className="text-xl font-black text-red-600">${Number(product.discountPrice).toLocaleString()}</span>
-                <span className="text-sm text-gray-400 line-through">${Number(product.basePrice).toLocaleString()}</span>
-              </>
-            ) : (
-              <span className="text-xl font-bold text-black">${Number(product.basePrice).toLocaleString()}</span>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            {product.variants?.map(variant => (
-              <div key={variant.id} className="flex items-center justify-between text-sm">
-                <div className="flex flex-col">
-                  <span className="font-medium">Talla: {variant.size}</span>
-                  {variant.stock > 0 && variant.stock <= 2 ? (
-                    <span className="text-[9px] font-black bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-sm uppercase tracking-tighter animate-bounce mt-0.5 w-fit">
-                      ¡Últimos {variant.stock} pares!
-                    </span>
-                  ) : variant.stock > 0 ? (
-                    <span className="text-[10px] text-gray-400 italic">Disponibles ya</span>
-                  ) : null}
+          return (
+            <div key={product.id} className="group bg-white border-2 border-gray-100 rounded-[2.5rem] p-4 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden flex flex-col h-full">
+              {/* Etiqueta de Popularidad */}
+              {product.salesCount > 10 && (
+                <div className="absolute top-4 right-[-35px] bg-black text-white text-[8px] font-black py-1 px-10 transform rotate-45 z-10 uppercase tracking-widest italic shadow-lg">
+                  Los Más Pedidos
                 </div>
-                <Button
-                  size="sm"
-                  disabled={variant.stock <= 0}
-                  onClick={() => addItem({
-                    variantId: variant.id,
-                    productId: product.id,
-                    name: product.name,
-                    size: variant.size,
-                    color: variant.color,
-                    price: Number(product.discountPrice || product.basePrice),
-                    quantity: 1,
-                    image: product.imageUrl
-                  })}
-                >
-                  {variant.stock > 0 ? 'Añadir' : 'Agotado'}
-                </Button>
+              )}
+
+              {/* Imagen con Link */}
+              <div className="block relative aspect-square overflow-hidden rounded-[2rem] bg-gray-50 mb-6">
+                {product.imageUrl && (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-700 drop-shadow-xl p-4"
+                  />
+                )}
+
+                {/* Acciones sobre la imagen */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 gap-2">
+                   <Link href={productPath} className="bg-white text-black px-4 py-2 rounded-full font-black uppercase italic text-[9px] shadow-2xl border-2 border-black hover:bg-black hover:text-white transition-all">
+                     Ver Detalles
+                   </Link>
+                   {product.model3dUrl && (
+                     <button
+                       onClick={() => setQuickViewProduct(product)}
+                       className="bg-orange-600 text-white px-4 py-2 rounded-full font-black uppercase italic text-[9px] shadow-2xl flex items-center gap-1 hover:bg-orange-700"
+                     >
+                       <Rotate3d size={14} /> Mover 3D
+                     </button>
+                   )}
+                </div>
               </div>
-            ))}
+
+              {/* Info */}
+              <div className="flex-1 px-2">
+                <Link href={productPath}>
+                  <h3 className="font-black uppercase italic text-lg leading-tight hover:text-orange-600 transition-colors cursor-pointer mb-2">
+                    {product.name}
+                  </h3>
+                </Link>
+                <p className="text-gray-400 text-[10px] font-bold uppercase mb-4 tracking-widest">{product.category || 'Calzado Nacional'}</p>
+
+                <div className="flex items-center gap-2 mb-6">
+                  {product.discountPrice ? (
+                    <>
+                      <span className="text-2xl font-black text-red-600 italic">${Number(product.discountPrice).toLocaleString()}</span>
+                      <span className="text-sm text-gray-400 line-through font-bold">${Number(product.basePrice).toLocaleString()}</span>
+                    </>
+                  ) : (
+                    <span className="text-2xl font-black text-black italic">${Number(product.basePrice).toLocaleString()}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Selector Rápido de Talla */}
+              <div className="space-y-3 mt-auto pt-4 border-t border-gray-100">
+                <div className="flex justify-between items-center">
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Tallas Nacionales 🇨🇴</p>
+                  <span className="text-[8px] font-black text-orange-600 uppercase italic">Horma Real</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {product.variants?.slice(0, 3).map(variant => (
+                    <button
+                      key={variant.id}
+                      disabled={variant.stock <= 0}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        addItem({
+                          variantId: variant.id,
+                          name: product.name,
+                          price: Number(product.discountPrice || product.basePrice),
+                          quantity: 1,
+                          size: variant.size,
+                          color: variant.color,
+                          image: product.imageUrl
+                        });
+                      }}
+                      className="bg-gray-50 hover:bg-black hover:text-white transition-all px-3 py-2 rounded-xl text-[10px] font-black italic border border-gray-100 flex-1 min-w-[50px] flex flex-col items-center leading-none"
+                    >
+                      <span>{variant.stock > 0 ? variant.size : '❌'}</span>
+                      <span className="text-[6px] opacity-40 mt-1">NAC</span>
+                    </button>
+                  ))}
+                  {product.variants?.length > 3 && (
+                    <Link href={productPath} className="text-[9px] font-black text-orange-600 flex items-center italic hover:underline">
+                      +{product.variants.length - 3} más
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* MODAL DE VISTA RÁPIDA 3D */}
+      {quickViewProduct && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl relative border-4 border-orange-500">
+            <button
+              onClick={() => setQuickViewProduct(null)}
+              className="absolute top-6 right-6 z-50 bg-black text-white p-3 rounded-full hover:bg-orange-600 transition-all shadow-xl"
+            >
+              <X size={24} />
+            </button>
+
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              {/* Visor 3D Real */}
+              <div className="h-[400px] md:h-[600px] bg-gray-50 border-r border-gray-100">
+                <Product3DViewer
+                  modelUrl={quickViewProduct.model3dUrl}
+                  posterUrl={quickViewProduct.imageUrl}
+                />
+              </div>
+
+              {/* Info Rápida */}
+              <div className="p-10 flex flex-col justify-center bg-white">
+                <span className="bg-yellow-400 text-black text-[9px] font-black px-3 py-1 rounded-full uppercase italic mb-4 inline-block w-fit">
+                  🇨🇴 Fábrica Nacional
+                </span>
+                <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-gray-900 leading-none mb-4">
+                  {quickViewProduct.name}
+                </h2>
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6">
+                  {quickViewProduct.gender} • {quickViewProduct.category}
+                </p>
+                <p className="text-gray-500 font-medium italic mb-8 leading-tight">
+                  Interactúa con el modelo 3D a la izquierda. Gíralo, míralo por debajo y convéncete de la calidad de nuestros pegues.
+                </p>
+
+                <div className="flex justify-between items-end mb-10">
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase">Precio del Barrio</p>
+                    <p className="text-4xl font-black italic text-gray-900">${Number(quickViewProduct.basePrice).toLocaleString()}</p>
+                  </div>
+                </div>
+
+                <Link href={`/products/${quickViewProduct.id}`} className="w-full">
+                  <Button className="w-full py-6 bg-black text-white font-black italic uppercase text-xs rounded-2xl flex items-center justify-center gap-3">
+                    <ShoppingBag size={18} /> Ver tallas y Comprar
+                  </Button>
+                </Link>
+
+                <p className="text-[9px] text-center text-gray-400 mt-6 font-bold uppercase tracking-widest">
+                  Respaldo por AnalizisEstudio • Calidad Orígenes Kicks
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-      ))}
-    </div>
+      )}
+    </>
   );
 };

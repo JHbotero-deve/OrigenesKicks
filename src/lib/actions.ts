@@ -289,3 +289,37 @@ export async function manualInventoryRemoval(data: {
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * 5. SEGUIMIENTO PÚBLICO REAL
+ * Permite a cualquier cliente ver su estado con el ID del pedido
+ */
+export async function getPublicOrderStatus(orderCode: string) {
+  try {
+    // Buscamos por ID (primeros 8 caracteres) o por número de factura
+    const order = await prisma.pedido.findFirst({
+      where: {
+        OR: [
+          { id: { startsWith: orderCode.toLowerCase() } },
+          { invoice: { fullNumber: orderCode.toUpperCase() } }
+        ]
+      },
+      include: {
+        envio: true,
+        items: { include: { variant: { include: { product: true } } } }
+      }
+    });
+
+    if (!order) return { success: false, message: "No encontramos ningún pedido con ese código." };
+
+    return {
+      success: true,
+      status: order.status,
+      date: order.createdAt,
+      city: order.envio?.city || 'Medellín',
+      items: order.items.map(i => i.variant.product.name)
+    };
+  } catch (error) {
+    return { success: false, message: "Error al consultar el sistema." };
+  }
+}
