@@ -28,11 +28,19 @@ export default function AnalizisCorePanel() {
 
       {/* 1. SIDEBAR - ESTILO CORE PANEL */}
       <aside className="w-72 bg-[#16161D] border-r border-white/5 flex flex-col p-6 h-screen sticky top-0">
-        <div className="flex items-center gap-3 mb-12 px-2">
-          <div className="w-10 h-10 bg-[#5E5CE6] rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(94,92,230,0.3)]">
-            <span className="font-black italic text-xl">A</span>
+        <div className="mb-12 px-2">
+          <div className="relative group cursor-pointer">
+             <div className="absolute inset-0 bg-[#5E5CE6]/20 blur-xl group-hover:bg-[#5E5CE6]/40 transition-all rounded-full"></div>
+             <img
+              src="/analizis-factory.jpg"
+              className="relative w-full rounded-2xl border-2 border-white/10 shadow-2xl transform group-hover:scale-105 transition-transform duration-500"
+              alt="AnalizisEstudio Logo"
+             />
           </div>
-          <h1 className="font-black uppercase tracking-tighter text-xl italic">CORE PANEL</h1>
+          <div className="mt-4 text-center">
+            <h1 className="font-black uppercase tracking-tighter text-xl italic text-white">CORE PANEL</h1>
+            <p className="text-[8px] font-black text-blue-500 uppercase tracking-[0.4em]">AnalizisEstudio Engine</p>
+          </div>
         </div>
 
         <nav className="flex-1 space-y-8">
