@@ -46,7 +46,7 @@ export const SpecialOffersSection: React.FC<SpecialOffersSectionProps> = ({ spec
         </div>
       ) : (
         <div className="bg-gray-100 p-8 rounded-xl text-center cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => setShowOffers(true)}>
-          <p className="text-sm text-gray-500 font-medium uppercase tracking-[0.2em]">Haz clic para revelar precios exclusivos para clientes VIP</p>
+          <p className="text-sm text-gray-500 font-medium uppercase tracking-[0.2em]">Haz clic para revelar precios exclusivos para gente de la casa</p>
         </div>
       )}
     </div>

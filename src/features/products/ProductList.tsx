@@ -18,7 +18,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
         <div key={product.id} className="border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
           {product.salesCount > 10 && (
             <div className="absolute top-2 right-[-35px] bg-black text-white text-[8px] font-black py-1 px-10 transform rotate-45 z-10 uppercase tracking-widest">
-              Top Ventas
+              Los Más Pedidos
             </div>
           )}
           {product.imageUrl && (
@@ -45,10 +45,10 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                   <span className="font-medium">Talla: {variant.size}</span>
                   {variant.stock > 0 && variant.stock <= 2 ? (
                     <span className="text-[9px] font-black bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-sm uppercase tracking-tighter animate-bounce mt-0.5 w-fit">
-                      ¡Casi agotado! Quedan {variant.stock}
+                      ¡Últimos {variant.stock} pares!
                     </span>
                   ) : variant.stock > 0 ? (
-                    <span className="text-[10px] text-gray-400 italic">Disponibilidad inmediata</span>
+                    <span className="text-[10px] text-gray-400 italic">Disponibles ya</span>
                   ) : null}
                 </div>
                 <Button

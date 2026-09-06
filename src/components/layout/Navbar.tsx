@@ -18,7 +18,8 @@ export const Navbar: React.FC = () => {
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
-          <Link href="/products" className="hidden xs:block text-[10px] sm:text-sm font-medium hover:text-gray-600 uppercase tracking-widest">Vitrina</Link>
+          <Link href="/products" className="hidden xs:block text-[10px] sm:text-sm font-black hover:text-gray-600 uppercase tracking-widest italic">Vitrina</Link>
+          <Link href="/posventa" className="hidden md:block text-[10px] sm:text-sm font-black hover:text-orange-600 uppercase tracking-widest italic text-orange-500">Soporte</Link>
 
           <CartDrawer />
 
@@ -31,7 +32,7 @@ export const Navbar: React.FC = () => {
             </Link>
           ) : (
             <Link href="/login">
-              <Button size="sm" className="text-[10px] sm:text-sm px-3 sm:px-6">Login</Button>
+              <Button size="sm" className="text-[10px] sm:text-sm px-3 sm:px-6 uppercase font-black italic">Ingresar</Button>
             </Link>
           )}
         </div>

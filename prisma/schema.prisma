@@ -11,36 +11,73 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// --- CONFIGURACIÓN DE LA TIENDA (para facturación DIAN) ---
+// --- ESTRUCTURA MULTI-SUCURSAL (Pensando en grande) ---
 
-model StoreConfig {
-  id          String   @id @default(uuid())
-  businessName String   @map("business_name")
-  nit          String
-  regime      String   @default("SIMPLIFICADO")
-  address     String
-  city        String
-  department  String   @default("Cundinamarca")
-  phone       String?
-  email       String?
-  logoUrl     String?  @map("logo_url")
+// --- REPORTES Y CIERRES (Para el Dueño) ---
+
+model DailyClosing {
+  id            String   @id @default(uuid())
+  storeId       String   @map("store_id")
+  store         Store    @relation(fields: [storeId], references: [id])
+  closedById    String   @map("closed_by_id")
+  closedBy      User     @relation("ClosedBy", fields: [closedById], references: [id])
+
+  date          DateTime @default(now())
+  totalSales    Decimal  @map("total_sales")
+  totalOrders   Int      @map("total_orders")
+  pendingOrders Int      @map("pending_orders")
+  cashAmount    Decimal  @map("cash_amount")
+  transferAmount Decimal @map("transfer_amount")
+
+  observations  String?
+  sentToEmail   Boolean  @default(false) @map("sent_to_email")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("daily_closings")
+}
+
+// --- SEGURIDAD Y LICENCIA (Propiedad de AnalizisEstudio) ---
+
+model AppLicense {
+  id            String   @id @default(uuid())
+  licenseKey    String   @unique @map("license_key")
+  ownerEmail    String   @map("owner_email") // Correo del dueño que compró la app
+  masterPin     String   @map("master_pin")  // PIN secreto de acceso (ej: 9988)
+  status        String   @default("ACTIVE")  // ACTIVE, SUSPENDED
+  lastCheck     DateTime @default(now()) @map("last_check")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt      @map("updated_at")
+
+  @@map("app_licenses")
+}
+
+model Store {
+  id           String   @id @default(uuid())
+  name         String   // Nombre del local
+  address      String
+  city         String
+  phone        String   // WhatsApp del local
+  imageUrl     String?  @map("image_url") // Foto de la fachada/local
+  managerId    String?  @unique @map("manager_id")
+  manager      User?    @relation("StoreManager", fields: [managerId], references: [id])
+  active       Boolean  @default(true)
   
   invoicePrefix String @default("FK") @map("invoice_prefix")
-  dianResolution String? @map("dian_resolution")
-  dianFrom       Int?    @map("dian_from")
-  dianTo         Int?    @map("dian_to")
-  dianDate       DateTime? @map("dian_date")
-  
-  defaultTaxRate Decimal @default(19.0) @map("default_tax_rate")
   lastInvoiceNumber Int @default(0) @map("last_invoice_number")
   
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt      @map("updated_at")
 
-  @@map("store_configs")
-}
+  pedidos     Pedido[]
+  variants    Variant[]
+  employees   User[]    @relation("StoreEmployees")
+  inventoryLogs InventoryLog[]
+  dailyClosings DailyClosing[]
 
-// --- SEGURIDAD Y USUARIOS ---
+  @@map("stores")
+}
 
 model User {
   id        String   @id @default(uuid())
@@ -48,12 +85,23 @@ model User {
   name      String
   password  String
   role      Role     @default(CLIENT)
+
+  // Relaciones de seguridad
+  managedStore Store?  @relation("StoreManager")
+  workStoreId  String? @map("work_store_id")
+  workStore    Store?  @relation("StoreEmployees", fields: [workStoreId], references: [id])
+
+  permissions  String[] @default([]) // Permisos granulares: ["INV_EDIT", "PRICE_EDIT", "VOID_INVOICE"]
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt      @map("updated_at")
 
   apartados         Apartado[]
   pedidos           Pedido[]
   abonosVerificados Abono[]   @relation("VerifiedBy")
+  inventoryLogs     InventoryLog[] @relation("PerformedBy")
+  dailyClosings     DailyClosing[] @relation("ClosedBy")
+  cart              Cart? // Restaurando relación con el carrito
 
   @@map("users")
 }
@@ -92,17 +140,36 @@ enum Role {
 
 // --- INVENTARIO Y PRODUCTOS ---
 
+model Provider {
+  id          String   @id @default(uuid())
+  name        String
+  contactName String?  @map("contact_name")
+  phone       String?
+  email       String?
+  address     String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  inventoryLogs InventoryLog[]
+  @@map("providers")
+}
+
 model Product {
   id            String    @id @default(uuid())
   name          String
+  slug          String    @unique // URL amigable: tenis-pro-colombia
   description   String?
   basePrice     Decimal   @map("base_price")
   discountPrice Decimal?  @map("discount_price")
   category      String?
+  gender        Gender    @default(UNISEX)
+  usage         Usage     @default(DIARIO)
   active        Boolean   @default(true)
   isSpecial     Boolean   @default(false) @map("is_special")
   salesCount    Int       @default(0)     @map("sales_count")
   imageUrl      String?   @map("image_url")
+  model3dUrl    String?   @map("model_3d_url") // Para el visor 3D
   sku           String?
   taxRate       Decimal?  @map("tax_rate")
   createdAt     DateTime  @default(now()) @map("created_at")
@@ -112,10 +179,25 @@ model Product {
   @@map("products")
 }
 
+enum Gender {
+  HOMBRE
+  MUJER
+  UNISEX
+}
+
+enum Usage {
+  DEPORTE
+  DIARIO
+  TRABAJO
+  URBANO
+}
+
 model Variant {
   id        String   @id @default(uuid())
   productId String   @map("product_id")
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  storeId   String?  @map("store_id")
+  store     Store?   @relation(fields: [storeId], references: [id])
   size      String
   color     String
   stock     Int      @default(0)
@@ -124,6 +206,7 @@ model Variant {
   pedidoItems   PedidoItem[]
   apartadoItems ApartadoItem[]
   inventoryLogs InventoryLog[]
+  cartItems     CartItem[] // Restaurando relación con los items del carrito
   @@map("product_variants")
 }
 
@@ -131,10 +214,18 @@ model InventoryLog {
   id          String   @id @default(uuid())
   variantId   String   @map("variant_id")
   variant     Variant  @relation(fields: [variantId], references: [id])
-  changeType  String   @map("change_type")
+  storeId     String?  @map("store_id")
+  store       Store?   @relation(fields: [storeId], references: [id])
+  changeType  String   @map("change_type") // PURCHASE, SALE, RETURN, ADJUSTMENT
   quantity    Int
   reason      String
-  performedBy String   @map("performed_by")
+
+  performedById String @map("performed_by_id")
+  performedBy   User   @relation("PerformedBy", fields: [performedById], references: [id])
+
+  providerId  String?  @map("provider_id")
+  provider    Provider? @relation(fields: [providerId], references: [id])
+
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("inventory_logs")
@@ -146,6 +237,8 @@ model Pedido {
   id            String       @id @default(uuid())
   clientId      String       @map("client_id")
   client        User         @relation(fields: [clientId], references: [id])
+  storeId       String?      @map("store_id")
+  store         Store?       @relation(fields: [storeId], references: [id])
   totalAmount   Decimal      @map("total_amount")
   status        PedidoStatus @default(RECIBIDO)
   paymentMethod String       @map("payment_method")

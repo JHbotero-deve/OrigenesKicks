@@ -34,10 +34,10 @@ export const useCartStore = create<CartStore>()(
       },
       clearCart: () => set({ items: [] }),
 
-      get totalItems() {
+      getTotalItems: () => {
         return get().items.reduce((total, item) => total + item.quantity, 0);
       },
-      get totalPrice() {
+      getTotalPrice: () => {
         return get().items.reduce((total, item) => total + (item.price * item.quantity), 0);
       },
     }),

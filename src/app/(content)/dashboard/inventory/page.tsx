@@ -41,8 +41,8 @@ export default async function InventoryPage() {
     <div className="space-y-8">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-black italic uppercase tracking-tighter">Control de Inventario</h1>
-          <p className="text-gray-500 text-sm">Monitoreo de existencias y alertas de reposición.</p>
+          <h1 className="text-3xl font-black italic uppercase tracking-tighter">Inventario de la Fábrica</h1>
+          <p className="text-gray-500 text-sm">Control real de lo que tenemos en bodega y vitrina.</p>
         </div>
       </div>
 
@@ -51,7 +51,7 @@ export default async function InventoryPage() {
         <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4 text-orange-700">
             <AlertTriangle className="w-6 h-6" />
-            <h2 className="font-bold text-lg uppercase italic">Alertas de Stock Crítico (2 o menos)</h2>
+            <h2 className="font-bold text-lg uppercase italic">¡Pilas! Queda muy poco de esto:</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {lowStockVariants.map(variant => (
@@ -59,8 +59,8 @@ export default async function InventoryPage() {
                 {variant.imageUrl && <img src={variant.imageUrl} className="w-12 h-12 object-cover rounded" />}
                 <div className="flex-1">
                   <p className="text-xs font-bold uppercase truncate">{variant.productName}</p>
-                  <p className="text-[10px] text-gray-500">Talla: {variant.size} | SKU: {variant.sku}</p>
-                  <p className="text-sm font-black text-orange-600">¡Solo {variant.stock} disponibles!</p>
+                  <p className="text-[10px] text-gray-500">Talla: {variant.size} | Ref: {variant.sku}</p>
+                  <p className="text-sm font-black text-orange-600">¡Solo quedan {variant.stock} pares!</p>
                 </div>
               </div>
             ))}
@@ -78,10 +78,10 @@ export default async function InventoryPage() {
           <table className="w-full text-left text-sm">
             <thead className="bg-gray-50 border-b text-[10px] uppercase font-bold text-gray-500">
               <tr>
-                <th className="px-6 py-3">Producto</th>
-                <th className="px-6 py-3">Variante (Talla)</th>
-                <th className="px-6 py-3">SKU</th>
-                <th className="px-6 py-3 text-center">Stock</th>
+                <th className="px-6 py-3">Kicks / Modelo</th>
+                <th className="px-6 py-3">Talla</th>
+                <th className="px-6 py-3">Referencia</th>
+                <th className="px-6 py-3 text-center">En Existencia</th>
                 <th className="px-6 py-3 text-center">Estado</th>
                 <th className="px-6 py-3 text-right">Acciones</th>
               </tr>

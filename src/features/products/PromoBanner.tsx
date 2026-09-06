@@ -8,20 +8,21 @@ export const PromoBanner: React.FC = () => {
       <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center group-hover:scale-105 transition-transform duration-700"></div>
 
       <div className="relative z-10 flex flex-col items-center text-center">
-        <span className="bg-white text-black text-[9px] md:text-[10px] font-black px-2 md:px-3 py-1 uppercase tracking-[0.3em] mb-4">
-          Nueva Colección 2026
+        <span className="bg-yellow-400 text-black text-[9px] md:text-[10px] font-black px-2 md:px-3 py-1 uppercase tracking-[0.3em] mb-4 shadow-lg">
+          Orgullo Colombiano 🇨🇴
         </span>
-        <h2 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black italic uppercase tracking-tighter mb-4 leading-none">
-          Orígenes Kicks
+        <h2 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black italic uppercase tracking-tighter mb-4 leading-none text-white drop-shadow-2xl">
+          Calzado del Barrio
         </h2>
-        <p className="max-w-xs sm:max-w-md md:max-w-lg text-gray-400 text-[10px] sm:text-xs md:text-base mb-6 md:mb-8 uppercase tracking-widest leading-relaxed px-4">
-          Estilo urbano sin límites. Reserva tus Kicks hoy y asegura tu lugar en la calle.
-          <span className="text-white font-bold ml-1">#OriginalesComoTu</span>
+        <p className="max-w-xs sm:max-w-md md:max-w-lg text-gray-200 text-[10px] sm:text-xs md:text-base mb-6 md:mb-8 uppercase tracking-widest leading-relaxed px-4 font-bold">
+          Diseñados para el deporte o para el camello diario. <br/>
+          Calidad de fábrica nacional, entrega garantizada.
+          <span className="text-yellow-400 font-black ml-1">#PisaFirme</span>
         </p>
 
         <div className="flex gap-4">
-          <div className="border border-white/30 px-6 py-2 text-xs uppercase font-bold tracking-widest">
-            Edición Limitada
+          <div className="bg-white text-black px-6 py-2 text-xs uppercase font-black tracking-widest italic shadow-xl">
+            Apoya lo Nuestro
           </div>
         </div>
       </div>

@@ -8,10 +8,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ShoppingCart, Trash2, X } from 'lucide-react';
 
 export const CartDrawer: React.FC = () => {
-  const { items, removeItem, clearCart, totalPrice } = useCartStore();
+  const { items, removeItem, clearCart, getTotalPrice } = useCartStore();
   const { user } = useAuth();
   const [isOpen, setIsOpen] = React.useState(false);
   const [paymentMethod, setPaymentMethod] = React.useState('TRANSFERENCIA');
+
+  const totalPrice = getTotalPrice();
 
   // Datos de envío
   const [address, setAddress] = React.useState('');
@@ -44,23 +46,23 @@ export const CartDrawer: React.FC = () => {
     });
 
     if (res.success) {
-      alert(`¡Pedido reservado! Se ha enviado una constancia a tu correo. Tienes 24 horas para confirmar el pago.`);
+      alert(`¡Pedido reservado, parcero! Te enviamos la constancia al correo. Tienes 24 horas para confirmar el pago y que no te quiten los Kicks.`);
       clearCart();
       setIsOpen(false);
       setAddress('');
       setPhone('');
     } else {
-      alert("Error: " + res.error);
+      alert("Hubo un error: " + res.error);
     }
   };
 
   return (
     <>
-      <Button variant="outline" onClick={() => setIsOpen(true)} className="relative">
-        <ShoppingCart className="w-5 h-5 mr-2" />
-        Carrito
+      <Button variant="outline" onClick={() => setIsOpen(true)} className="relative border-2 border-black font-black italic uppercase text-xs">
+        <ShoppingCart className="w-4 h-4 mr-2" />
+        Mi Carrito
         {items.length > 0 && (
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+          <span className="absolute -top-2 -right-2 bg-orange-600 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center border-2 border-white">
             {items.length}
           </span>
         )}
@@ -143,12 +145,12 @@ export const CartDrawer: React.FC = () => {
                   <span>Total</span>
                   <span>${totalPrice.toLocaleString()}</span>
                 </div>
-                <Button className="w-full py-6 text-lg" onClick={handleCheckout}>
+                <Button className="w-full py-6 text-lg bg-black text-white font-black italic uppercase" onClick={handleCheckout}>
                   Confirmar Reserva (24h)
                 </Button>
                 <p className="text-[10px] text-gray-400 text-center uppercase tracking-widest leading-tight">
-                  Al confirmar, el calzado sale de la vitrina por 24 horas.<br/>
-                  Se enviará una constancia a tu correo.
+                  Al confirmar, tus Kicks salen de la vitrina por 24 horas.<br/>
+                  Apoya la fábrica nacional, ¡gracias por tu compra!
                 </p>
               </div>
             )}

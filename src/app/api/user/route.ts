@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const email = searchParams.get('email');
 
   if (!email) {
-    return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    return NextResponse.json({ error: 'El correo electrónico es obligatorio' }, { status: 400 });
   }
 
   try {
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
     return NextResponse.json(user);

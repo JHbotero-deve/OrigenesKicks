@@ -23,7 +23,7 @@ export const ManualRemovalForm: React.FC<ManualRemovalFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason || reason.trim().length < 5) {
-      alert("Debes proporcionar un motivo descriptivo.");
+      alert("Cuéntanos bien por qué estás retirando estos Kicks (mínimo 5 letras).");
       return;
     }
 
@@ -35,12 +35,12 @@ export const ManualRemovalForm: React.FC<ManualRemovalFormProps> = ({
     });
 
     if (res.success) {
-      alert(`Éxito: Se retiraron ${quantity} unidades. Se ha enviado una alerta de seguridad al administrador.`);
+      alert(`¡Listo! Se sacaron ${quantity} pares de la cuenta. Ya le avisamos al dueño por seguridad.`);
       setIsOpen(false);
       setReason('');
       setQuantity(1);
     } else {
-      alert("Error: " + res.error);
+      alert("No se pudo: " + res.error);
     }
     setIsSubmitting(false);
   };
@@ -65,17 +65,17 @@ export const ManualRemovalForm: React.FC<ManualRemovalFormProps> = ({
       <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md border-t-4 border-red-600 animate-in zoom-in-95">
         <div className="flex items-center gap-2 text-red-600 mb-4">
           <AlertCircle className="w-6 h-6" />
-          <h3 className="font-black uppercase italic text-lg">Retiro Manual de Stock</h3>
+          <h3 className="font-black uppercase italic text-lg">Retirar Mercancía Manualmente</h3>
         </div>
 
         <p className="text-xs text-gray-500 mb-6">
-          Estás retirando stock de <strong className="text-black uppercase">{productName} (Talla {size})</strong> fuera del sistema de ventas.
-          Esta acción es <span className="underline font-bold">irrevocable</span> y disparará una alerta de seguridad.
+          Vas a sacar stock de <strong className="text-black uppercase">{productName} (Talla {size})</strong> sin una venta de por medio.
+          Esto queda registrado en el **Kardex de Auditoría** para el dueño.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[10px] font-bold uppercase mb-1">Cantidad a retirar</label>
+            <label className="block text-[10px] font-bold uppercase mb-1">¿Cuántos pares salen?</label>
             <input
               type="number"
               min="1"
@@ -88,11 +88,11 @@ export const ManualRemovalForm: React.FC<ManualRemovalFormProps> = ({
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold uppercase mb-1">Motivo / Justificación (Obligatorio)</label>
+            <label className="block text-[10px] font-bold uppercase mb-1">¿Por qué salen? (Motivo real)</label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Ej: Producto dañado en bodega / Error de conteo físico..."
+              placeholder="Ej: Cambio por garantía, se dañaron en el local, regalo del dueño..."
               className="w-full p-2 border rounded text-sm h-24 resize-none"
               required
             />
