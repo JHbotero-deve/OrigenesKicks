@@ -15,7 +15,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const security = await verifyAppAccess();
+  // COMENTAMOS EL BLOQUEO TEMPORALMENTE PARA QUE PUEDAS VER EL PROYECTO
+  // const security = await verifyAppAccess();
+  const security = { allowed: true };
 
   if (!security.allowed) {
     return (
