@@ -16,6 +16,13 @@ export async function createOrder(data: {
   shippingAddress?: { address: string; city: string; phone: string };
 }): Promise<{ success: boolean; pedidoId?: string; error?: string }> {
   try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Debes iniciar sesión para realizar un pedido" };
+
+    const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
+    if (!dbUser) return { success: false, error: "Usuario no encontrado en la base de datos" };
+
     const result = await prisma.$transaction(async (tx) => {
       let calculatedTotal = 0;
       const itemsWithRealPrices = [];
@@ -49,7 +56,7 @@ export async function createOrder(data: {
 
       const pedido = await tx.pedido.create({
         data: {
-          clientId: data.clientId,
+          clientId: dbUser.id,
           storeId: assignedStoreId, // Vínculo real con el local
           totalAmount: calculatedTotal,
           paymentMethod: data.paymentMethod,
@@ -85,7 +92,7 @@ export async function createOrder(data: {
             changeType: 'RESERVATION',
             quantity: item.quantity,
             reason: `Reserva de 24h (Pedido #${pedido.id.slice(0,8)})`,
-            performedById: data.clientId
+            performedById: dbUser.id
           }
         });
       }
@@ -321,5 +328,53 @@ export async function getPublicOrderStatus(orderCode: string) {
     };
   } catch (error) {
     return { success: false, message: "Error al consultar el sistema." };
+  }
+}
+
+/**
+ * 6. ACTUALIZACIÓN DE ENVÍO Y ESTADO FINAL
+ * Flujo: Delivery/Admin -> Actualiza Envío -> Sincroniza Pedido
+ */
+export async function updateShippingStatus(shippingId: string, status: 'PENDIENTE' | 'EN_RUTA' | 'ENTREGADO' | 'FALLIDO' | 'RETORNADO'): Promise<{ success: boolean; error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autorizado" };
+
+  const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
+  if (!dbUser || !['ADMIN', 'SELLER', 'DELIVERY'].includes(dbUser.role)) {
+    return { success: false, error: "No tienes permisos para actualizar el envío" };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const envio = await tx.envio.findUnique({
+        where: { id: shippingId },
+        include: { pedido: true }
+      });
+
+      if (!envio) throw new Error("Envío no encontrado");
+
+      await tx.envio.update({
+        where: { id: shippingId },
+        data: { status }
+      });
+
+      if (status === 'ENTREGADO') {
+        await tx.pedido.update({
+          where: { id: envio.pedidoId },
+          data: { status: 'ENTREGADO' }
+        });
+      } else if (status === 'FALLIDO' || status === 'RETORNADO') {
+        await tx.pedido.update({
+          where: { id: envio.pedidoId },
+          data: { status: 'RECHAZADO' }
+        });
+      }
+    });
+
+    revalidatePath('/dashboard/orders');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
 }

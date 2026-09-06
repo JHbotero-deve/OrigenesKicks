@@ -1,7 +1,8 @@
 import prisma from "@/lib/db";
 import { createClient } from "@/lib/supabase-server";
-import { approveOrder } from "@/lib/actions";
+import { approveOrder, updateShippingStatus } from "@/lib/actions";
 import { Button } from "@/components/ui/Button";
+import { ShippingStatusController } from "@/components/dashboard/ShippingStatusController";
 import Link from "next/link";
 
 export const dynamic = 'force-dynamic';
@@ -142,6 +143,15 @@ export default async function OrdersPage() {
                         Este mensaje llegará directamente<br/>a la sucursal de {storeName}
                       </p>
                     </>
+                  )}
+
+                  {isAdmin && order.status === 'CONFIRMADO' && order.envio && (
+                    <div className="mt-4">
+                      <ShippingStatusController 
+                        shippingId={order.envio.id} 
+                        currentStatus={order.envio.status} 
+                      />
+                    </div>
                   )}
 
                   {isAdmin && order.status === 'RECIBIDO' && (
