@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { Search, Package, Truck, CheckCircle, Clock, MapPin } from 'lucide-react'
-import { getPublicOrderStatus } from '@/lib/actions'
+import { getPublicOrderStatus } from '@/lib/actions/public'
 
 export default function TrackingPage() {
   const [orderCode, setOrderCode] = useState('')

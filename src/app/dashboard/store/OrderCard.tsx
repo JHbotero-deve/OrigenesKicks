@@ -1,0 +1,79 @@
+'use client';
+import { updateOrderStatus } from '@/lib/actions/orders';
+import { useState } from 'react';
+
+export default function OrderCard({ order }: { order: any }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleStatusChange = async (status: any) => {
+    setLoading(true);
+    const result = await updateOrderStatus(order.id, status);
+    setLoading(false);
+    
+    if (result.success && result.whatsappLink) {
+      window.open(result.whatsappLink, '_blank');
+    }
+  };
+
+  const statusColors: any = {
+    RECIBIDO: 'bg-red-100 text-red-700 border-red-200',
+    CONFIRMADO: 'bg-green-100 text-green-700 border-green-200',
+    PROCESANDO: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    DESPACHADO: 'bg-blue-100 text-blue-700 border-blue-200',
+    ENTREGADO: 'bg-gray-100 text-gray-700 border-gray-200',
+  };
+
+  return (
+    <div className='bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4'>
+      <div className='flex items-center gap-4 w-full md:w-auto'>
+        <div className='bg-gray-100 p-3 rounded-full text-2xl'>📦</div>
+        <div>
+          <p className='font-bold text-lg text-gray-800'>{order.client.name}</p>
+          <p className='text-sm text-gray-500'>{order.client.phone} • \</p>
+          <span className={\	ext-xs px-2 py-1 rounded-full border font-semibold \\}>
+            {order.status}
+          </span>
+        </div>
+      </div>
+
+      <div className='flex gap-2 w-full md:w-auto'>
+        {order.status === 'RECIBIDO' && (
+          <button 
+            onClick={() => handleStatusChange('CONFIRMADO')}
+            disabled={loading}
+            className='flex-1 md:flex-none bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-xl font-bold text-sm transition-colors shadow-sm active:scale-95'
+          >
+            {loading ? '...' : '✅ PAGO RECIBIDO'}
+          </button>
+        )}
+        {order.status === 'CONFIRMADO' && (
+          <button 
+            onClick={() => handleStatusChange('PROCESANDO')}
+            disabled={loading}
+            className='flex-1 md:flex-none bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-3 rounded-xl font-bold text-sm transition-colors shadow-sm active:scale-95'
+          >
+            {loading ? '...' : '⚙️ PREPARANDO'}
+          </button>
+        )}
+        {order.status === 'PROCESANDO' && (
+          <button 
+            onClick={() => handleStatusChange('DESPACHADO')}
+            disabled={loading}
+            className='flex-1 md:flex-none bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-xl font-bold text-sm transition-colors shadow-sm active:scale-95'
+          >
+            {loading ? '...' : '🚚 ENVIADO'}
+          </button>
+        )}
+        {order.status === 'DESPACHADO' && (
+          <button 
+            onClick={() => handleStatusChange('ENTREGADO')}
+            disabled={loading}
+            className='flex-1 md:flex-none bg-gray-800 hover:bg-black text-white px-4 py-3 rounded-xl font-bold text-sm transition-colors shadow-sm active:scale-95'
+          >
+            {loading ? '...' : '🏁 ENTREGADO'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}

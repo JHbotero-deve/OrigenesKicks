@@ -1,56 +1,48 @@
-    # Estructura del Proyecto - OrígenesKicks (Next.js App Router)
+# 👟 Orígenes Kicks - Manual de Arquitectura y Operación
 
-    ## Objetivo
-    Facilitar el mantenimiento y escalabilidad del proyecto mediante una separación clara de responsabilidades.
+## 🚀 Visión General
+Sistema de e-commerce de alta gama para calzado, diseñado específicamente para operar en entornos de venta rápida (Plaza de Mercado) con una experiencia de usuario premium basada en 3D y Realidad Aumentada.
 
-    ## Visión General de la Carpeta `src/`
+## 🛠️ Stack Tecnológico
+- **Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS.
+- **Backend:** Server Actions, Prisma ORM, PostgreSQL (Docker).
+- **Seguridad:** JWT (JOSE), Bcrypt, Middleware de Roles.
+- **Experiencia:** <model-viewer> (3D/AR), PWA (Progressive Web App).
+- **Pagos:** Wompi (PSE/Tarjetas), Pagos Manuales.
 
-    ```text
-    src/
-    ├── app/                    # App Router: Rutas, Layouts y API Handlers
-    │   ├── (auth)/             # Grupo: Login, Registro (Layout minimalista)
-    │   ├── (content)/          # Grupo: Dashboard, Productos (Layout con Navbar/Sidebar)
-    │   ├── api/                # Endpoints de la API interna (/api/...)
-    │   ├── layout.tsx          # Root Layout (Providers, fuentes globales)
-    │   └── page.tsx            # Home Page (/)
-    ├── components/             # Componentes compartidos y atómicos
-    │   ├── ui/                 # Componentes base (Botones, Inputs, Cards)
-    │   └── layout/             # Componentes de estructura (Navbar, Footer)
-    ├── features/               # Lógica y UI específica por dominio (Auth, Products, etc.)
-    ├── lib/                    # Utilidades, cliente de DB y Server Actions
-    ├── services/               # Capa de datos (Llamadas a API externa o interna)
-    ├── types/                  # Definiciones de TypeScript
-    ├── contexts/               # Contextos de React (Auth, Carrito)
-    ├── stores/                 # Estado global (Stand)
-    └── hooks/                  # Hooks personalizados
-    ```
+## 📁 Módulos del Sistema
 
-    ## Convenciones de Desarrollo
+### 1. Gestión de Acceso y Seguridad (/src/lib/actions/auth.ts)
+- **Self-Service:** Registro autónomo de clientes con validación de correo.
+- **Auth Pro:** Sistema de tokens JWT con cookies HTTP-only y expiración de 7 días.
+- **Control de Roles:** Redirección inteligente según el rol (ADMIN $\rightarrow$ Dashboard Admin, SELLER $\rightarrow$ Modo Tienda, CLIENT $\rightarrow$ Vitrina).
 
-    | Capa               | Responsabilidad                                               |
-    |:-------------------|:--------------------------------------------------------------|
-    | **app/**           | Definición de rutas y manejo de peticiones.                   |
-    | **features/**      | Componentes complejos que pertenecen a un dominio específico. |
-    | **lib/actions.ts** | Mutaciones de datos seguras (Server Actions).                 |
-    | **services/**      | Encapsulación de fetch/axios para obtener datos.              |
-    | **types/index.ts** | Punto central de exportación de interfaces.                   |
+### 2. Motor de Inventario y Trazabilidad (/src/lib/actions/inventory.ts)
+- **Stock en Tiempo Real:** Validación inmediata antes de cada venta.
+- **Ajustes de Inventario:** Módulo para registrar daños, robos o errores con motivo obligatorio.
+- **Auditoría Total:** Logs detallados de cada movimiento de calzado (Salió por venta, entró por compra, salió por daño).
 
-    ## Path Aliases
-    Usa siempre importaciones absolutas para mayor claridad:
-    - `@/components/*`
-    - `@/features/*`
-    - `@/lib/*`
-    - `@/hooks/*`
+### 3. Vitrina 3D y Experiencia AR (/src/components/product/ShoeViewer.tsx)
+- **Estudio Virtual:** Iluminación profesional con sombras dinámicas y fondos radiales.
+- **Interacción 360°:** Zoom, rotación y exploración completa del producto.
+- **Realidad Aumentada (AR):** Capacidad de proyectar el zapato en el espacio real del cliente vía móvil.
 
-    ## Lógica de Negocio Crítica
+### 4. Operación "Modo Plaza" (/src/app/dashboard/store)
+- **UI de Alta Velocidad:** Botones gigantes y flujos simplificados para vendedores en entorno rápido.
+- **Ciclo de Vida del Pedido:** Gestión rápida de estados (Recibido $\rightarrow$ Confirmado $\rightarrow$ Despachado $\rightarrow$ Entregado).
+- **Notificaciones:** Automatización de avisos vía WhatsApp al cliente en cambios de estado.
 
-    ### Reserva de 24 Horas
-    - **Flujo**: Cuando un cliente reserva (Checkout), el stock disminuye inmediatamente.
-    - **Estabilidad**: La función `releaseExpiredReservations` en `lib/actions.ts` garantiza que si no hay aprobación administrativa en 24 horas, el producto vuelve automáticamente a la vitrina.
-    - **Seguridad**: Las acciones de aprobación (`approveOrder`) están protegidas y solo pueden ser ejecutadas por usuarios con rol `ADMIN` o `SELLER`.
+### 5. Control Financiero y Cierres (/src/lib/actions/finance.ts)
+- **Cierres de Caja:** Automatización de sumas diarias vs. saldo físico en caja.
+- **Reportes de Rentabilidad:** Análisis mensual de ingresos y volumen de ventas.
+- **Control de Pérdidas:** Reporte económico de calzado perdido o dañado (No-Venta).
 
-    ## Activos y Publicidad
-    - **Publicidad**: El componente `PromoBanner` en `features/products` gestiona la identidad visual de la vitrina.
-    - **Imágenes**: Se recomienda usar el bucket de Supabase `product-images` para el catálogo real.
+### 6. Posventa y Fidelización (/src/app/(content)/posventa)
+- **Tracking Público:** Rastreo de pedidos mediante código único.
+- **Visualización de Ruta:** Mapa interactivo y barra de progreso para reducir la ansiedad del cliente.
 
-    ```
+## 📦 Flujo de Datos Maestro (End-to-End)
+Cliente $\rightarrow$ Carrito $\rightarrow$ Pago (Wompi/Manual) $\rightarrow$ Pedido $\rightarrow$ Aprobación Admin $\rightarrow$ Factura $\rightarrow$ Notificación WhatsApp $\rightarrow$ Despacho $\rightarrow$ Rastreo Posventa $\rightarrow$ Cierre de Caja Diario.
+
+## 📱 Capacidad PWA
+La aplicación es instalable en dispositivos móviles, permitiendo que el vendedor opere sin depender totalmente del navegador, con carga acelerada y acceso directo desde la pantalla de inicio.
