@@ -1,8 +1,5 @@
-import { Product, Variant } from "./product";
-
 export interface CartItem {
   variantId: string;
-  productId: string;
   name: string;
   size: string;
   color: string;
@@ -17,6 +14,6 @@ export interface CartStore {
   removeItem: (variantId: string) => void;
   updateQuantity: (variantId: string, quantity: number) => void;
   clearCart: () => void;
-  totalItems: number;
-  totalPrice: number;
+  getTotalItems: () => number;
+  getTotalPrice: () => number;
 }

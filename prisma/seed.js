@@ -1,4 +1,5 @@
-import pkg from '@prisma/client';
+﻿import pkg from '@prisma/client';
+import bcrypt from 'bcrypt';
 const { PrismaClient } = pkg;
 
 const prisma = new PrismaClient();
@@ -34,7 +35,23 @@ async function main() {
     },
   });
 
-  // 3. PRODUCTO DE MUESTRA CON 3D REAL (Para que el dueño vea la magia)
+  // 3. Usuario ADMINISTRADOR por defecto
+  const hashedPassword = await bcrypt.hash('admin123', 10);
+  await prisma.user.upsert({
+    where: { email: 'admin@origeneskicks.com' },
+    update: {},
+    create: {
+      email: 'admin@origeneskicks.com',
+      name: 'Administrador Maestro',
+      password: hashedPassword,
+      role: 'ADMIN',
+      managedStore: {
+        connect: { id: 'default-store-id' }
+      }
+    },
+  });
+
+  // 4. PRODUCTO DE MUESTRA CON 3D REAL
   const product3d = await prisma.product.upsert({
     where: { slug: 'kicks-pro-3d-test' },
     update: {
@@ -60,8 +77,9 @@ async function main() {
     }
   });
 
-  console.log('✅ Sistema Activado y Producto 3D Creado:', product3d.name);
-  console.log('\n✨ Entra a /products y busca el botón "Mover 3D" en el nuevo modelo.');
+  console.log('✅ Sistema Activado');
+  console.log('👤 Usuario Admin: admin@origeneskicks.com / admin123');
+  console.log('✅ Producto 3D Creado:', product3d.name);
 }
 
 main()
@@ -70,5 +88,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await prisma.();
   });

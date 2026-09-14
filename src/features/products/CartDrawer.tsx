@@ -5,7 +5,7 @@ import { useCartStore } from '@/stores/useCartStore';
 import { Button } from '@/components/ui/Button';
 import { createOrder } from '@/lib/actions';
 import { useAuth } from '@/contexts/AuthContext';
-import { ShoppingCart, Trash2, X } from 'lucide-react';
+import { ShoppingBag, Trash2, X } from 'lucide-react';
 
 export const CartDrawer: React.FC = () => {
   const { items, removeItem, clearCart, getTotalPrice } = useCartStore();

@@ -1,11 +1,11 @@
-"use client";
+﻿'use client';
 
 import React, { useState } from 'react';
 import { Product } from '@/types/product';
 import { useCartStore } from '@/stores/useCartStore';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import { X, Rotate3d, ShoppingBag, Eye } from 'lucide-react';
+import { X, Rotate3d, ShoppingBag, Eye, Search, MapPin } from 'lucide-react';
 import { Product3DViewer } from '@/components/products/Product3DViewer';
 
 interface ProductListProps {
@@ -15,23 +15,48 @@ interface ProductListProps {
 export const ProductList: React.FC<ProductListProps> = ({ products }) => {
   const addItem = useCartStore(state => state.addItem);
   const [quickViewProduct, setQuickViewProduct] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.variants?.some(v => v.sku?.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   return (
     <>
+      {/* BARRA DE BÚSQUEDA RÁPIDA (REFERENCIAS) */}
+      <div className="mb-12 relative max-w-2xl mx-auto">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <input 
+          type="text" 
+          placeholder="Buscar zapato por nombre, referencia o SKU..." 
+          className="w-full pl-12 pr-4 py-4 bg-white border-2 border-gray-100 rounded-full focus:border-black outline-none transition-all font-bold italic text-sm shadow-sm"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        {searchTerm && (
+          <button 
+            onClick={() => setSearchTerm('')} 
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black"
+          >
+            <X size={18} />
+          </button>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-        {products.map(product => {
-          const productPath = `/products/${product.id}`;
+        {filteredProducts.map(product => {
+          const productPath = \/products/\\;
 
           return (
             <div key={product.id} className="group bg-white border-2 border-gray-100 rounded-[2.5rem] p-4 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden flex flex-col h-full">
-              {/* Etiqueta de Popularidad */}
               {product.salesCount > 10 && (
                 <div className="absolute top-4 right-[-35px] bg-black text-white text-[8px] font-black py-1 px-10 transform rotate-45 z-10 uppercase tracking-widest italic shadow-lg">
                   Los Más Pedidos
                 </div>
               )}
 
-              {/* ENLACE GIGANTE (Toda la parte superior es clickeable) */}
               <Link href={productPath} className="block group/link flex-1">
                 <div className="relative aspect-square overflow-hidden rounded-[2rem] bg-gray-50 mb-6">
                   {product.imageUrl && (
@@ -41,8 +66,6 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                       className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-700 drop-shadow-xl p-4"
                     />
                   )}
-
-                  {/* Overlay visual al pasar el mouse */}
                   <div className="absolute inset-0 bg-black/0 group-hover/link:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover/link:opacity-100">
                     <div className="bg-white text-black px-6 py-3 rounded-full font-black uppercase italic text-[10px] shadow-2xl border-2 border-black flex items-center gap-2 transform -rotate-2">
                       <Eye size={14} /> Ver en Detalle
@@ -54,22 +77,27 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                   <h3 className="font-black uppercase italic text-lg leading-tight group-hover/link:text-orange-600 transition-colors mb-2">
                     {product.name}
                   </h3>
-                  <p className="text-gray-400 text-[10px] font-bold uppercase mb-4 tracking-widest">{product.category || 'Calzado Nacional'}</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">{product.category || 'Calzado Nacional'}</p>
+                    <div className="flex items-center gap-1 text-orange-600">
+                      <MapPin size={10} />
+                      <span className="text-[9px] font-black uppercase italic">{product.variants?.[0]?.store?.name || 'Bodega Central'}</span>
+                    </div>
+                  </div>
 
                   <div className="flex items-center gap-2 mb-6">
                     {product.discountPrice ? (
                       <>
-                        <span className="text-2xl font-black text-red-600 italic">${Number(product.discountPrice).toLocaleString()}</span>
-                        <span className="text-sm text-gray-400 line-through font-bold">${Number(product.basePrice).toLocaleString()}</span>
+                        <span className="text-2xl font-black text-red-600 italic"></span>
+                        <span className="text-sm text-gray-400 line-through font-bold"></span>
                       </>
                     ) : (
-                      <span className="text-2xl font-black text-black italic">${Number(product.basePrice).toLocaleString()}</span>
+                      <span className="text-2xl font-black text-black italic"></span>
                     )}
                   </div>
                 </div>
               </Link>
 
-              {/* Botón 3D Rápido (Fuera del link para no interferir) */}
               {product.model3dUrl && (
                 <button
                   onClick={() => setQuickViewProduct(product)}
@@ -80,7 +108,6 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                 </button>
               )}
 
-              {/* Selector Rápido de Talla (Parte Inferior) */}
               <div className="space-y-3 mt-4 pt-4 border-t border-gray-100">
                 <div className="flex justify-between items-center">
                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Tallas Nacionales 🇨🇴</p>
@@ -122,7 +149,6 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
         })}
       </div>
 
-      {/* MODAL DE VISTA RÁPIDA 3D */}
       {quickViewProduct && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl relative border-4 border-orange-500">
@@ -132,7 +158,6 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
             >
               <X size={24} />
             </button>
-
             <div className="grid grid-cols-1 md:grid-cols-2">
               <div className="h-[400px] md:h-[600px] bg-gray-50 border-r border-gray-100">
                 <Product3DViewer
@@ -150,7 +175,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                 <p className="text-gray-500 font-medium italic mb-8 leading-tight">
                   Interactúa con el modelo 3D a la izquierda. Gíralo y convéncete de la calidad de nuestros pegues.
                 </p>
-                <Link href={`/products/${quickViewProduct.id}`} className="w-full">
+                <Link href={\/products/\\} className="w-full">
                   <Button className="w-full py-6 bg-black text-white font-black uppercase italic text-xs rounded-2xl flex items-center justify-center gap-3">
                     <ShoppingBag size={18} /> Ver tallas y Comprar
                   </Button>

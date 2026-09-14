@@ -2,26 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+:root {
+  --void: #0A0B10;
+  --panel: #12141C;
+  --panel-2: #191C27;
+  --line: #2A2E3D;
+  --text: #E8E9F2;
+  --text-dim: #8286A0;
+  --volt: #C6FF3D;
+  --plasma: #7C4DFF;
+  --amber: #FFB020;
+  --ember: #FF3B6E;
+  --common: #6B7280;
+  --pf-ml: #C6FF3D;
+  --pf-amz: #FFB020;
+  --pf-tiktok: #FF3B81;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background: radial-gradient(circle at top center, #1a1d2a 0%, var(--void) 100%);
+  background-image: 
+    linear-gradient(rgba(124,77,255,0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,77,255,0.055) 1px, transparent 1px);
+  background-size: 32px 32px;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+}
+
+/* Cyberpunk Utility Classes */
+.cyber-border {
+  border: 1px solid var(--line);
+}
+.cyber-text-volt { color: var(--volt); }
+.cyber-text-plasma { color: var(--plasma); }
+.cyber-bg-panel { background-color: var(--panel); }
+.cyber-bg-void { background-color: var(--void); }
+
+.cyber-button {
+  background: var(--volt);
+  color: var(--void);
+  font-weight: 700;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+.cyber-button:hover {
+  box-shadow: 0 0 15px var(--volt);
+  transform: translateY(-2px);
 }
