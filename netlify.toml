@@ -1,17 +1,6 @@
 [build]
-  command = "npx prisma generate && next build"
+  command = "npx prisma generate && npm run build"
   publish = ".next"
 
 [build.environment]
   NODE_VERSION = "20"
-  # URL real integrada para evitar errores de prerenderizado
-  NEXT_PUBLIC_SUPABASE_URL = "https://asrtfxhapplxfdbqexic.supabase.co"
-  NEXT_PUBLIC_SUPABASE_ANON_KEY = "placeholder"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
-[[redirects]]
-  from = "/*"
-  to = "/.next/server/pages/:splat"
-  status = 200
