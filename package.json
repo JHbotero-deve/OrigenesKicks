@@ -43,5 +43,9 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "prisma@6.19.3": true
   }
 }
