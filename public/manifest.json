@@ -1,0 +1,17 @@
+{
+  "name": "AnalizisEstudio Core",
+  "short_name": "AnalizisCore",
+  "description": "Sistema de Gestión y Control AnalizisEstudio",
+  "start_url": "/analizis-control",
+  "display": "standalone",
+  "background_color": "#0F0F12",
+  "theme_color": "#5E5CE6",
+  "icons": [
+    {
+      "src": "/analizis-factory.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
