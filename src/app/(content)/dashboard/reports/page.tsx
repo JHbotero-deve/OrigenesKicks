@@ -15,7 +15,7 @@ export default async function ReportsPage() {
     include: { workStore: true }
   });
 
-  const isAdmin = dbUser?.role === 'ADMIN';
+  const isAdmin = dbUser?.role === 'OWNER';
 
   // Datos para el reporte rápido (últimos 30 días)
   const lastMonth = new Date();

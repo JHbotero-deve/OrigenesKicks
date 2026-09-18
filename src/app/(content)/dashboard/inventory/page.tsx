@@ -17,7 +17,7 @@ export default async function InventoryPage() {
     where: { email: user.email }
   });
 
-  if (dbUser?.role !== 'ADMIN' && dbUser?.role !== 'SELLER') {
+  if (dbUser?.role !== 'OWNER' && dbUser?.role !== 'ADMIN') {
     return <div>Acceso denegado</div>;
   }
 

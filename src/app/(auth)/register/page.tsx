@@ -1,45 +1,45 @@
 "use client";
 
 import React, { useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    // Autenticación real contra Supabase. No hay PIN ni contraseña
-    // especial para "el dueño": el rol se decide en la base de datos
-    // (tabla User.role), nunca en el navegador.
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    });
+    const data = await res.json();
 
-    if (authError) {
-      setError('Correo o contraseña incorrectos.');
+    if (!res.ok) {
+      setError(data.error || 'No se pudo completar el registro');
       setLoading(false);
       return;
     }
 
-    // Preguntamos al servidor cuál es el rol real de esta cuenta
-    // (el endpoint usa la sesión, no confía en nada que mandemos aquí).
-    try {
-      const res = await fetch('/api/user');
-      const data = await res.json();
-      const staffRoles = ['OWNER', 'ADMIN', 'SELLER', 'DELIVERY'];
-      router.push(staffRoles.includes(data?.role) ? '/dashboard' : '/products');
-    } catch {
-      router.push('/products');
+    // La cuenta ya quedó creada y confirmada en el servidor;
+    // ahora iniciamos sesión normalmente con las mismas credenciales.
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    if (signInError) {
+      router.push('/login');
+      return;
     }
+    router.push('/products');
   };
 
   return (
@@ -50,11 +50,26 @@ export default function LoginPage() {
             Oríg<span className="text-orange-600">enes</span>Kicks
           </h1>
           <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-2">
-            Ingresa a tu cuenta
+            Crea tu cuenta
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-5">
+        <form onSubmit={handleRegister} className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Nombre</label>
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Tu nombre"
+                className="w-full pl-12 p-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
+                required
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Correo</label>
             <div className="relative">
@@ -76,21 +91,15 @@ export default function LoginPage() {
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
               <input
-                type={showPassword ? 'text' : 'password'}
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-12 pr-12 p-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
+                placeholder="Mínimo 8 caracteres"
+                className="w-full pl-12 p-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
                 required
-                autoComplete="current-password"
+                minLength={8}
+                autoComplete="new-password"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
             </div>
           </div>
 
@@ -103,13 +112,13 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-black text-white p-5 rounded-2xl font-black uppercase italic hover:bg-gray-800 transition-colors shadow-xl mt-4 flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            {loading ? 'Ingresando...' : 'Ingresar'} {!loading && <ArrowRight size={16} />}
+            {loading ? 'Creando cuenta...' : 'Crear cuenta'} {!loading && <ArrowRight size={16} />}
           </button>
         </form>
 
         <p className="mt-8 text-center text-[11px] font-bold text-gray-400 uppercase">
-          ¿No tienes cuenta?{' '}
-          <Link href="/register" className="text-orange-600 hover:underline">Regístrate</Link>
+          ¿Ya tienes cuenta?{' '}
+          <Link href="/login" className="text-orange-600 hover:underline">Ingresa</Link>
         </p>
       </div>
     </div>

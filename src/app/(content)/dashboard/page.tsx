@@ -26,7 +26,7 @@ export default function DashboardPage() {
     );
   }
 
-  const isStaff = dbUser?.role === 'ADMIN' || dbUser?.role === 'SELLER';
+  const isStaff = dbUser?.role === 'OWNER' || dbUser?.role === 'ADMIN' || dbUser?.role === 'SELLER';
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">

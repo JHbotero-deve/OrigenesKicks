@@ -27,9 +27,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDbUser = async (email: string) => {
+    const fetchDbUser = async () => {
       try {
-        const response = await fetch(`/api/user?email=${email}`);
+        const response = await fetch(`/api/user`);
+        if (!response.ok) { setDbUser(null); return; }
         const data = await response.json();
         setDbUser(data);
       } catch (error) {
@@ -41,7 +42,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user?.email) fetchDbUser(session.user.email);
+      if (session?.user) fetchDbUser();
       setIsLoading(false);
     });
 
@@ -49,8 +50,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        if (session?.user?.email) {
-          fetchDbUser(session.user.email);
+        if (session?.user) {
+          fetchDbUser();
         } else {
           setDbUser(null);
         }

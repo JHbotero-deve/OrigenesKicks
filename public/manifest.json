@@ -1,21 +1,17 @@
 {
-  "name": "Orígenes Kicks Store",
-  "short_name": "OrígenesKicks",
-  "description": "Gestión de ventas y pedidos de Orígenes Kicks",
-  "start_url": "/",
+  "name": "AnalizisEstudio Core",
+  "short_name": "AnalizisCore",
+  "description": "Sistema de Gestión y Control AnalizisEstudio",
+  "start_url": "/analizis-control",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "background_color": "#0F0F12",
+  "theme_color": "#5E5CE6",
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
+      "src": "/analizis-factory.jpg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/jpeg",
+      "purpose": "any maskable"
     }
   ]
 }

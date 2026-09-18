@@ -1,31 +1,29 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/db';
+import { getSessionUser } from '@/lib/auth-guard';
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const email = searchParams.get('email');
+/**
+ * Devuelve el perfil (incluyendo rol) del usuario ACTUALMENTE autenticado.
+ *
+ * Antes este endpoint aceptaba ?email=cualquiera y devolvía el perfil
+ * de esa persona sin pedir sesión — cualquiera podía consultar el rol
+ * de cualquier cuenta. Ahora el email nunca viene del cliente: se toma
+ * de la sesión de Supabase en el servidor.
+ */
+export async function GET() {
+  const { authUser, dbUser } = await getSessionUser();
 
-  if (!email) {
-    return NextResponse.json({ error: 'El correo electrónico es obligatorio' }, { status: 400 });
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
   }
 
-  try {
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true
-      }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
-    }
-
-    return NextResponse.json(user);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!dbUser) {
+    return NextResponse.json({ error: 'Usuario no encontrado en la base de datos' }, { status: 404 });
   }
+
+  return NextResponse.json({
+    id: dbUser.id,
+    email: dbUser.email,
+    name: dbUser.name,
+    role: dbUser.role,
+  });
 }

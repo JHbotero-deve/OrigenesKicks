@@ -19,7 +19,7 @@ export default async function DashboardLayout({
     where: { email: user.email }
   });
 
-  const isStaff = dbUser?.role === 'ADMIN' || dbUser?.role === 'SELLER';
+  const isStaff = dbUser?.role === 'OWNER' || dbUser?.role === 'ADMIN' || dbUser?.role === 'SELLER';
 
   return (
     <div className="flex min-h-screen bg-gray-50">

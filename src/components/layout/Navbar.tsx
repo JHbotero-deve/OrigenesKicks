@@ -19,7 +19,7 @@ export const Navbar: React.FC = () => {
   const { user, dbUser } = useAuth();
   const pathname = usePathname();
 
-  const isStaff = dbUser?.role === 'ADMIN' || dbUser?.role === 'SELLER';
+  const isStaff = dbUser?.role === 'OWNER' || dbUser?.role === 'ADMIN' || dbUser?.role === 'SELLER';
 
   const navItems = [
     { name: 'VITRINA', href: '/products', icon: Package },

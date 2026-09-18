@@ -14,7 +14,7 @@ export default async function AuditLogsPage() {
     where: { email: user.email }
   });
 
-  if (dbUser?.role !== 'ADMIN') {
+  if (dbUser?.role !== 'OWNER') {
     return <div className="p-8 text-center font-bold text-red-600">ACCESO DENEGADO: Solo el Propietario puede auditar los registros.</div>;
   }
 

@@ -17,10 +17,18 @@ export default async function OrdersPage() {
     where: { email: user.email }
   });
 
-  const isAdmin = dbUser?.role === 'ADMIN' || dbUser?.role === 'SELLER';
+  // isStaff: puede ver TODOS los pedidos y despachar (dueño, admin, trabajador).
+  // canApprovePayments: solo dueño/admin pueden validar el pago y facturar
+  // (el trabajador solo despacha, no confirma dinero).
+  const isStaff = dbUser?.role === 'OWNER' || dbUser?.role === 'ADMIN' || dbUser?.role === 'SELLER';
+  const canApprovePayments = dbUser?.role === 'OWNER' || dbUser?.role === 'ADMIN';
+  const isAdmin = isStaff; // se conserva el nombre para no romper el resto de la vista
 
   const orders = await prisma.pedido.findMany({
-    where: isAdmin ? {} : { clientId: user.id },
+    // OJO: antes esto usaba `user.id` (id de Supabase Auth), que no es
+    // el mismo id que `Pedido.clientId` (id de la tabla User en Prisma).
+    // Por eso un cliente normal probablemente no veía sus propios pedidos.
+    where: isAdmin ? {} : { clientId: dbUser?.id },
     include: {
       client: { select: { name: true, email: true } },
       store: true, // Sucursal asignada
@@ -154,7 +162,7 @@ export default async function OrdersPage() {
                     </div>
                   )}
 
-                  {isAdmin && order.status === 'RECIBIDO' && (
+                  {canApprovePayments && order.status === 'RECIBIDO' && (
                     <form action={async () => {
                       "use server";
                       await approveOrder(order.id);

@@ -12,11 +12,15 @@ export async function verifyAppAccess() {
     if (!license) {
       console.log("🛠️ AnalizisEstudio: Detectada primera ejecución. Activando núcleo...");
 
+      // Estos valores ya NO se usan para iniciar sesión (el login real
+      // es email + contraseña vía Supabase). Son solo el registro de
+      // licencia interno; aun así viven en variables de entorno para
+      // no dejarlos legibles en el código fuente.
       license = await prisma.appLicense.create({
         data: {
-          licenseKey: 'OK-2026-PRO',
-          ownerEmail: 'admin@origeneskicks.com',
-          masterPin: '2026',
+          licenseKey: process.env.APP_LICENSE_KEY || 'OK-2026-PRO',
+          ownerEmail: process.env.APP_OWNER_EMAIL || 'admin@origeneskicks.com',
+          masterPin: process.env.APP_MASTER_PIN || '2026',
           status: 'ACTIVE',
         }
       });

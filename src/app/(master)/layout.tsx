@@ -1,18 +1,18 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase-server";
+import { requireRole } from "@/lib/auth-guard";
 
 export default async function MasterLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // El panel maestro (licencia, control interno) es exclusivo del
+  // dueño de la tienda. Antes se verificaba con una lista de correos
+  // quemados en el código; ahora se verifica el rol real en la base
+  // de datos, igual que el resto de la app.
+  const { ok } = await requireRole(["OWNER"]);
 
-  // Aquí definimos tu correo personal como el único autorizado para el Core Panel
-  const MASTER_EMAILS = ['JHbotero-deve@analizis.com', 'admin@origeneskicks.com'];
-
-  if (!user || !MASTER_EMAILS.includes(user.email!)) {
+  if (!ok) {
     redirect("/login");
   }
 
