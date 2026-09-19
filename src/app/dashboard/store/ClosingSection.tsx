@@ -3,18 +3,23 @@
 import { useState } from 'react';
 import { performDailyClosing } from '@/lib/actions/finance';
 
+type Role = 'OWNER' | 'ADMIN' | 'SELLER' | 'DELIVERY' | 'CLIENT';
+
 export default function ClosingSection({
   totals,
   storeId,
+  role,
 }: {
   totals: { totalSales: unknown; totalOrders: number };
   storeId: string | null;
+  role: Role | null;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ cashAmount: '', transferAmount: '', observations: '' });
 
   const expected = Number(totals.totalSales ?? 0);
+  const canClose = role === 'OWNER' || role === 'ADMIN';
 
   const handleClose = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +48,7 @@ export default function ClosingSection({
   return (
     <section className='mt-10 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm'>
       {!isOpen ? (
-        <div className='text-center'>
+        {!canClose ? null : <div className='text-center'>
           <h3 className='mb-4 text-lg font-bold text-gray-900'>¿Terminaste la jornada?</h3>
           <button
             type='button'
@@ -53,7 +58,7 @@ export default function ClosingSection({
           >
             Hacer cierre de caja
           </button>
-        </div>
+        </div>}
       ) : (
         <form onSubmit={handleClose} className='space-y-4'>
           <div className='mb-4 flex items-center justify-between'>
