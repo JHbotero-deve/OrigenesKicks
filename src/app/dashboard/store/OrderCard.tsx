@@ -1,75 +1,109 @@
 'use client';
 
-import { updateOrderStatus } from '@/lib/actions/orders';
 import { useState } from 'react';
+
+type OrderStatus =
+  | 'RECIBIDO'
+  | 'CONFIRMADO'
+  | 'PROCESANDO'
+  | 'DESPACHADO'
+  | 'ENTREGADO'
+  | 'CANCELADO'
+  | 'RECHAZADO';
 
 type Order = {
   id: string;
-  status: string;
+  status: OrderStatus;
   client: {
     name: string;
     phone?: string | null;
   };
 };
 
+const statusColors: Record<OrderStatus, string> = {
+  RECIBIDO: 'bg-red-100 text-red-700 border-red-200',
+  CONFIRMADO: 'bg-green-100 text-green-700 border-green-200',
+  PROCESANDO: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  DESPACHADO: 'bg-blue-100 text-blue-700 border-blue-200',
+  ENTREGADO: 'bg-gray-100 text-gray-700 border-gray-200',
+  CANCELADO: 'bg-gray-100 text-gray-700 border-gray-200',
+  RECHAZADO: 'bg-gray-100 text-gray-700 border-gray-200',
+};
+
+const nextStatus: Partial<Record<OrderStatus, { value: OrderStatus; label: string }>> = {
+  RECIBIDO: { value: 'CONFIRMADO', label: 'PAGO RECIBIDO' },
+  CONFIRMADO: { value: 'PROCESANDO', label: 'PREPARANDO' },
+  PROCESANDO: { value: 'DESPACHADO', label: 'ENVIADO' },
+  DESPACHADO: { value: 'ENTREGADO', label: 'ENTREGADO' },
+};
+
 export default function OrderCard({ order }: { order: Order }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleStatusChange = async (status: string) => {
+  const handleStatusChange = async (status: OrderStatus) => {
     setLoading(true);
+    setError('');
+
     try {
-      const result = await updateOrderStatus(order.id, status);
-      if (result.success && result.whatsappLink) {
+      const response = await fetch('/api/orders/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.id, status }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setError(result.error || 'No se pudo actualizar el pedido');
+        return;
+      }
+
+      if (result.whatsappLink) {
         window.open(result.whatsappLink, '_blank', 'noopener,noreferrer');
       }
+
+      window.location.reload();
+    } catch {
+      setError('No se pudo conectar con el servidor');
     } finally {
       setLoading(false);
     }
   };
 
-  const statusColors: Record<string, string> = {
-    RECIBIDO: 'bg-red-100 text-red-700 border-red-200',
-    CONFIRMADO: 'bg-green-100 text-green-700 border-green-200',
-    PROCESANDO: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    DESPACHADO: 'bg-blue-100 text-blue-700 border-blue-200',
-    ENTREGADO: 'bg-gray-100 text-gray-700 border-gray-200',
-  };
+  const action = nextStatus[order.status];
 
   return (
-    <div className='bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4'>
-      <div className='flex items-center gap-4 w-full md:w-auto'>
-        <div className='bg-gray-100 p-3 rounded-full text-sm font-bold'>OK</div>
-        <div>
-          <p className='font-bold text-lg text-gray-800'>{order.client.name}</p>
+    <div className='flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between'>
+      <div className='flex w-full items-center gap-4 md:w-auto'>
+        <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-sm font-bold text-gray-800'>
+          OK
+        </div>
+
+        <div className='min-w-0'>
+          <p className='truncate text-lg font-bold text-gray-900'>{order.client.name}</p>
           <p className='text-sm text-gray-500'>{order.client.phone || 'Sin teléfono'}</p>
-          <span className={`text-xs px-2 py-1 rounded-full border font-semibold ${statusColors[order.status] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+          <span className={`mt-1 inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${statusColors[order.status]}`}>
             {order.status}
           </span>
+          {error && (
+            <p className='mt-2 text-sm font-medium text-red-600' role='alert'>
+              {error}
+            </p>
+          )}
         </div>
       </div>
 
-      <div className='flex gap-2 w-full md:w-auto'>
-        {order.status === 'RECIBIDO' && (
-          <button onClick={() => handleStatusChange('CONFIRMADO')} disabled={loading} className='flex-1 md:flex-none bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-xl font-bold text-sm transition-colors shadow-sm'>
-            {loading ? 'Procesando...' : 'PAGO RECIBIDO'}
-          </button>
-        )}
-        {order.status === 'CONFIRMADO' && (
-          <button onClick={() => handleStatusChange('PROCESANDO')} disabled={loading} className='flex-1 md:flex-none bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-3 rounded-xl font-bold text-sm transition-colors shadow-sm'>
-            {loading ? 'Procesando...' : 'PREPARANDO'}
-          </button>
-        )}
-        {order.status === 'PROCESANDO' && (
-          <button onClick={() => handleStatusChange('DESPACHADO')} disabled={loading} className='flex-1 md:flex-none bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-xl font-bold text-sm transition-colors shadow-sm'>
-            {loading ? 'Procesando...' : 'ENVIADO'}
-          </button>
-        )}
-        {order.status === 'DESPACHADO' && (
-          <button onClick={() => handleStatusChange('ENTREGADO')} disabled={loading} className='flex-1 md:flex-none bg-gray-800 hover:bg-black text-white px-4 py-3 rounded-xl font-bold text-sm transition-colors shadow-sm'>
-            {loading ? 'Procesando...' : 'ENTREGADO'}
-          </button>
-        )}
-      </div>
+      {action && (
+        <button
+          type='button'
+          onClick={() => handleStatusChange(action.value)}
+          disabled={loading}
+          className='min-h-11 w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto'
+        >
+          {loading ? 'Procesando...' : action.label}
+        </button>
+      )}
     </div>
   );
 }
