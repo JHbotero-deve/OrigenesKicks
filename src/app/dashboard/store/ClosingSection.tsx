@@ -48,7 +48,7 @@ export default function ClosingSection({
   return (
     <section className='mt-10 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm'>
       {!isOpen ? (
-        {!canClose ? null : <div className='text-center'>
+        canClose ? <div className='text-center'>
           <h3 className='mb-4 text-lg font-bold text-gray-900'>¿Terminaste la jornada?</h3>
           <button
             type='button'
@@ -58,7 +58,7 @@ export default function ClosingSection({
           >
             Hacer cierre de caja
           </button>
-        </div>}
+        </div> : null
       ) : (
         <form onSubmit={handleClose} className='space-y-4'>
           <div className='mb-4 flex items-center justify-between'>
