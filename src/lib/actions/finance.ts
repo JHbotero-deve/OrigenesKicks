@@ -1,12 +1,11 @@
+"use server";
+
 import prisma from '@/lib/db';
-import { requireRole, ROLES_OWNER_ONLY, ROLES_STAFF } from '@/lib/auth-guard';
+import { requireRole, ROLES_APPROVE_ORDERS, ROLES_OWNER_ONLY } from '@/lib/auth-guard';
 
 export async function calculateDailyTotals(storeId?: string) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
+  const today = startOfToday();
+  const tomorrow = startOfTomorrow();
 
   const orders = await prisma.pedido.aggregate({
     where: {
@@ -30,7 +29,7 @@ export async function performDailyClosing(data: {
   transferAmount: number;
   observations?: string;
 }) {
-  const auth = await requireRole(ROLES_STAFF);
+  const auth = await requireRole(ROLES_APPROVE_ORDERS);
 
   if (!auth.ok) {
     return { success: false, error: 'No tienes permisos para realizar el cierre' };
@@ -39,12 +38,22 @@ export async function performDailyClosing(data: {
   const cashAmount = Number(data.cashAmount);
   const transferAmount = Number(data.transferAmount);
 
-  if (!data.storeId || !Number.isFinite(cashAmount) || cashAmount < 0 || !Number.isFinite(transferAmount) || transferAmount < 0) {
+  if (
+    !data.storeId ||
+    !Number.isFinite(cashAmount) ||
+    cashAmount < 0 ||
+    !Number.isFinite(transferAmount) ||
+    transferAmount < 0
+  ) {
     return { success: false, error: 'Los valores del cierre no son válidos' };
   }
 
   const user = auth.dbUser;
-  if (user.role !== 'OWNER' && user.role !== 'ADMIN' && data.storeId !== user.workStoreId) {
+  if (user.role !== 'OWNER' && user.role !== 'ADMIN') {
+    return { success: false, error: 'No tienes permisos para cerrar caja' };
+  }
+
+  if (user.role !== 'OWNER' && data.storeId !== user.workStoreId) {
     return { success: false, error: 'No tienes acceso a esta tienda' };
   }
 
@@ -52,7 +61,7 @@ export async function performDailyClosing(data: {
   const pending = await prisma.pedido.count({
     where: {
       storeId: data.storeId,
-      status: { in: ['RECIBIDO'] },
+      status: 'RECIBIDO',
       createdAt: { gte: startOfToday(), lt: startOfTomorrow() },
     },
   });
@@ -81,7 +90,10 @@ export async function getFinancialReport(startDate: Date, endDate: Date, storeId
   const auth = await requireRole(ROLES_OWNER_ONLY);
 
   if (!auth.ok) {
-    return { closings: [], summary: { totalRevenue: 0, totalCash: 0, totalTransfers: 0, totalOrders: 0, totalDiff: 0 } };
+    return {
+      closings: [],
+      summary: { totalRevenue: 0, totalCash: 0, totalTransfers: 0, totalOrders: 0, totalDiff: 0 },
+    };
   }
 
   const closings = await prisma.dailyClosing.findMany({
@@ -98,7 +110,7 @@ export async function getFinancialReport(startDate: Date, endDate: Date, storeId
   const totalOrders = closings.reduce((sum, c) => sum + c.totalOrders, 0);
   const totalDiff = closings.reduce(
     (sum, c) => sum + Number(c.cashAmount) + Number(c.transferAmount) - Number(c.totalSales),
-    0
+    0,
   );
 
   return {
