@@ -2,7 +2,6 @@
 
 import prisma from "./db";
 import { revalidatePath } from "next/cache";
-import { createClient } from "./supabase-server";
 import { requireAuthenticatedUser, requireRole, ROLES_APPROVE_ORDERS, ROLES_DISPATCH, ROLES_OWNER_ONLY } from "./auth-guard";
 
 /**
@@ -17,14 +16,11 @@ export async function createOrder(data: {
   shippingAddress?: { address: string; city: string; phone: string };
 }): Promise<{ success: boolean; pedidoId?: string; error?: string }> {
   try {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: "Debes iniciar sesión para realizar un pedido" };
+    const auth = await requireAuthenticatedUser();
+    if (!auth.ok) return { success: false, error: "Debes iniciar sesión para realizar un pedido" };
+    const dbUser = auth.dbUser;
 
-    const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
-    if (!dbUser) return { success: false, error: "Usuario no encontrado en la base de datos" };
-
-    if (!data.items.length) return { success: false, error: "El pedido no contiene productos" };
+    if (!data.items.length) return { success: false, error: "El pedido no contiene productos" };\n    const allowedPaymentMethods = ["TRANSFERENCIA", "CONTRA_ENTREGA_MEDELLIN", "EFECTIVO"];\n    if (!allowedPaymentMethods.includes(data.paymentMethod)) return { success: false, error: "Método de pago no válido" };\n    if (data.items.length > 50) return { success: false, error: "El pedido contiene demasiados productos" };
     if (data.items.some((item) => !Number.isInteger(item.quantity) || item.quantity <= 0)) {
       return { success: false, error: "Cantidad de producto inválida" };
     }
@@ -32,7 +28,7 @@ export async function createOrder(data: {
     const result = await prisma.$transaction(async (tx) => {
       let calculatedTotal = 0;
       const itemsWithRealPrices = [];
-      let assignedStoreId = null;
+      let assignedStoreId: string | null = null;
 
       for (const item of data.items) {
         const variant = await tx.variant.findUnique({
@@ -46,6 +42,9 @@ export async function createOrder(data: {
 
         // Asignamos el pedido a la sucursal de la primera variante (flujo simplificado)
         if (!assignedStoreId) assignedStoreId = variant.storeId;
+        if (assignedStoreId !== variant.storeId) {
+          throw new Error("Todos los productos del pedido deben pertenecer a la misma tienda.");
+        }
 
         const price = Number(variant.product.discountPrice || variant.product.basePrice);
         calculatedTotal += price * item.quantity;
@@ -86,10 +85,13 @@ export async function createOrder(data: {
 
       // Reducir stock y auditar
       for (const item of data.items) {
-        await tx.variant.update({
-          where: { id: item.variantId },
+        const stockUpdate = await tx.variant.updateMany({
+          where: { id: item.variantId, stock: { gte: item.quantity } },
           data: { stock: { decrement: item.quantity } }
         });
+        if (stockUpdate.count !== 1) {
+          throw new Error("El stock cambió mientras procesábamos el pedido. Actualiza el carrito e inténtalo de nuevo.");
+        }
 
         await tx.inventoryLog.create({
           data: {
