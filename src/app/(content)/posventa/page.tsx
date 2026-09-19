@@ -132,9 +132,9 @@ export default function PosventaPage() {
 
               <div className="bg-orange-600 p-6 rounded-[2rem] text-white flex flex-col md:flex-row items-center justify-between gap-4">
                  <p className="text-sm font-black italic uppercase">¿Necesitas ayuda con el envío?</p>
-                 <a href={`https://wa.me/573000000000?text=${encodeURIComponent(`Hola. Mi pedido #${orderId} aparece como ${orderData.status}. Necesito información sobre el envío.`)}`} target="_blank" className="bg-white text-black px-8 py-3 rounded-xl font-black uppercase italic text-[10px] hover:scale-105 transition-transform">
+                 <a href={`https://wa.me/${String(orderData.storePhone || '').replace(/\D/g, '')}?text=${encodeURIComponent(`Hola. Mi pedido #${orderId} aparece como ${orderData.status}. Necesito información sobre el envío.`)}`} target="_blank" className="bg-white text-black px-8 py-3 rounded-xl font-black uppercase italic text-[10px] hover:scale-105 transition-transform">
                    Hablar con la Sucursal
-                 </a>
+                 </a> : null}
               </div>
             </div>
           )}
