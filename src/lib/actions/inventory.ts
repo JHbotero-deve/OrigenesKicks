@@ -2,7 +2,7 @@
 
 import prisma from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { requireRole, ROLES_STAFF } from '@/lib/auth-guard';
+import { requireRole, ROLES_MANAGE_CATALOG } from '@/lib/auth-guard';
 
 export async function adjustInventory(data: {
   variantId: string;
@@ -10,7 +10,7 @@ export async function adjustInventory(data: {
   reason: string;
   storeId?: string;
 }) {
-  const auth = await requireRole(ROLES_STAFF);
+  const auth = await requireRole(ROLES_MANAGE_CATALOG);
 
   if (!auth.ok) {
     return { success: false, error: 'No tienes permisos para ajustar el inventario' };
@@ -38,15 +38,13 @@ export async function adjustInventory(data: {
         select: { id: true, stock: true, storeId: true },
       });
 
-      if (!variant) {
-        throw new Error('Variante de producto no encontrada');
-      }
+      if (!variant) throw new Error('Variante de producto no encontrada');
 
       const user = auth.dbUser;
       const effectiveStoreId =
         user.role === 'OWNER' || user.role === 'ADMIN'
           ? data.storeId ?? variant.storeId
-          : user.workStoreId;
+          : null;
 
       if (!effectiveStoreId || variant.storeId !== effectiveStoreId) {
         throw new Error('La variante no pertenece a la tienda autorizada');
