@@ -1,99 +1,106 @@
 'use client';
+
 import { useState } from 'react';
 import { adjustInventory } from '@/lib/actions/inventory';
 
-export default function AdjustInventoryModal({ isOpen, onClose, storeId, userId }: { isOpen: boolean, onClose: () => void, storeId: string, userId: string }) {
+export default function AdjustInventoryModal({
+  isOpen,
+  onClose,
+  storeId,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  storeId: string | null;
+}) {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    variantId: '',
-    quantity: -1,
-    reason: '',
-  });
+  const [formData, setFormData] = useState({ variantId: '', quantity: -1, reason: '' });
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    const result = await adjustInventory({
-      variantId: formData.variantId,
-      quantity: formData.quantity,
-      reason: formData.reason,
-      userId: userId,
-      storeId: storeId,
-    });
 
-    if (result.success) {
-      alert('Inventario actualizado correctamente');
-      onClose();
-    } else {
-      alert('Error al actualizar inventario');
+    try {
+      const result = await adjustInventory({
+        variantId: formData.variantId.trim(),
+        quantity: formData.quantity,
+        reason: formData.reason,
+        storeId: storeId ?? undefined,
+      });
+
+      if (result.success) {
+        onClose();
+        setFormData({ variantId: '', quantity: -1, reason: '' });
+        alert('Inventario actualizado correctamente');
+      } else {
+        alert(result.error);
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in'>
-      <div className='bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200'>
-        <div className='bg-red-600 p-6 text-white'>
-          <h3 className='text-2xl font-black uppercase italic'>Ajustar Inventario ⚠️</h3>
-          <p className='text-sm opacity-90'>Registra daños, pérdidas o errores</p>
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm'>
+      <div className='w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl'>
+        <div className='bg-gray-950 p-6 text-white'>
+          <h3 className='text-2xl font-black uppercase'>Ajustar inventario</h3>
+          <p className='mt-1 text-sm text-gray-300'>Registra daños, pérdidas o errores de conteo.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className='p-6 space-y-4'>
+        <form onSubmit={handleSubmit} className='space-y-4 p-6'>
           <div>
-            <label className='block text-sm font-bold text-gray-600 mb-1'>ID de la Variante/Zapato</label>
-            <input 
-              type='text' 
+            <label htmlFor='variant-id' className='mb-1 block text-sm font-bold text-gray-700'>ID de la variante</label>
+            <input
+              id='variant-id'
+              type='text'
               required
-              className='w-full p-4 rounded-xl border-2 border-gray-200 text-lg focus:border-red-500 outline-none'
-              placeholder='Ej: UUID de la variante'
-              onChange={(e) => setFormData({...formData, variantId: e.target.value})}
+              value={formData.variantId}
+              onChange={(e) => setFormData({ ...formData, variantId: e.target.value })}
+              className='w-full rounded-xl border border-gray-300 p-4 outline-none focus:border-gray-950 focus:ring-2 focus:ring-gray-950/10'
+              placeholder='UUID de la variante'
             />
           </div>
 
-          <div className='grid grid-cols-2 gap-4'>
-            <div>
-              <label className='block text-sm font-bold text-gray-600 mb-1'>Cantidad</label>
-              <input 
-                type='number' 
-                required
-                className='w-full p-4 rounded-xl border-2 border-gray-200 text-lg focus:border-red-500 outline-none'
-                value={formData.quantity}
-                onChange={(e) => setFormData({...formData, quantity: Number(e.target.value)})}
-              />
-            </div>
-            <div className='flex items-end pb-1'>
-              <p className='text-[10px] text-gray-400 font-bold uppercase italic'>-1 = Pérdida / +1 = Entrada</p>
-            </div>
+          <div>
+            <label htmlFor='inventory-quantity' className='mb-1 block text-sm font-bold text-gray-700'>Cantidad</label>
+            <input
+              id='inventory-quantity'
+              type='number'
+              min='-100000'
+              max='100000'
+              required
+              value={formData.quantity}
+              onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
+              className='w-full rounded-xl border border-gray-300 p-4 outline-none focus:border-gray-950 focus:ring-2 focus:ring-gray-950/10'
+            />
+            <p className='mt-1 text-xs text-gray-500'>Usa valores negativos para retiros y positivos para entradas.</p>
           </div>
 
           <div>
-            <label className='block text-sm font-bold text-gray-600 mb-1'>Razón del Ajuste</label>
-            <textarea 
+            <label htmlFor='inventory-reason' className='mb-1 block text-sm font-bold text-gray-700'>Razón del ajuste</label>
+            <textarea
+              id='inventory-reason'
               required
-              className='w-full p-4 rounded-xl border-2 border-gray-200 text-lg focus:border-red-500 outline-none'
-              placeholder='Ej: Suela rota, error de conteo...'
               rows={3}
-              onChange={(e) => setFormData({...formData, reason: e.target.value})}
+              value={formData.reason}
+              onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+              className='w-full rounded-xl border border-gray-300 p-4 outline-none focus:border-gray-950 focus:ring-2 focus:ring-gray-950/10'
+              placeholder='Ej. Suela rota, error de conteo...'
             />
           </div>
 
-          <div className='flex gap-3 pt-4'>
-            <button 
-              type='button' 
-              onClick={onClose}
-              className='flex-1 py-4 rounded-2xl font-bold text-gray-500 hover:bg-gray-100 transition-colors'
-            >
+          <div className='flex gap-3 pt-2'>
+            <button type='button' onClick={onClose} className='flex-1 rounded-xl py-3 font-bold text-gray-600 hover:bg-gray-100'>
               Cancelar
             </button>
-            <button 
-              type='submit' 
-              disabled={loading}
-              className='flex-1 bg-red-600 text-white py-4 rounded-2xl font-black text-lg hover:bg-red-700 transition-all shadow-lg active:scale-95 disabled:opacity-50'
+            <button
+              type='submit'
+              disabled={loading || !storeId}
+              className='flex-1 rounded-xl bg-gray-950 py-3 font-black text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50'
             >
-              {loading ? 'Guardando...' : 'CONFIRMAR'}
+              {loading ? 'Guardando...' : 'Confirmar'}
             </button>
           </div>
         </form>
