@@ -4,12 +4,23 @@ import prisma from '@/lib/db';
 import { requireRole, ROLES_APPROVE_ORDERS, ROLES_OWNER_ONLY } from '@/lib/auth-guard';
 
 export async function calculateDailyTotals(storeId?: string) {
+  const auth = await requireRole(ROLES_APPROVE_ORDERS);
+  if (!auth.ok) {
+    return { totalSales: 0, totalOrders: 0 };
+  }
+
+  const user = auth.dbUser;
+  const effectiveStoreId =
+    user.role === 'OWNER' || user.role === 'ADMIN'
+      ? storeId
+      : user.workStoreId;
+
   const today = startOfToday();
   const tomorrow = startOfTomorrow();
 
   const orders = await prisma.pedido.aggregate({
     where: {
-      ...(storeId ? { storeId } : {}),
+      ...(effectiveStoreId ? { storeId: effectiveStoreId } : {}),
       status: { in: ['CONFIRMADO', 'PROCESANDO', 'DESPACHADO', 'ENTREGADO'] },
       createdAt: { gte: today, lt: tomorrow },
     },
@@ -18,7 +29,7 @@ export async function calculateDailyTotals(storeId?: string) {
   });
 
   return {
-    totalSales: orders._sum.totalAmount || 0,
+    totalSales: Number(orders._sum.totalAmount || 0),
     totalOrders: orders._count.id || 0,
   };
 }
@@ -81,7 +92,17 @@ export async function performDailyClosing(data: {
 
   return {
     success: true,
-    closing,
+    closing: {
+      id: closing.id,
+      storeId: closing.storeId,
+      date: closing.date,
+      totalSales: Number(closing.totalSales),
+      totalOrders: closing.totalOrders,
+      pendingOrders: closing.pendingOrders,
+      cashAmount: Number(closing.cashAmount),
+      transferAmount: Number(closing.transferAmount),
+      difference: cashAmount + transferAmount - Number(totals.totalSales),
+    },
     difference: cashAmount + transferAmount - Number(totals.totalSales),
   };
 }
