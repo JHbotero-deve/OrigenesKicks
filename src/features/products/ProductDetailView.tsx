@@ -40,10 +40,11 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
   const discountPrice = product.discountPrice == null ? null : Number(product.discountPrice);
   const hasValidDiscount =
     Number.isFinite(basePrice) &&
+    discountPrice !== null &&
     Number.isFinite(discountPrice) &&
     discountPrice > 0 &&
     discountPrice < basePrice;
-  const salePrice = hasValidDiscount ? discountPrice : basePrice;
+  const salePrice = hasValidDiscount && discountPrice !== null ? discountPrice : basePrice;
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(variants[0] ?? null);
   const [view3d, setView3d] = useState(Boolean(product.model3dUrl));
