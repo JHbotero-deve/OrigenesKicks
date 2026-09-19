@@ -253,6 +253,15 @@ export async function releaseExpiredReservations() {
       }
 
       for (const order of expiredOrders) {
+        // Reclama atómicamente el pedido antes de devolver stock. Esto evita
+        // que dos ejecuciones concurrentes liberen la misma reserva dos veces.
+        const claimed = await tx.pedido.updateMany({
+          where: { id: order.id, status: "RECIBIDO", expiresAt: { lt: now } },
+          data: { status: "CANCELADO", notes: "Cancelado por falta de pago (24h)." },
+        });
+
+        if (claimed.count !== 1) continue;
+
         for (const item of order.items) {
           await tx.variant.update({
             where: { id: item.variantId },
@@ -270,11 +279,8 @@ export async function releaseExpiredReservations() {
             },
           });
         }
-        await tx.pedido.update({
-          where: { id: order.id },
-          data: { status: "CANCELADO", notes: "Cancelado por falta de pago (24h)." },
-        });
       }
+
       return { success: true, released: expiredOrders.length };
     });
   } catch (error) {
