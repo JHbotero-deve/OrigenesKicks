@@ -4,9 +4,11 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
+type DbUser = { id: string; email: string; name: string; role: string; };
+
 type AuthContextType = {
   user: User | null;
-  dbUser: any | null;
+  dbUser: DbUser | null;
   session: Session | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
@@ -22,7 +24,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [dbUser, setDbUser] = useState<any | null>(null);
+  const [dbUser, setDbUser] = useState<DbUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
