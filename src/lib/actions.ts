@@ -20,7 +20,16 @@ export async function createOrder(data: {
     if (!auth.ok) return { success: false, error: "Debes iniciar sesión para realizar un pedido" };
     const dbUser = auth.dbUser;
 
-    if (!data.items.length) return { success: false, error: "El pedido no contiene productos" };\n    const allowedPaymentMethods = ["TRANSFERENCIA", "CONTRA_ENTREGA_MEDELLIN", "EFECTIVO"];\n    if (!allowedPaymentMethods.includes(data.paymentMethod)) return { success: false, error: "Método de pago no válido" };\n    if (data.items.length > 50) return { success: false, error: "El pedido contiene demasiados productos" };
+    if (!Array.isArray(data.items) || data.items.length === 0) {
+      return { success: false, error: "El pedido no contiene productos" };
+    }
+    const allowedPaymentMethods = ["TRANSFERENCIA", "CONTRA_ENTREGA_MEDELLIN", "EFECTIVO"];
+    if (!allowedPaymentMethods.includes(data.paymentMethod)) {
+      return { success: false, error: "Método de pago no válido" };
+    }
+    if (data.items.length > 50) {
+      return { success: false, error: "El pedido contiene demasiados productos" };
+    }
     if (data.items.some((item) => !Number.isInteger(item.quantity) || item.quantity <= 0)) {
       return { success: false, error: "Cantidad de producto inválida" };
     }
@@ -274,26 +283,35 @@ export async function manualInventoryRemoval(data: {
   const auth = await requireRole(ROLES_OWNER_ONLY);
   if (!auth.ok) return { success: false, error: "Solo el dueño puede autorizar retiros manuales" };
   const dbUser = auth.dbUser;
+  const quantity = Number(data.quantity);
+  const reason = data.reason?.trim();
+
+  if (!data.variantId || !Number.isInteger(quantity) || quantity <= 0) {
+    return { success: false, error: "La cantidad debe ser un entero mayor que cero" };
+  }
+  if (!reason || reason.length < 3 || reason.length > 500) {
+    return { success: false, error: "La razón del retiro debe tener entre 3 y 500 caracteres" };
+  }
 
   try {
     return await prisma.$transaction(async (tx) => {
-      const variant = await tx.variant.findUnique({ where: { id: data.variantId }, include: { store: true } });
-      if (!variant || variant.stock < data.quantity) throw new Error("Stock insuficiente");
+      const variant = await tx.variant.findUnique({ where: { id: data.variantId } });
+      if (!variant || variant.stock < quantity) throw new Error("Stock insuficiente");
 
-      await tx.variant.update({ where: { id: data.variantId }, data: { stock: { decrement: data.quantity } } });
+      await tx.variant.update({ where: { id: data.variantId }, data: { stock: { decrement: quantity } } });
 
       await tx.inventoryLog.create({
         data: {
           variantId: data.variantId,
           storeId: variant.storeId,
           changeType: 'ADJUSTMENT',
-          quantity: data.quantity,
-          reason: data.reason,
+          quantity: -quantity,
+          reason,
           performedById: dbUser.id
         }
       });
 
-      console.log(`[SEGURIDAD] ${dbUser.name} sacó ${data.quantity} pares por: ${data.reason}`);
+      console.log(`[SEGURIDAD] ${dbUser.name} retiró ${quantity} unidades por: ${reason}`);
       revalidatePath('/dashboard/inventory');
       return { success: true };
     });
