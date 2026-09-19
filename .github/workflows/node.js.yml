@@ -39,7 +39,7 @@ jobs:
 
       - name: Upgrade Next.js 16 dependencies
         run: |
-          npm install next@16.3.3 react@19.2.0 react-dom@19.2.0 eslint-config-next@16.3.3 @types/react@19 @types/react-dom@19
+          npm install next@16.3.3 react@19.2.0 react-dom@19.2.0 eslint-config-next@16.3.3 eslint@9 @types/react@19 @types/react-dom@19
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package.json package-lock.json
