@@ -3,12 +3,12 @@
 import prisma from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { generateWhatsAppLink } from '@/lib/whatsapp';
-import { requireRole, ROLES_STAFF } from '@/lib/auth-guard';
+import { requireRole, ROLES_APPROVE_ORDERS, ROLES_DISPATCH } from '@/lib/auth-guard';
 
 type OrderStatus = 'CONFIRMADO' | 'PROCESANDO' | 'DESPACHADO' | 'ENTREGADO' | 'CANCELADO';
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus) {
-  const auth = await requireRole(ROLES_STAFF);
+  const auth = await requireRole(ROLES_DISPATCH);
 
   if (!auth.ok) {
     return { success: false, error: 'No tienes permisos para actualizar pedidos' };
@@ -33,7 +33,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
       return { success: false, error: 'No tienes acceso a este pedido' };
     }
 
-    const allowedTransitions: Record<string, OrderStatus[]> = {
+    const managerTransitions: Record<string, OrderStatus[]> = {
       RECIBIDO: ['CONFIRMADO', 'CANCELADO'],
       CONFIRMADO: ['PROCESANDO', 'CANCELADO'],
       PROCESANDO: ['DESPACHADO', 'CANCELADO'],
@@ -42,6 +42,19 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
       CANCELADO: [],
       RECHAZADO: [],
     };
+    const dispatchTransitions: Record<string, OrderStatus[]> = {
+      RECIBIDO: [],
+      CONFIRMADO: [],
+      PROCESANDO: ['DESPACHADO'],
+      DESPACHADO: ['ENTREGADO'],
+      ENTREGADO: [],
+      CANCELADO: [],
+      RECHAZADO: [],
+    };
+    const allowedTransitions =
+      user.role === 'OWNER' || user.role === 'ADMIN'
+        ? managerTransitions
+        : dispatchTransitions;
 
     if (!allowedTransitions[order.status]?.includes(status)) {
       return { success: false, error: 'Cambio de estado no permitido' };
