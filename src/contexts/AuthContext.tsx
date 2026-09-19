@@ -4,9 +4,11 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
+type DbUser = { id: string; email: string; name: string; role: string; };
+
 type AuthContextType = {
   user: User | null;
-  dbUser: any | null; // Datos de nuestra base de datos (incluyendo rol)
+  dbUser: DbUser | null;
   session: Session | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
@@ -22,44 +24,91 @@ const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [dbUser, setDbUser] = useState<any | null>(null);
+  const [dbUser, setDbUser] = useState<DbUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchDbUser = async () => {
       try {
-        const response = await fetch(`/api/user`);
-        if (!response.ok) { setDbUser(null); return; }
+        const response = await fetch("/api/user");
+
+        if (!response.ok) {
+          if (isMounted) setDbUser(null);
+          return;
+        }
+
         const data = await response.json();
-        setDbUser(data);
+
+        if (isMounted) {
+          setDbUser(data);
+        }
       } catch (error) {
         console.error("Error al sincronizar usuario:", error);
+        if (isMounted) {
+          setDbUser(null);
+        }
       }
     };
 
-    // Check active sessions
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) fetchDbUser();
-      setIsLoading(false);
-    });
+    const initializeSession = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+        if (!isMounted) return;
+
         setSession(session);
         setUser(session?.user ?? null);
+
         if (session?.user) {
-          fetchDbUser();
+          await fetchDbUser();
         } else {
           setDbUser(null);
         }
+      } catch (error) {
+        console.error("Error al obtener la sesión:", error);
+
+        if (isMounted) {
+          setSession(null);
+          setUser(null);
+          setDbUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void initializeSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      if (!isMounted) return;
+
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+
+      if (nextSession?.user) {
+        await fetchDbUser();
+      } else {
+        setDbUser(null);
+      }
+
+      if (isMounted) {
         setIsLoading(false);
       }
-    );
+    });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
@@ -75,8 +124,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
+
   return context;
 };

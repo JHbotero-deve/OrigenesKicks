@@ -9,7 +9,7 @@ interface Store {
   address: string;
   city: string;
   phone: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
 }
 
 interface Props {

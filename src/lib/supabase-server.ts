@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
@@ -14,9 +16,9 @@ function getConfig() {
   return { url, anonKey };
 }
 
-export function createClient() {
+export async function createClient() {
   const { url, anonKey } = getConfig();
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient(url, anonKey, {
     cookies: {

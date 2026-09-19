@@ -2,12 +2,20 @@
 
 import prisma from "./db";
 import { revalidatePath } from "next/cache";
-import { requireAuthenticatedUser, requireRole, ROLES_APPROVE_ORDERS, ROLES_DISPATCH, ROLES_OWNER_ONLY } from "./auth-guard";
+import { requireAuthenticatedUser, requireRole, ROLES_APPROVE_ORDERS, ROLES_DISPATCH } from "./auth-guard";
 
-/**
- * 1. CREACIÓN DEL PEDIDO (Reserva de 24h)
- * Flujo: Cliente -> Vitrina -> Reserva -> Bloqueo de Stock -> Auditoría
- */
+const DEFAULT_TAX_RATE = 19;
+const MAX_SHIPPING_FIELD_LENGTH = 200;
+
+function publicActionError(error: unknown, fallback: string) {
+  if (error instanceof Error) {
+    console.error(fallback + ":", error);
+  } else {
+    console.error(fallback + ":", error);
+  }
+  return fallback;
+}
+
 export async function createOrder(data: {
   clientId: string;
   items: { variantId: string; quantity: number; unitPrice: number }[];
@@ -20,40 +28,77 @@ export async function createOrder(data: {
     if (!auth.ok) return { success: false, error: "Debes iniciar sesión para realizar un pedido" };
     const dbUser = auth.dbUser;
 
-    if (!data.items.length) return { success: false, error: "El pedido no contiene productos" };\n    const allowedPaymentMethods = ["TRANSFERENCIA", "CONTRA_ENTREGA_MEDELLIN", "EFECTIVO"];\n    if (!allowedPaymentMethods.includes(data.paymentMethod)) return { success: false, error: "Método de pago no válido" };\n    if (data.items.length > 50) return { success: false, error: "El pedido contiene demasiados productos" };
+    if (!Array.isArray(data.items) || data.items.length === 0) {
+      return { success: false, error: "El pedido no contiene productos" };
+    }
+    const allowedPaymentMethods = ["TRANSFERENCIA", "CONTRA_ENTREGA_MEDELLIN", "EFECTIVO"];
+    if (!allowedPaymentMethods.includes(data.paymentMethod)) {
+      return { success: false, error: "Método de pago no válido" };
+    }
+    if (data.items.length > 50) {
+      return { success: false, error: "El pedido contiene demasiados productos" };
+    }
     if (data.items.some((item) => !Number.isInteger(item.quantity) || item.quantity <= 0)) {
       return { success: false, error: "Cantidad de producto inválida" };
     }
 
+    if (data.shippingAddress) {
+      const address = data.shippingAddress.address.trim();
+      const city = data.shippingAddress.city.trim();
+      const phone = data.shippingAddress.phone.trim();
+
+      if (
+        !address || address.length > MAX_SHIPPING_FIELD_LENGTH ||
+        !city || city.length > MAX_SHIPPING_FIELD_LENGTH ||
+        !phone || phone.length > 30
+      ) {
+        return { success: false, error: "Datos de envío inválidos" };
+      }
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       let calculatedTotal = 0;
-      const itemsWithRealPrices = [];
+      const itemsWithRealPrices: { variantId: string; quantity: number; unitPrice: number }[] = [];
       let assignedStoreId: string | null = null;
 
       for (const item of data.items) {
         const variant = await tx.variant.findUnique({
           where: { id: item.variantId },
-          include: { product: true, store: true }
+          include: { product: true, store: true },
         });
 
-        if (!variant || variant.stock < item.quantity) {
-          throw new Error(`¡Pilas! No hay suficiente stock para ${variant?.product.name || 'este modelo'}`);
+        if (!variant || !variant.product.active || variant.stock < item.quantity) {
+          throw new Error("No hay suficiente stock disponible para uno de los productos.");
         }
 
-        // Asignamos el pedido a la sucursal de la primera variante (flujo simplificado)
         if (!assignedStoreId) assignedStoreId = variant.storeId;
         if (assignedStoreId !== variant.storeId) {
           throw new Error("Todos los productos del pedido deben pertenecer a la misma tienda.");
         }
 
-        const price = Number(variant.product.discountPrice || variant.product.basePrice);
+        const basePrice = Number(variant.product.basePrice);
+        const discountPrice = variant.product.discountPrice === null
+          ? null
+          : Number(variant.product.discountPrice);
+        const price = discountPrice !== null && discountPrice >= 0 && discountPrice < basePrice
+          ? discountPrice
+          : basePrice;
+
+        if (!Number.isFinite(basePrice) || basePrice < 0 || !Number.isFinite(price) || price < 0) {
+          throw new Error("El precio de uno de los productos no es válido.");
+        }
+
         calculatedTotal += price * item.quantity;
 
         itemsWithRealPrices.push({
           variantId: item.variantId,
           quantity: item.quantity,
-          unitPrice: price
+          unitPrice: price,
         });
+      }
+
+      if (!assignedStoreId) {
+        throw new Error("No se pudo determinar la tienda del pedido.");
       }
 
       const expiresAt = new Date();
@@ -62,32 +107,29 @@ export async function createOrder(data: {
       const pedido = await tx.pedido.create({
         data: {
           clientId: dbUser.id,
-          storeId: assignedStoreId, // Vínculo real con el local
+          storeId: assignedStoreId,
           totalAmount: calculatedTotal,
           paymentMethod: data.paymentMethod,
-          status: 'RECIBIDO',
+          status: "RECIBIDO",
           expiresAt,
-          items: {
-            create: itemsWithRealPrices
-          },
+          items: { create: itemsWithRealPrices },
           ...(data.shippingAddress && {
             envio: {
               create: {
-                address: data.shippingAddress.address,
-                city: data.shippingAddress.city,
-                phone: data.shippingAddress.phone,
-                status: 'PENDIENTE'
-              }
-            }
-          })
-        }
+                address: data.shippingAddress.address.trim(),
+                city: data.shippingAddress.city.trim(),
+                phone: data.shippingAddress.phone.trim(),
+                status: "PENDIENTE",
+              },
+            },
+          }),
+        },
       });
 
-      // Reducir stock y auditar
       for (const item of data.items) {
         const stockUpdate = await tx.variant.updateMany({
           where: { id: item.variantId, stock: { gte: item.quantity } },
-          data: { stock: { decrement: item.quantity } }
+          data: { stock: { decrement: item.quantity } },
         });
         if (stockUpdate.count !== 1) {
           throw new Error("El stock cambió mientras procesábamos el pedido. Actualiza el carrito e inténtalo de nuevo.");
@@ -97,30 +139,25 @@ export async function createOrder(data: {
           data: {
             variantId: item.variantId,
             storeId: assignedStoreId,
-            changeType: 'RESERVATION',
+            changeType: "RESERVATION",
             quantity: item.quantity,
-            reason: `Reserva de 24h (Pedido #${pedido.id.slice(0,8)})`,
-            performedById: dbUser.id
-          }
+            reason: `Reserva de 24h (Pedido #${pedido.id.slice(0, 8)})`,
+            performedById: dbUser.id,
+          },
         });
       }
 
       return { success: true, pedidoId: pedido.id };
     });
 
-    revalidatePath('/products');
-    revalidatePath('/dashboard/orders');
+    revalidatePath("/products");
+    revalidatePath("/dashboard/orders");
     return result;
-  } catch (error: any) {
-    console.error("Error al crear pedido:", error.message);
-    return { success: false, error: error.message };
+  } catch (error) {
+    return { success: false, error: publicActionError(error, "No se pudo crear el pedido") };
   }
 }
 
-/**
- * 2. APROBACIÓN Y FACTURACIÓN (Cierre de Venta)
- * Flujo: Admin -> Verifica Pago -> Genera Factura Legal -> Venta Definitiva
- */
 export async function approveOrder(pedidoId: string): Promise<{ success: boolean; error?: string }> {
   const auth = await requireRole(ROLES_APPROVE_ORDERS);
   if (!auth.ok) return { success: false, error: "No tienes permiso para aprobar ventas" };
@@ -130,89 +167,97 @@ export async function approveOrder(pedidoId: string): Promise<{ success: boolean
     await prisma.$transaction(async (tx) => {
       const p = await tx.pedido.findUnique({
         where: { id: pedidoId },
-        include: { items: { include: { variant: { include: { product: true } } } }, store: true, client: true }
+        include: { items: { include: { variant: { include: { product: true } } } }, store: true, client: true },
       });
 
-      if (!p || p.status !== 'RECIBIDO') throw new Error("Pedido no válido para aprobación");
+      if (!p || p.status !== "RECIBIDO") throw new Error("Pedido no válido para aprobación");
+      if (!p.store) throw new Error("El pedido no tiene una tienda asociada");
+      if (dbUser.role !== "OWNER" && p.storeId !== dbUser.workStoreId) {
+        throw new Error("No tienes acceso a este pedido");
+      }
 
-      // Actualizar estado del pedido
       await tx.pedido.update({
         where: { id: pedidoId },
-        data: { status: 'CONFIRMADO', expiresAt: null }
+        data: { status: "CONFIRMADO", expiresAt: null },
       });
 
-      // Generar Factura con los datos del LOCAL específico
       const store = p.store;
-      const nextInvoiceNumber = (store?.lastInvoiceNumber || 0) + 1;
-      const prefix = store?.invoicePrefix || "FK";
+      const updatedStore = await tx.store.update({
+        where: { id: store.id },
+        data: { lastInvoiceNumber: { increment: 1 } },
+        select: { id: true, invoicePrefix: true, lastInvoiceNumber: true },
+      });
+
+      const nextInvoiceNumber = updatedStore.lastInvoiceNumber;
+      const prefix = updatedStore.invoicePrefix;
 
       const factura = await tx.factura.create({
         data: {
           invoiceNumber: nextInvoiceNumber,
-          prefix: prefix,
+          prefix,
           fullNumber: `${prefix}-${nextInvoiceNumber}`,
           customerName: p.client.name,
           customerIdType: "CC",
           customerId: p.client.id,
           customerEmail: p.client.email,
           totalAmount: p.totalAmount,
-          subtotal: Number(p.totalAmount) / 1.19,
-          taxAmount: Number(p.totalAmount) - (Number(p.totalAmount) / 1.19),
+          subtotal: p.items.reduce((sum, item) => {
+            const rate = Number(item.variant.product.taxRate ?? DEFAULT_TAX_RATE) / 100;
+            const gross = Number(item.unitPrice) * item.quantity;
+            return sum + (rate > 0 ? gross / (1 + rate) : gross);
+          }, 0),
+          taxAmount: p.items.reduce((sum, item) => {
+            const rate = Number(item.variant.product.taxRate ?? DEFAULT_TAX_RATE) / 100;
+            const gross = Number(item.unitPrice) * item.quantity;
+            return sum + (rate > 0 ? gross - gross / (1 + rate) : 0);
+          }, 0),
           paymentMethod: p.paymentMethod,
-          status: 'VALIDADA',
+          status: "VALIDADA",
           pedidoId: p.id,
           items: {
-            create: p.items.map(item => ({
+            create: p.items.map((item) => ({
               productName: item.variant.product.name,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
-              taxRate: 19,
-              taxAmount: Number(item.unitPrice) * 0.19,
+              taxRate: Number(item.variant.product.taxRate ?? DEFAULT_TAX_RATE),
+              taxAmount: (() => {
+                const rate = Number(item.variant.product.taxRate ?? DEFAULT_TAX_RATE) / 100;
+                const gross = Number(item.unitPrice) * item.quantity;
+                return rate > 0 ? gross - gross / (1 + rate) : 0;
+              })(),
               lineTotal: Number(item.unitPrice) * item.quantity,
-              size: item.variant.size
-            }))
-          }
-        }
+              size: item.variant.size,
+            })),
+          },
+        },
       });
 
-      // Actualizar contador del local
-      if (store) {
-        await tx.store.update({
-          where: { id: store.id },
-          data: { lastInvoiceNumber: nextInvoiceNumber }
-        });
-      }
-
-      // Registrar venta definitiva en el Kardex
       for (const item of p.items) {
         await tx.product.update({
           where: { id: item.variant.productId },
-          data: { salesCount: { increment: item.quantity } }
+          data: { salesCount: { increment: item.quantity } },
         });
 
         await tx.inventoryLog.create({
           data: {
             variantId: item.variantId,
-            storeId: store?.id,
-            changeType: 'SALE',
+            storeId: store.id,
+            changeType: "SALE",
             quantity: item.quantity,
             reason: `Venta confirmada: Recibo ${factura.fullNumber}`,
-            performedById: dbUser.id
-          }
+            performedById: dbUser.id,
+          },
         });
       }
     });
 
-    revalidatePath('/dashboard/orders');
+    revalidatePath("/dashboard/orders");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error) {
+    return { success: false, error: publicActionError(error, "No se pudo aprobar el pedido") };
   }
 }
 
-/**
- * 3. TAREAS DE MANTENIMIENTO (Liberación Automática)
- */
 export async function releaseExpiredReservations() {
   const auth = await requireRole(ROLES_APPROVE_ORDERS);
   if (!auth.ok) return { success: false, error: "No autorizado" };
@@ -221,109 +266,79 @@ export async function releaseExpiredReservations() {
   try {
     return await prisma.$transaction(async (tx) => {
       const expiredOrders = await tx.pedido.findMany({
-        where: { status: 'RECIBIDO', expiresAt: { lt: now } },
-        include: { items: true }
+        where: { status: "RECIBIDO", expiresAt: { lt: now } },
+        include: { items: true },
       });
 
       const systemUser = await tx.user.findFirst({
-        where: { role: 'OWNER' },
-        select: { id: true }
+        where: { role: "OWNER" },
+        select: { id: true },
       });
       if (expiredOrders.length && !systemUser) {
         throw new Error("No existe un usuario OWNER para registrar la liberación automática.");
       }
 
+      let releasedCount = 0;
+
       for (const order of expiredOrders) {
+        // Reclama atómicamente el pedido antes de devolver stock. Esto evita
+        // que dos ejecuciones concurrentes liberen la misma reserva dos veces.
+        const claimed = await tx.pedido.updateMany({
+          where: { id: order.id, status: "RECIBIDO", expiresAt: { lt: now } },
+          data: { status: "CANCELADO", notes: "Cancelado por falta de pago (24h)." },
+        });
+
+        if (claimed.count !== 1) continue;
+
         for (const item of order.items) {
           await tx.variant.update({
             where: { id: item.variantId },
-            data: { stock: { increment: item.quantity } }
+            data: { stock: { increment: item.quantity } },
           });
 
           await tx.inventoryLog.create({
             data: {
               variantId: item.variantId,
               storeId: order.storeId,
-              changeType: 'RETURN',
+              changeType: "RETURN",
               quantity: item.quantity,
-              reason: `Vencieron las 24h del pedido #${order.id.slice(0,8)}`,
-              performedById: systemUser!.id
-            }
+              reason: `Vencieron las 24h del pedido #${order.id.slice(0, 8)}`,
+              performedById: systemUser!.id,
+            },
           });
         }
-        await tx.pedido.update({
-          where: { id: order.id },
-          data: { status: 'CANCELADO', notes: 'Cancelado por falta de pago (24h).' }
-        });
+
+        releasedCount += 1;
       }
-      return { success: true, released: expiredOrders.length };
+
+      return { success: true, released: releasedCount };
     });
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error) {
+    return { success: false, error: publicActionError(error, "No se pudieron liberar las reservas vencidas") };
   }
 }
 
-/**
- * 4. RETIROS MANUALES AUDITADOS
- */
-export async function manualInventoryRemoval(data: {
-  variantId: string;
-  quantity: number;
-  reason: string;
-}): Promise<{ success: boolean; error?: string }> {
-  const auth = await requireRole(ROLES_OWNER_ONLY);
-  if (!auth.ok) return { success: false, error: "Solo el dueño puede autorizar retiros manuales" };
-  const dbUser = auth.dbUser;
-
-  try {
-    return await prisma.$transaction(async (tx) => {
-      const variant = await tx.variant.findUnique({ where: { id: data.variantId }, include: { store: true } });
-      if (!variant || variant.stock < data.quantity) throw new Error("Stock insuficiente");
-
-      await tx.variant.update({ where: { id: data.variantId }, data: { stock: { decrement: data.quantity } } });
-
-      await tx.inventoryLog.create({
-        data: {
-          variantId: data.variantId,
-          storeId: variant.storeId,
-          changeType: 'ADJUSTMENT',
-          quantity: data.quantity,
-          reason: data.reason,
-          performedById: dbUser.id
-        }
-      });
-
-      console.log(`[SEGURIDAD] ${dbUser.name} sacó ${data.quantity} pares por: ${data.reason}`);
-      revalidatePath('/dashboard/inventory');
-      return { success: true };
-    });
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
-
-/**
- * 5. SEGUIMIENTO PÚBLICO REAL
- * Permite a cualquier cliente ver su estado con el ID del pedido
- */
 export async function getPublicOrderStatus(orderCode: string) {
   try {
     const normalizedCode = orderCode?.trim();
     if (!normalizedCode || normalizedCode.length < 4 || normalizedCode.length > 80) {
       return { success: false, message: "Código de pedido inválido." };
     }
-    // Buscamos por ID (primeros 8 caracteres) o por número de factura
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizedCode);
+    if (!isUuid && !/^[A-Za-z0-9-]{3,40}$/.test(normalizedCode)) {
+      return { success: false, message: "Código de pedido inválido." };
+    }
+
     const order = await prisma.pedido.findFirst({
-      where: {
-        OR: [
-          { id: { startsWith: normalizedCode.toLowerCase() } },
-          { invoice: { fullNumber: normalizedCode.toUpperCase() } }
-        ]
-      },
+      where: isUuid
+        ? { id: normalizedCode }
+        : { invoice: { fullNumber: normalizedCode.toUpperCase() } },
       include: {
         envio: true,
-        items: { include: { variant: { include: { product: true } } } }
-      }
+        store: { select: { phone: true, name: true } },
+        items: { include: { variant: { include: { product: true } } } },
+      },
     });
 
     if (!order) return { success: false, message: "No encontramos ningún pedido con ese código." };
@@ -332,19 +347,21 @@ export async function getPublicOrderStatus(orderCode: string) {
       success: true,
       status: order.status,
       date: order.createdAt,
-      city: order.envio?.city || 'Medellín',
-      items: order.items.map(i => i.variant.product.name)
+      city: order.envio?.city || "Medellín",
+      storePhone: order.store?.phone || null,
+      storeName: order.store?.name || null,
+      items: order.items.map((i) => i.variant.product.name),
     };
   } catch (error) {
+    console.error("Error al consultar pedido público:", error);
     return { success: false, message: "Error al consultar el sistema." };
   }
 }
 
-/**
- * 6. ACTUALIZACIÓN DE ENVÍO Y ESTADO FINAL
- * Flujo: Delivery/Admin -> Actualiza Envío -> Sincroniza Pedido
- */
-export async function updateShippingStatus(shippingId: string, status: 'PENDIENTE' | 'EN_RUTA' | 'ENTREGADO' | 'FALLIDO' | 'RETORNADO'): Promise<{ success: boolean; error?: string }> {
+export async function updateShippingStatus(
+  shippingId: string,
+  status: "PENDIENTE" | "EN_RUTA" | "ENTREGADO" | "FALLIDO" | "RETORNADO",
+): Promise<{ success: boolean; error?: string }> {
   const auth = await requireRole(ROLES_DISPATCH);
   if (!auth.ok) return { success: false, error: "No tienes permisos para actualizar el envío" };
   const dbUser = auth.dbUser;
@@ -353,32 +370,44 @@ export async function updateShippingStatus(shippingId: string, status: 'PENDIENT
     await prisma.$transaction(async (tx) => {
       const envio = await tx.envio.findUnique({
         where: { id: shippingId },
-        include: { pedido: true }
+        include: { pedido: true },
       });
 
       if (!envio) throw new Error("Envío no encontrado");
 
+      if (
+        dbUser.role !== "OWNER" &&
+        dbUser.role !== "ADMIN" &&
+        envio.pedido.storeId !== dbUser.workStoreId
+      ) {
+        throw new Error("No tienes acceso a este envío");
+      }
+
+      if (status === "ENTREGADO" && envio.status !== "EN_RUTA") {
+        throw new Error("Un envío solo puede marcarse entregado cuando está en ruta");
+      }
+
       await tx.envio.update({
         where: { id: shippingId },
-        data: { status }
+        data: { status },
       });
 
-      if (status === 'ENTREGADO') {
+      if (status === "ENTREGADO") {
         await tx.pedido.update({
           where: { id: envio.pedidoId },
-          data: { status: 'ENTREGADO' }
+          data: { status: "ENTREGADO" },
         });
-      } else if (status === 'FALLIDO' || status === 'RETORNADO') {
+      } else if (status === "FALLIDO" || status === "RETORNADO") {
         await tx.pedido.update({
           where: { id: envio.pedidoId },
-          data: { status: 'RECHAZADO' }
+          data: { status: "RECHAZADO" },
         });
       }
     });
 
-    revalidatePath('/dashboard/orders');
+    revalidatePath("/dashboard/orders");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error) {
+    return { success: false, error: publicActionError(error, "No se pudo actualizar el envío") };
   }
 }

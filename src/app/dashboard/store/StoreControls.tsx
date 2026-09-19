@@ -1,24 +1,31 @@
 'use client';
+
 import { useState } from 'react';
 import AdjustInventoryModal from './AdjustInventoryModal';
 
-export default function StoreControls() {
+type Role = 'OWNER' | 'ADMIN' | 'SELLER' | 'DELIVERY' | 'CLIENT';
+
+export default function StoreControls({ storeId, role }: { storeId: string | null; role: Role | null }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const canAdjust = role === 'OWNER' || role === 'ADMIN';
+
+  if (!canAdjust) return null;
 
   return (
     <>
-      <button 
+      <button
+        type='button'
         onClick={() => setIsModalOpen(true)}
-        className='w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-2xl font-black text-lg transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3 mb-6'
+        disabled={!storeId}
+        className='mb-6 flex w-full items-center justify-center gap-3 rounded-xl bg-orange-500 py-4 text-lg font-black text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50'
       >
-        <span className='text-2xl'>⚠️</span> REPORTAR PÉRDIDA / AJUSTE
+        Reportar pérdida / ajuste
       </button>
 
-      <AdjustInventoryModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        storeId='default_store' // Simplified
-        userId='admin_user' // Simplified
+      <AdjustInventoryModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        storeId={storeId}
       />
     </>
   );

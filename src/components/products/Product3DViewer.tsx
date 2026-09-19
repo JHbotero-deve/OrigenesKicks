@@ -2,26 +2,6 @@
 
 import React from 'react';
 
-// Declaración global para que TypeScript reconozca el elemento personalizado de Google
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'model-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
-        src?: string;
-        poster?: string;
-        alt?: string;
-        'auto-rotate'?: boolean | string;
-        'camera-controls'?: boolean | string;
-        ar?: boolean | string;
-        'shadow-intensity'?: string;
-        'shadow-softness'?: string;
-        'environment-image'?: string;
-        exposure?: string;
-      }, HTMLElement>;
-    }
-  }
-}
-
 interface Props {
   modelUrl?: string | null;
   posterUrl?: string;

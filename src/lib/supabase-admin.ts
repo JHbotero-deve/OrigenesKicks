@@ -1,27 +1,22 @@
-import { createClient } from '@supabase/supabase-js';
+import "server-only";
+import { createClient } from "@supabase/supabase-js";
 
 /**
- * Cliente con la Service Role Key de Supabase — puede crear/borrar
- * usuarios de Auth directamente (auth.admin.*).
+ * Cliente con la Service Role Key de Supabase.
  *
- * SOLO se debe importar desde código que corre en el servidor
- * (Route Handlers, Server Actions). Nunca lo importes desde un
- * componente "use client": la Service Role Key se saltaría todas
- * las reglas de seguridad si llegara al navegador.
- *
- * Requiere la variable de entorno SUPABASE_SERVICE_ROLE_KEY
- * (Supabase Dashboard → Project Settings → API → service_role).
- * Esa clave NO lleva el prefijo NEXT_PUBLIC_ a propósito.
+ * Este módulo solo puede ejecutarse en el servidor. Nunca debe importarse
+ * desde componentes "use client".
  */
 export function createAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+  if (!url) {
+    throw new Error("Falta NEXT_PUBLIC_SUPABASE_URL en las variables de entorno.");
+  }
 
   if (!serviceRoleKey) {
-    throw new Error(
-      'Falta SUPABASE_SERVICE_ROLE_KEY en las variables de entorno. ' +
-      'Sin ella no se pueden crear cuentas de staff ni completar el registro de clientes.'
-    );
+    throw new Error("Falta SUPABASE_SERVICE_ROLE_KEY en las variables de entorno.");
   }
 
   return createClient(url, serviceRoleKey, {

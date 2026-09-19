@@ -1,3 +1,5 @@
+import 'server-only';
+
 import prisma from "./db";
 import { createClient } from "./supabase-server";
 import type { Role } from "@prisma/client";
@@ -10,7 +12,7 @@ import type { Role } from "@prisma/client";
  * datos en Prisma (pedidos, apartados, etc.) — son ids distintos.
  */
 export async function getSessionUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user: authUser } } = await supabase.auth.getUser();
 
   if (!authUser || !authUser.email) {

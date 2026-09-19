@@ -282,7 +282,7 @@ model Envio {
   pedido          Pedido      @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
   address         String
   city            String
-  department      String?     @default("Cundinamarca")
+  department      String?     @default("Antioquia")
   phone           String?
   trackingNumber  String?     @map("tracking_number")
   deliveryDate    DateTime?   @map("delivery_date")

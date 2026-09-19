@@ -1,15 +1,71 @@
+"use server";
+
 import prisma from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { generateWhatsAppLink } from '@/lib/whatsapp';
+import { requireRole, ROLES_DISPATCH } from '@/lib/auth-guard';
 
-export async function updateOrderStatus(orderId: string, status: 'CONFIRMADO' | 'PROCESANDO' | 'DESPACHADO' | 'ENTREGADO' | 'CANCELADO') {
+type OrderStatus = 'CONFIRMADO' | 'PROCESANDO' | 'DESPACHADO' | 'ENTREGADO' | 'CANCELADO';
+
+export type StoreOrder = {
+  id: string;
+  status: 'RECIBIDO' | 'CONFIRMADO' | 'PROCESANDO' | 'DESPACHADO' | 'ENTREGADO' | 'CANCELADO' | 'RECHAZADO';
+  client: {
+    name: string;
+  };
+};
+
+export async function updateOrderStatus(orderId: string, status: OrderStatus) {
+  const auth = await requireRole(ROLES_DISPATCH);
+
+  if (!auth.ok) {
+    return { success: false, error: 'No tienes permisos para actualizar pedidos' };
+  }
+
+  if (!orderId || !status) {
+    return { success: false, error: 'Datos del pedido incompletos' };
+  }
+
   try {
     const order = await prisma.pedido.findUnique({
       where: { id: orderId },
-      include: { client: true }
+      include: { client: { select: { name: true } } },
     });
 
-    if (!order) throw new Error('Pedido no encontrado');
+    if (!order) {
+      return { success: false, error: 'Pedido no encontrado' };
+    }
+
+    const user = auth.dbUser;
+    if (user.role !== 'OWNER' && user.role !== 'ADMIN' && order.storeId !== user.workStoreId) {
+      return { success: false, error: 'No tienes acceso a este pedido' };
+    }
+
+    const managerTransitions: Record<string, OrderStatus[]> = {
+      RECIBIDO: ['CONFIRMADO', 'CANCELADO'],
+      CONFIRMADO: ['PROCESANDO', 'CANCELADO'],
+      PROCESANDO: ['DESPACHADO', 'CANCELADO'],
+      DESPACHADO: ['ENTREGADO'],
+      ENTREGADO: [],
+      CANCELADO: [],
+      RECHAZADO: [],
+    };
+    const dispatchTransitions: Record<string, OrderStatus[]> = {
+      RECIBIDO: [],
+      CONFIRMADO: [],
+      PROCESANDO: ['DESPACHADO'],
+      DESPACHADO: ['ENTREGADO'],
+      ENTREGADO: [],
+      CANCELADO: [],
+      RECHAZADO: [],
+    };
+    const allowedTransitions =
+      user.role === 'OWNER' || user.role === 'ADMIN'
+        ? managerTransitions
+        : dispatchTransitions;
+
+    if (!allowedTransitions[order.status]?.includes(status)) {
+      return { success: false, error: 'Cambio de estado no permitido' };
+    }
 
     await prisma.pedido.update({
       where: { id: orderId },
@@ -18,41 +74,50 @@ export async function updateOrderStatus(orderId: string, status: 'CONFIRMADO' | 
 
     revalidatePath('/dashboard/store');
 
-    let message = '';
-    if (status === 'CONFIRMADO') {
-      message = `¡Hola ${order.client.name}! 👟 Tu pedido en Orígenes Kicks ha sido CONFIRMADO. Estamos preparando tus tenis para el envío.`;
-    } else if (status === 'DESPACHADO') {
-      message = `¡Buenas noticias ${order.client.name}! 🚚 Tus Kicks ya han sido DESPACHADOS y están en camino a tu dirección.`;
-    }
-
-    const whatsappLink = message ? generateWhatsAppLink(order.client.phone, message) : null;
-
-    return { success: true, whatsappLink };
+    return { success: true, whatsappLink: null };
   } catch (error) {
     console.error('Error updating order status:', error);
     return { success: false, error: 'No se pudo actualizar el pedido' };
   }
 }
 
+export async function getTodaysOrders(storeId?: string): Promise<StoreOrder[]> {
+  const auth = await requireRole(ROLES_DISPATCH);
 
-export async function getTodaysOrders(storeId?: string) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  if (!auth.ok) {
+    return [];
+  }
 
-  return await prisma.pedido.findMany({
+  const user = auth.dbUser;
+  const effectiveStoreId =
+    user.role === 'OWNER' || user.role === 'ADMIN'
+      ? storeId
+      : user.workStoreId;
+
+  const orders = await prisma.pedido.findMany({
     where: {
-      storeId: storeId || undefined,
-      createdAt: {
-        gte: today,
-      },
+      ...(effectiveStoreId ? { storeId: effectiveStoreId } : {}),
+      createdAt: { gte: startOfToday(), lt: startOfTomorrow() },
     },
-    include: {
-      client: {
-        select: { name: true, phone: true }
-      }
+    select: {
+      id: true,
+      status: true,
+      client: { select: { name: true } },
     },
-    orderBy: {
-      createdAt: 'desc',
-    },
+    orderBy: { createdAt: 'desc' },
   });
+
+  return orders;
+}
+
+function startOfToday() {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function startOfTomorrow() {
+  const date = startOfToday();
+  date.setDate(date.getDate() + 1);
+  return date;
 }

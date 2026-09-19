@@ -1,46 +1,39 @@
-﻿import pkg from '@prisma/client';
-const { PrismaClient } = pkg;
+import pkg from "@prisma/client";
 
+const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = 'jorgebotero190@gmail.com';
-  console.log('Buscando usuario: ' + email + '...');
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
 
-  try {
-    let user = await prisma.user.findUnique({
-      where: { email },
+  if (!email) {
+    throw new Error("Define ADMIN_EMAIL con el correo de una cuenta existente en Supabase Auth.");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, email: true, role: true },
+  });
+
+  if (!user) {
+    throw new Error("El usuario no existe en Prisma. Crea primero la cuenta mediante Supabase Auth.");
+  }
+
+  if (user.role === "OWNER") {
+    console.log("El usuario ya es OWNER.");
+  } else {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { role: "ADMIN" },
     });
-
-    if (!user) {
-      console.log('Usuario no encontrado. Creandolo ahora mismo...');
-      user = await prisma.user.create({
-        data: {
-          email: email,
-          name: 'Jorge Botero',
-          password: 'password123', 
-          role: 'ADMIN',
-        },
-      });
-      console.log('Exito: Usuario creado y asignado como Administrador.');
-    } else if (user.role === 'ADMIN') {
-      console.log('El usuario ya es Administrador.');
-    } else {
-      await prisma.user.update({
-        where: { email },
-        data: { role: 'ADMIN' },
-      });
-      console.log('Exito: Ahora eres Administrador del sistema.');
-    }
-  } catch (error) {
-    console.error('Ocurrio un error: ' + error.message);
+    console.log(`Rol actualizado a ADMIN para ${user.email}.`);
   }
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
+  .catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
   })
   .finally(async () => {
     await prisma.$disconnect();

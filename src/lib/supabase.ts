@@ -22,6 +22,8 @@ export const supabase = {
   auth: {
     getSession: () => getSupabaseClient().auth.getSession(),
     getUser: () => getSupabaseClient().auth.getUser(),
+    signInWithPassword: (credentials: Parameters<ReturnType<typeof createClient>["auth"]["signInWithPassword"]>[0]) =>
+      getSupabaseClient().auth.signInWithPassword(credentials),
     onAuthStateChange: (...args: Parameters<ReturnType<typeof createClient>["auth"]["onAuthStateChange"]>) =>
       getSupabaseClient().auth.onAuthStateChange(...args),
     signOut: () => getSupabaseClient().auth.signOut(),
