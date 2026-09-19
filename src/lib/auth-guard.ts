@@ -57,3 +57,18 @@ export const ROLES_MANAGE_CATALOG: Role[] = ["OWNER", "ADMIN"];
 export const ROLES_APPROVE_ORDERS: Role[] = ["OWNER", "ADMIN"];
 export const ROLES_DISPATCH: Role[] = ["OWNER", "ADMIN", "SELLER", "DELIVERY"];
 export const ROLES_OWNER_ONLY: Role[] = ["OWNER"];
+
+
+export async function requireAuthenticatedUser() {
+  const { authUser, dbUser } = await getSessionUser();
+
+  if (!authUser) {
+    return { ok: false as const, reason: "NOT_LOGGED_IN" as const, dbUser: null };
+  }
+
+  if (!dbUser) {
+    return { ok: false as const, reason: "NO_DB_USER" as const, dbUser: null };
+  }
+
+  return { ok: true as const, reason: null, dbUser };
+}
