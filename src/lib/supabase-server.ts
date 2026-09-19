@@ -1,33 +1,38 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseAnonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
+function getConfig() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
+    throw new Error(
+      "Faltan NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en el entorno de ejecución."
+    );
+  }
+
+  return { url, anonKey };
+}
 
 export function createClient() {
-  const cookieStore = cookies()
+  const { url, anonKey } = getConfig();
+  const cookieStore = cookies();
 
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  return createServerClient(url, anonKey, {
     cookies: {
       get(name: string) {
-        return cookieStore.get(name)?.value
+        return cookieStore.get(name)?.value;
       },
       set(name: string, value: string, options: CookieOptions) {
         try {
-          cookieStore.set({ name, value, ...options })
-        } catch (error) {
-          // Manejado por middleware
-        }
+          cookieStore.set({ name, value, ...options });
+        } catch {}
       },
       remove(name: string, options: CookieOptions) {
         try {
-          cookieStore.set({ name, value: '', ...options })
-        } catch (error) {
-          // Manejado por middleware
-        }
+          cookieStore.set({ name, value: "", ...options });
+        } catch {}
       },
     },
-  })
+  });
 }
