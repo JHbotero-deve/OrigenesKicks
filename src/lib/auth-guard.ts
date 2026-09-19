@@ -1,3 +1,5 @@
+import 'server-only';
+
 import prisma from "./db";
 import { createClient } from "./supabase-server";
 import type { Role } from "@prisma/client";
