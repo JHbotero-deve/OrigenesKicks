@@ -7,13 +7,18 @@ import { CartDrawer } from '@/features/products/CartDrawer';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Package,
-  Layers,
-  FileText,
   Sparkles,
   ShieldCheck,
-  User,
-  ShoppingBag
+  User
 } from 'lucide-react';
+
+type NavItem = {
+  name: string;
+  href: string;
+  icon: typeof Package;
+  authRequired?: boolean;
+  staffOnly?: boolean;
+};
 
 export const Navbar: React.FC = () => {
   const { user, dbUser } = useAuth();
@@ -21,7 +26,7 @@ export const Navbar: React.FC = () => {
 
   const isStaff = dbUser?.role === 'OWNER' || dbUser?.role === 'ADMIN' || dbUser?.role === 'SELLER';
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { name: 'VITRINA', href: '/products', icon: Package },
     { name: 'MIS PEDIDOS', href: '/dashboard/orders', icon: Sparkles, authRequired: true },
     { name: 'RASTREAR PEDIDO', href: '/posventa', icon: ShieldCheck },
@@ -29,7 +34,6 @@ export const Navbar: React.FC = () => {
 
   return (
     <div className="sticky top-0 z-50 w-full">
-      {/* 1. ANNOUNCEMENT BAR (Barra Superior) */}
       <div className="bg-black text-white text-[9px] font-black uppercase tracking-[0.15em] py-2 overflow-hidden whitespace-nowrap border-b border-white/10">
         <div className="container mx-auto px-4 flex justify-center gap-8 animate-marquee md:animate-none">
           <span className="flex items-center gap-2">
@@ -44,11 +48,8 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. MAIN NAVBAR */}
       <nav className="bg-white border-b border-gray-100 py-3">
         <div className="max-w-[1600px] mx-auto px-6 flex items-center justify-between">
-
-          {/* LOGO SECTION */}
           <Link href="/" className="flex items-center gap-3 shrink-0 group">
             <div className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center font-black text-xl italic border-2 border-black group-hover:bg-orange-600 transition-colors">
               OK
@@ -63,7 +64,6 @@ export const Navbar: React.FC = () => {
             </div>
           </Link>
 
-          {/* NAVIGATION ITEMS (CENTER) */}
           <div className="hidden lg:flex items-center bg-gray-50 p-1.5 rounded-full border border-gray-100 gap-1">
             {navItems.map((item) => {
               if (item.staffOnly && !isStaff) return null;
@@ -88,11 +88,9 @@ export const Navbar: React.FC = () => {
             })}
           </div>
 
-          {/* ACTIONS (RIGHT) */}
           <div className="flex items-center gap-3">
-            {/* El CartDrawer ahora está estilizado como el botón de la imagen */}
             <div className="relative group">
-               <CartDrawer />
+              <CartDrawer />
             </div>
 
             <Link href="/dashboard">
@@ -102,7 +100,6 @@ export const Navbar: React.FC = () => {
               </button>
             </Link>
           </div>
-
         </div>
       </nav>
     </div>
