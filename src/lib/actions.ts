@@ -288,54 +288,6 @@ export async function releaseExpiredReservations() {
 }
 
 /**
- * 4. RETIROS MANUALES AUDITADOS
- */
-export async function manualInventoryRemoval(data: {
-  variantId: string;
-  quantity: number;
-  reason: string;
-}): Promise<{ success: boolean; error?: string }> {
-  const auth = await requireRole(ROLES_OWNER_ONLY);
-  if (!auth.ok) return { success: false, error: "Solo el dueño puede autorizar retiros manuales" };
-  const dbUser = auth.dbUser;
-  const quantity = Number(data.quantity);
-  const reason = data.reason?.trim();
-
-  if (!data.variantId || !Number.isInteger(quantity) || quantity <= 0) {
-    return { success: false, error: "La cantidad debe ser un entero mayor que cero" };
-  }
-  if (!reason || reason.length < 3 || reason.length > 500) {
-    return { success: false, error: "La razón del retiro debe tener entre 3 y 500 caracteres" };
-  }
-
-  try {
-    return await prisma.$transaction(async (tx) => {
-      const variant = await tx.variant.findUnique({ where: { id: data.variantId } });
-      if (!variant || variant.stock < quantity) throw new Error("Stock insuficiente");
-
-      await tx.variant.update({ where: { id: data.variantId }, data: { stock: { decrement: quantity } } });
-
-      await tx.inventoryLog.create({
-        data: {
-          variantId: data.variantId,
-          storeId: variant.storeId,
-          changeType: 'ADJUSTMENT',
-          quantity: -quantity,
-          reason,
-          performedById: dbUser.id
-        }
-      });
-
-      console.log(`[SEGURIDAD] ${dbUser.name} retiró ${quantity} unidades por: ${reason}`);
-      revalidatePath('/dashboard/inventory');
-      return { success: true };
-    });
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
-
-/**
  * 5. SEGUIMIENTO PÚBLICO REAL
  * Permite a cualquier cliente ver su estado con el ID del pedido
  */
@@ -395,6 +347,21 @@ export async function updateShippingStatus(shippingId: string, status: 'PENDIENT
       });
 
       if (!envio) throw new Error("Envío no encontrado");
+
+      if (
+        dbUser.role !== 'OWNER' &&
+        dbUser.role !== 'ADMIN' &&
+        envio.pedido.storeId !== dbUser.workStoreId
+      ) {
+        throw new Error("No tienes acceso a este envío");
+      }
+
+      if (
+        status === 'ENTREGADO' &&
+        envio.status !== 'EN_RUTA'
+      ) {
+        throw new Error("Un envío solo puede marcarse entregado cuando está en ruta");
+      }
 
       await tx.envio.update({
         where: { id: shippingId },
