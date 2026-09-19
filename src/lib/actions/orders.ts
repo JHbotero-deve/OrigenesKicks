@@ -7,6 +7,15 @@ import { requireRole, ROLES_DISPATCH } from '@/lib/auth-guard';
 
 type OrderStatus = 'CONFIRMADO' | 'PROCESANDO' | 'DESPACHADO' | 'ENTREGADO' | 'CANCELADO';
 
+export type StoreOrder = {
+  id: string;
+  status: 'RECIBIDO' | 'CONFIRMADO' | 'PROCESANDO' | 'DESPACHADO' | 'ENTREGADO' | 'CANCELADO' | 'RECHAZADO';
+  client: {
+    name: string;
+    phone: string | null;
+  };
+};
+
 export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   const auth = await requireRole(ROLES_DISPATCH);
 
@@ -69,9 +78,9 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 
     let message = '';
     if (status === 'CONFIRMADO') {
-      message = `Hola ${order.client.name}. Tu pedido en Orígenes Kicks ha sido confirmado y estamos preparando tus tenis.`;
+      message = 'Hola ' + order.client.name + '. Tu pedido en Orígenes Kicks ha sido confirmado y estamos preparando tus tenis.';
     } else if (status === 'DESPACHADO') {
-      message = `Hola ${order.client.name}. Tu pedido en Orígenes Kicks ha sido despachado.`;
+      message = 'Hola ' + order.client.name + '. Tu pedido en Orígenes Kicks ha sido despachado.';
     }
 
     const whatsappLink =
@@ -86,7 +95,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   }
 }
 
-export async function getTodaysOrders(storeId?: string) {
+export async function getTodaysOrders(storeId?: string): Promise<StoreOrder[]> {
   const auth = await requireRole(ROLES_DISPATCH);
 
   if (!auth.ok) {
@@ -99,16 +108,20 @@ export async function getTodaysOrders(storeId?: string) {
       ? storeId
       : user.workStoreId;
 
-  return prisma.pedido.findMany({
+  const orders = await prisma.pedido.findMany({
     where: {
       ...(effectiveStoreId ? { storeId: effectiveStoreId } : {}),
       createdAt: { gte: startOfToday(), lt: startOfTomorrow() },
     },
-    include: {
+    select: {
+      id: true,
+      status: true,
       client: { select: { name: true, phone: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
+
+  return orders;
 }
 
 function startOfToday() {
