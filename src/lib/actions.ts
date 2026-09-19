@@ -23,6 +23,11 @@ export async function createOrder(data: {
     const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
     if (!dbUser) return { success: false, error: "Usuario no encontrado en la base de datos" };
 
+    if (!data.items.length) return { success: false, error: "El pedido no contiene productos" };
+    if (data.items.some((item) => !Number.isInteger(item.quantity) || item.quantity <= 0)) {
+      return { success: false, error: "Cantidad de producto inválida" };
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       let calculatedTotal = 0;
       const itemsWithRealPrices = [];
@@ -153,7 +158,7 @@ export async function approveOrder(pedidoId: string): Promise<{ success: boolean
           fullNumber: `${prefix}-${nextInvoiceNumber}`,
           customerName: p.client.name,
           customerIdType: "CC",
-          customerId: "123456789",
+          customerId: p.client.id,
           customerEmail: p.client.email,
           totalAmount: p.totalAmount,
           subtotal: Number(p.totalAmount) / 1.19,
@@ -222,6 +227,14 @@ export async function releaseExpiredReservations() {
         include: { items: true }
       });
 
+      const systemUser = await tx.user.findFirst({
+        where: { role: 'OWNER' },
+        select: { id: true }
+      });
+      if (expiredOrders.length && !systemUser) {
+        throw new Error("No existe un usuario OWNER para registrar la liberación automática.");
+      }
+
       for (const order of expiredOrders) {
         for (const item of order.items) {
           await tx.variant.update({
@@ -236,7 +249,7 @@ export async function releaseExpiredReservations() {
               changeType: 'RETURN',
               quantity: item.quantity,
               reason: `Vencieron las 24h del pedido #${order.id.slice(0,8)}`,
-              performedById: '00000000-0000-0000-0000-000000000000' // ID de sistema
+              performedById: systemUser!.id
             }
           });
         }
@@ -303,12 +316,16 @@ export async function manualInventoryRemoval(data: {
  */
 export async function getPublicOrderStatus(orderCode: string) {
   try {
+    const normalizedCode = orderCode?.trim();
+    if (!normalizedCode || normalizedCode.length < 4 || normalizedCode.length > 80) {
+      return { success: false, message: "Código de pedido inválido." };
+    }
     // Buscamos por ID (primeros 8 caracteres) o por número de factura
     const order = await prisma.pedido.findFirst({
       where: {
         OR: [
-          { id: { startsWith: orderCode.toLowerCase() } },
-          { invoice: { fullNumber: orderCode.toUpperCase() } }
+          { id: { startsWith: normalizedCode.toLowerCase() } },
+          { invoice: { fullNumber: normalizedCode.toUpperCase() } }
         ]
       },
       include: {
