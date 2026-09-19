@@ -3,7 +3,7 @@
 import prisma from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { generateWhatsAppLink } from '@/lib/whatsapp';
-import { requireRole, ROLES_APPROVE_ORDERS, ROLES_DISPATCH } from '@/lib/auth-guard';
+import { requireRole, ROLES_DISPATCH } from '@/lib/auth-guard';
 
 type OrderStatus = 'CONFIRMADO' | 'PROCESANDO' | 'DESPACHADO' | 'ENTREGADO' | 'CANCELADO';
 
@@ -87,7 +87,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 }
 
 export async function getTodaysOrders(storeId?: string) {
-  const auth = await requireRole(ROLES_STAFF);
+  const auth = await requireRole(ROLES_DISPATCH);
 
   if (!auth.ok) {
     return [];
