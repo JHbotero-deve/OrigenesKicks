@@ -357,6 +357,7 @@ export async function getPublicOrderStatus(orderCode: string) {
         : { invoice: { fullNumber: normalizedCode.toUpperCase() } },
       include: {
         envio: true,
+        store: { select: { phone: true, name: true } },
         items: { include: { variant: { include: { product: true } } } }
       }
     });
@@ -368,6 +369,8 @@ export async function getPublicOrderStatus(orderCode: string) {
       status: order.status,
       date: order.createdAt,
       city: order.envio?.city || 'Medellín',
+      storePhone: order.store?.phone || null,
+      storeName: order.store?.name || null,
       items: order.items.map(i => i.variant.product.name)
     };
   } catch (error) {
