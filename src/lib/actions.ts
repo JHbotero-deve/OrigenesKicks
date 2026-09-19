@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireAuthenticatedUser, requireRole, ROLES_APPROVE_ORDERS, ROLES_DISPATCH } from "./auth-guard";
 
 const DEFAULT_TAX_RATE = 19;
+const MAX_SHIPPING_FIELD_LENGTH = 200;
 
 function publicActionError(error: unknown, fallback: string) {
   if (error instanceof Error) {
@@ -41,6 +42,20 @@ export async function createOrder(data: {
       return { success: false, error: "Cantidad de producto inválida" };
     }
 
+    if (data.shippingAddress) {
+      const address = data.shippingAddress.address.trim();
+      const city = data.shippingAddress.city.trim();
+      const phone = data.shippingAddress.phone.trim();
+
+      if (
+        !address || address.length > MAX_SHIPPING_FIELD_LENGTH ||
+        !city || city.length > MAX_SHIPPING_FIELD_LENGTH ||
+        !phone || phone.length > 30
+      ) {
+        return { success: false, error: "Datos de envío inválidos" };
+      }
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       let calculatedTotal = 0;
       const itemsWithRealPrices: { variantId: string; quantity: number; unitPrice: number }[] = [];
@@ -61,7 +76,18 @@ export async function createOrder(data: {
           throw new Error("Todos los productos del pedido deben pertenecer a la misma tienda.");
         }
 
-        const price = Number(variant.product.discountPrice ?? variant.product.basePrice);
+        const basePrice = Number(variant.product.basePrice);
+        const discountPrice = variant.product.discountPrice === null
+          ? null
+          : Number(variant.product.discountPrice);
+        const price = discountPrice !== null && discountPrice >= 0 && discountPrice < basePrice
+          ? discountPrice
+          : basePrice;
+
+        if (!Number.isFinite(basePrice) || basePrice < 0 || !Number.isFinite(price) || price < 0) {
+          throw new Error("El precio de uno de los productos no es válido.");
+        }
+
         calculatedTotal += price * item.quantity;
 
         itemsWithRealPrices.push({
@@ -252,6 +278,8 @@ export async function releaseExpiredReservations() {
         throw new Error("No existe un usuario OWNER para registrar la liberación automática.");
       }
 
+      let releasedCount = 0;
+
       for (const order of expiredOrders) {
         // Reclama atómicamente el pedido antes de devolver stock. Esto evita
         // que dos ejecuciones concurrentes liberen la misma reserva dos veces.
@@ -279,9 +307,11 @@ export async function releaseExpiredReservations() {
             },
           });
         }
+
+        releasedCount += 1;
       }
 
-      return { success: true, released: expiredOrders.length };
+      return { success: true, released: releasedCount };
     });
   } catch (error) {
     return { success: false, error: publicActionError(error, "No se pudieron liberar las reservas vencidas") };
