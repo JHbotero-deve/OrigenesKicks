@@ -1,15 +1,49 @@
 import prisma from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { generateWhatsAppLink } from '@/lib/whatsapp';
+import { requireRole, ROLES_STAFF } from '@/lib/auth-guard';
 
-export async function updateOrderStatus(orderId: string, status: 'CONFIRMADO' | 'PROCESANDO' | 'DESPACHADO' | 'ENTREGADO' | 'CANCELADO') {
+type OrderStatus = 'CONFIRMADO' | 'PROCESANDO' | 'DESPACHADO' | 'ENTREGADO' | 'CANCELADO';
+
+export async function updateOrderStatus(orderId: string, status: OrderStatus) {
+  const auth = await requireRole(ROLES_STAFF);
+
+  if (!auth.ok) {
+    return { success: false, error: 'No tienes permisos para actualizar pedidos' };
+  }
+
+  if (!orderId || !status) {
+    return { success: false, error: 'Datos del pedido incompletos' };
+  }
+
   try {
     const order = await prisma.pedido.findUnique({
       where: { id: orderId },
-      include: { client: true }
+      include: { client: { select: { name: true, phone: true } } },
     });
 
-    if (!order) throw new Error('Pedido no encontrado');
+    if (!order) {
+      return { success: false, error: 'Pedido no encontrado' };
+    }
+
+    const user = auth.dbUser;
+    if (user.role !== 'OWNER' && user.role !== 'ADMIN' && order.storeId !== user.workStoreId) {
+      return { success: false, error: 'No tienes acceso a este pedido' };
+    }
+
+    const allowedTransitions: Record<string, OrderStatus[]> = {
+      RECIBIDO: ['CONFIRMADO', 'CANCELADO'],
+      CONFIRMADO: ['PROCESANDO', 'CANCELADO'],
+      PROCESANDO: ['DESPACHADO', 'CANCELADO'],
+      DESPACHADO: ['ENTREGADO'],
+      ENTREGADO: [],
+      CANCELADO: [],
+      RECHAZADO: [],
+    };
+
+    if (!allowedTransitions[order.status]?.includes(status)) {
+      return { success: false, error: 'Cambio de estado no permitido' };
+    }
 
     await prisma.pedido.update({
       where: { id: orderId },
@@ -20,12 +54,15 @@ export async function updateOrderStatus(orderId: string, status: 'CONFIRMADO' | 
 
     let message = '';
     if (status === 'CONFIRMADO') {
-      message = `¡Hola ${order.client.name}! 👟 Tu pedido en Orígenes Kicks ha sido CONFIRMADO. Estamos preparando tus tenis para el envío.`;
+      message = `Hola ${order.client.name}. Tu pedido en Orígenes Kicks ha sido confirmado y estamos preparando tus tenis.`;
     } else if (status === 'DESPACHADO') {
-      message = `¡Buenas noticias ${order.client.name}! 🚚 Tus Kicks ya han sido DESPACHADOS y están en camino a tu dirección.`;
+      message = `Hola ${order.client.name}. Tu pedido en Orígenes Kicks ha sido despachado.`;
     }
 
-    const whatsappLink = message ? generateWhatsAppLink(order.client.phone, message) : null;
+    const whatsappLink =
+      message && order.client.phone
+        ? generateWhatsAppLink(order.client.phone, message)
+        : null;
 
     return { success: true, whatsappLink };
   } catch (error) {
@@ -34,25 +71,39 @@ export async function updateOrderStatus(orderId: string, status: 'CONFIRMADO' | 
   }
 }
 
-
 export async function getTodaysOrders(storeId?: string) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const auth = await requireRole(ROLES_STAFF);
 
-  return await prisma.pedido.findMany({
+  if (!auth.ok) {
+    return [];
+  }
+
+  const user = auth.dbUser;
+  const effectiveStoreId =
+    user.role === 'OWNER' || user.role === 'ADMIN'
+      ? storeId
+      : user.workStoreId;
+
+  return prisma.pedido.findMany({
     where: {
-      storeId: storeId || undefined,
-      createdAt: {
-        gte: today,
-      },
+      ...(effectiveStoreId ? { storeId: effectiveStoreId } : {}),
+      createdAt: { gte: startOfToday(), lt: startOfTomorrow() },
     },
     include: {
-      client: {
-        select: { name: true, phone: true }
-      }
+      client: { select: { name: true, phone: true } },
     },
-    orderBy: {
-      createdAt: 'desc',
-    },
+    orderBy: { createdAt: 'desc' },
   });
+}
+
+function startOfToday() {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function startOfTomorrow() {
+  const date = startOfToday();
+  date.setDate(date.getDate() + 1);
+  return date;
 }
