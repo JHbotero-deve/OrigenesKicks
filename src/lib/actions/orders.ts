@@ -2,7 +2,6 @@
 
 import prisma from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { generateWhatsAppLink } from '@/lib/whatsapp';
 import { requireRole, ROLES_DISPATCH } from '@/lib/auth-guard';
 
 type OrderStatus = 'CONFIRMADO' | 'PROCESANDO' | 'DESPACHADO' | 'ENTREGADO' | 'CANCELADO';
@@ -12,7 +11,6 @@ export type StoreOrder = {
   status: 'RECIBIDO' | 'CONFIRMADO' | 'PROCESANDO' | 'DESPACHADO' | 'ENTREGADO' | 'CANCELADO' | 'RECHAZADO';
   client: {
     name: string;
-    phone: string | null;
   };
 };
 
@@ -30,7 +28,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   try {
     const order = await prisma.pedido.findUnique({
       where: { id: orderId },
-      include: { client: { select: { name: true, phone: true } } },
+      include: { client: { select: { name: true } } },
     });
 
     if (!order) {
@@ -76,19 +74,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 
     revalidatePath('/dashboard/store');
 
-    let message = '';
-    if (status === 'CONFIRMADO') {
-      message = 'Hola ' + order.client.name + '. Tu pedido en Orígenes Kicks ha sido confirmado y estamos preparando tus tenis.';
-    } else if (status === 'DESPACHADO') {
-      message = 'Hola ' + order.client.name + '. Tu pedido en Orígenes Kicks ha sido despachado.';
-    }
-
-    const whatsappLink =
-      message && order.client.phone
-        ? generateWhatsAppLink(order.client.phone, message)
-        : null;
-
-    return { success: true, whatsappLink };
+    return { success: true, whatsappLink: null };
   } catch (error) {
     console.error('Error updating order status:', error);
     return { success: false, error: 'No se pudo actualizar el pedido' };
@@ -116,7 +102,7 @@ export async function getTodaysOrders(storeId?: string): Promise<StoreOrder[]> {
     select: {
       id: true,
       status: true,
-      client: { select: { name: true, phone: true } },
+      client: { select: { name: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
