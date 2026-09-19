@@ -1,5 +1,6 @@
 "use server";
 
+import { randomInt, randomUUID } from "node:crypto";
 import prisma from "./db";
 import { revalidatePath } from "next/cache";
 import { requireRole, ROLES_OWNER_ONLY } from "./auth-guard";
@@ -26,8 +27,8 @@ export async function createAnalizisApp(data: CreateAnalizisAppData) {
   }
 
   try {
-    const licenseKey = `${businessName.toUpperCase().replace(/[^A-Z0-9]+/g, "-").slice(0, 12)}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-    const masterPin = String(crypto.randomInt(1000, 10000));
+    const licenseKey = `${businessName.toUpperCase().replace(/[^A-Z0-9]+/g, "-").slice(0, 12)}-${randomUUID().slice(0, 8).toUpperCase()}`;
+    const masterPin = String(randomInt(1000, 10000));
 
     const license = await prisma.appLicense.create({
       data: {
