@@ -56,7 +56,7 @@ export default async function ReportsPage() {
           <h3 className="font-black uppercase italic text-xl mb-2 text-gray-800">Cierre Diario</h3>
           <p className="text-xs text-gray-400 font-bold uppercase mb-6 leading-tight">Obligatorio para cada local al finalizar la jornada.</p>
           <div className="space-y-2 mb-8">
-            <p className="text-[10px] font-black uppercase">Ventas hoy: <span className="text-orange-600">$1'250.000</span></p>
+            <p className="text-[10px] font-black uppercase">Ventas hoy: <span className="text-orange-600">$1&apos;250.000</span></p>
             <p className="text-[10px] font-black uppercase">Pendientes: <span className="text-gray-400">4 Kicks</span></p>
           </div>
           <Button className="w-full bg-black text-white font-black uppercase italic text-[10px] rounded-xl py-4">
@@ -122,7 +122,7 @@ export default async function ReportsPage() {
                 <tr className="hover:bg-orange-50/30 transition-colors">
                   <td className="p-4">{new Date().toLocaleDateString()}</td>
                   <td className="p-4">Sede Principal</td>
-                  <td className="p-4 text-right text-orange-600 font-black">$2'340.000</td>
+                  <td className="p-4 text-right text-orange-600 font-black">$2&apos;340.000</td>
                   <td className="p-4 font-black italic uppercase">Camilo V.</td>
                   <td className="p-4 text-center">
                     <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">ENVIADO</span>
