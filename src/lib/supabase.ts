@@ -1,12 +1,29 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+function getConfig() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  if (process.env.NODE_ENV === 'production') {
-    console.warn('⚠️ Alerta: Variables de Supabase no detectadas en el build.');
+  if (!url || !anonKey) {
+    throw new Error(
+      "Faltan NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en el entorno de ejecución."
+    );
   }
+
+  return { url, anonKey };
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export function getSupabaseClient() {
+  const { url, anonKey } = getConfig();
+  return createClient(url, anonKey);
+}
+
+export const supabase = {
+  auth: {
+    getSession: () => getSupabaseClient().auth.getSession(),
+    getUser: () => getSupabaseClient().auth.getUser(),
+    onAuthStateChange: (...args: Parameters<ReturnType<typeof createClient>["auth"]["onAuthStateChange"]>) =>
+      getSupabaseClient().auth.onAuthStateChange(...args),
+    signOut: () => getSupabaseClient().auth.signOut(),
+  },
+};
