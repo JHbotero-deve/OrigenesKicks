@@ -1,48 +1,78 @@
+"use server";
+
 import prisma from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-
-/**
- * GESTIÓN DE AJUSTES DE INVENTARIO (NO VENTAS)
- * Para registrar pérdidas, daños, robos o devoluciones.
- */
+import { requireRole, ROLES_MANAGE_CATALOG } from '@/lib/auth-guard';
 
 export async function adjustInventory(data: {
-  variantId: string,
-  quantity: number, // Negativo para pérdida, positivo para entrada
-  reason: string,
-  userId: string,
-  storeId: string
+  variantId: string;
+  quantity: number;
+  reason: string;
+  userId?: string;
+  storeId?: string;
 }) {
+  const auth = await requireRole(ROLES_MANAGE_CATALOG);
+  if (!auth.ok) {
+    return { success: false, error: 'No tienes permisos para ajustar el inventario' };
+  }
+
+  const quantity = Number(data.quantity);
+  const reason = data.reason?.trim();
+
+  if (!data.variantId || !Number.isInteger(quantity) || quantity === 0) {
+    return { success: false, error: 'La cantidad debe ser un entero diferente de cero' };
+  }
+
+  if (!reason || reason.length < 3 || reason.length > 500) {
+    return { success: false, error: 'La razón del ajuste es obligatoria y debe tener entre 3 y 500 caracteres' };
+  }
+
   try {
-    return await prisma.\(async (tx) => {
-      // 1. Actualizar el stock de la variante
-      await tx.variant.update({
+    await prisma.$transaction(async (tx) => {
+      const variant = await tx.variant.findUnique({
         where: { id: data.variantId },
-        data: {
-          stock: { increment: data.quantity }
-        }
+        select: { id: true, stock: true, storeId: true }
       });
 
-      // 2. Crear el log del movimiento
-      // Definimos el tipo basado en el signo de la cantidad
-      const changeType = data.quantity < 0 ? 'ADJUSTMENT' : 'PURCHASE';
+      if (!variant) throw new Error('Variante de producto no encontrada');
+
+      if (quantity < 0 && variant.stock < Math.abs(quantity)) {
+        throw new Error('Stock insuficiente para realizar este retiro');
+      }
+
+      const update = await tx.variant.updateMany({
+        where: {
+          id: data.variantId,
+          ...(quantity < 0 ? { stock: { gte: Math.abs(quantity) } } : {})
+        },
+        data: { stock: { increment: quantity } }
+      });
+
+      if (update.count !== 1) {
+        throw new Error('El stock cambió durante el ajuste. Inténtalo nuevamente');
+      }
 
       await tx.inventoryLog.create({
         data: {
-          variantId: data.variantId,
-          storeId: data.storeId,
-          changeType: changeType,
-          quantity: data.quantity,
-          reason: data.reason,
-          performedById: data.userId,
+          variantId: variant.id,
+          storeId: variant.storeId ?? data.storeId ?? null,
+          changeType: quantity < 0 ? 'ADJUSTMENT' : 'PURCHASE',
+          quantity,
+          reason,
+          performedById: auth.dbUser.id,
         }
       });
-
-      revalidatePath('/dashboard/store');
-      return { success: true };
     });
+
+    revalidatePath('/dashboard/inventory');
+    revalidatePath('/dashboard/store');
+    revalidatePath('/products');
+    return { success: true };
   } catch (error) {
     console.error('Error adjusting inventory:', error);
-    return { success: false, error: 'No se pudo ajustar el inventario' };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'No se pudo ajustar el inventario'
+    };
   }
 }
