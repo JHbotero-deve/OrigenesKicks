@@ -11,7 +11,8 @@ function escapeHtml(value: unknown) {
     .replaceAll("'", '&#039;');
 }
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const auth = await requireAuthenticatedUser();
 
   if (!auth.ok) {
@@ -19,7 +20,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   }
 
   const factura = await prisma.factura.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       items: true,
       pedido: { include: { store: true } },
