@@ -9,6 +9,7 @@ export interface Product {
   category?: string;
   active: boolean;
   imageUrl?: string;
+  model3dUrl?: string;
   sku?: string;
   variants?: Variant[];
 }
