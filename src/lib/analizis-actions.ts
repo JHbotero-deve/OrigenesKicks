@@ -26,6 +26,10 @@ export async function createAnalizisApp(data: CreateAnalizisAppData) {
     return { success: false, error: "Los datos de la licencia son obligatorios." };
   }
 
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail)) {
+    return { success: false, error: "El correo del propietario no es válido." };
+  }
+
   try {
     const licenseKey = `${businessName.toUpperCase().replace(/[^A-Z0-9]+/g, "-").slice(0, 12)}-${randomUUID().slice(0, 8).toUpperCase()}`;
     const masterPin = String(randomInt(1000, 10000));
