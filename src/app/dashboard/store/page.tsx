@@ -7,7 +7,7 @@ import StoreControls from './StoreControls';
 
 export default async function StorePage() {
   const { dbUser } = await getSessionUser();
-  const storeId = dbUser?.workStoreId ?? (dbUser?.role === 'OWNER' || dbUser?.role === 'ADMIN' ? null : null);
+  const storeId = dbUser?.workStoreId ?? null;
 
   const [orders, totals] = await Promise.all([
     getTodaysOrders(storeId ?? undefined),
