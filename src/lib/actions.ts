@@ -4,6 +4,8 @@ import prisma from "./db";
 import { revalidatePath } from "next/cache";
 import { requireAuthenticatedUser, requireRole, ROLES_APPROVE_ORDERS, ROLES_DISPATCH, ROLES_OWNER_ONLY } from "./auth-guard";
 
+const DEFAULT_TAX_RATE = 19;
+
 /**
  * 1. CREACIÓN DEL PEDIDO (Reserva de 24h)
  * Flujo: Cliente -> Vitrina -> Reserva -> Bloqueo de Stock -> Auditoría
@@ -143,6 +145,10 @@ export async function approveOrder(pedidoId: string): Promise<{ success: boolean
       });
 
       if (!p || p.status !== 'RECIBIDO') throw new Error("Pedido no válido para aprobación");
+      if (!p.store) throw new Error("El pedido no tiene una tienda asociada");
+      if (dbUser.role !== 'OWNER' && p.storeId !== dbUser.workStoreId) {
+        throw new Error("No tienes acceso a este pedido");
+      }
 
       // Actualizar estado del pedido
       await tx.pedido.update({
@@ -152,8 +158,13 @@ export async function approveOrder(pedidoId: string): Promise<{ success: boolean
 
       // Generar Factura con los datos del LOCAL específico
       const store = p.store;
-      const nextInvoiceNumber = (store?.lastInvoiceNumber || 0) + 1;
-      const prefix = store?.invoicePrefix || "FK";
+      const updatedStore = await tx.store.update({
+        where: { id: store.id },
+        data: { lastInvoiceNumber: { increment: 1 } },
+        select: { id: true, invoicePrefix: true, lastInvoiceNumber: true },
+      });
+      const nextInvoiceNumber = updatedStore.lastInvoiceNumber;
+      const prefix = updatedStore.invoicePrefix;
 
       const factura = await tx.factura.create({
         data: {
@@ -165,8 +176,16 @@ export async function approveOrder(pedidoId: string): Promise<{ success: boolean
           customerId: p.client.id,
           customerEmail: p.client.email,
           totalAmount: p.totalAmount,
-          subtotal: Number(p.totalAmount) / 1.19,
-          taxAmount: Number(p.totalAmount) - (Number(p.totalAmount) / 1.19),
+          subtotal: p.items.reduce((sum, item) => {
+            const rate = Number(item.variant.product.taxRate ?? DEFAULT_TAX_RATE) / 100;
+            const gross = Number(item.unitPrice) * item.quantity;
+            return sum + (rate > 0 ? gross / (1 + rate) : gross);
+          }, 0),
+          taxAmount: p.items.reduce((sum, item) => {
+            const rate = Number(item.variant.product.taxRate ?? DEFAULT_TAX_RATE) / 100;
+            const gross = Number(item.unitPrice) * item.quantity;
+            return sum + (rate > 0 ? gross - gross / (1 + rate) : 0);
+          }, 0),
           paymentMethod: p.paymentMethod,
           status: 'VALIDADA',
           pedidoId: p.id,
@@ -175,22 +194,18 @@ export async function approveOrder(pedidoId: string): Promise<{ success: boolean
               productName: item.variant.product.name,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
-              taxRate: 19,
-              taxAmount: Number(item.unitPrice) * 0.19,
+              taxRate: Number(item.variant.product.taxRate ?? DEFAULT_TAX_RATE),
+              taxAmount: (() => {
+                const rate = Number(item.variant.product.taxRate ?? DEFAULT_TAX_RATE) / 100;
+                const gross = Number(item.unitPrice) * item.quantity;
+                return rate > 0 ? gross - gross / (1 + rate) : 0;
+              })(),
               lineTotal: Number(item.unitPrice) * item.quantity,
               size: item.variant.size
             }))
           }
         }
       });
-
-      // Actualizar contador del local
-      if (store) {
-        await tx.store.update({
-          where: { id: store.id },
-          data: { lastInvoiceNumber: nextInvoiceNumber }
-        });
-      }
 
       // Registrar venta definitiva en el Kardex
       for (const item of p.items) {
@@ -330,14 +345,16 @@ export async function getPublicOrderStatus(orderCode: string) {
     if (!normalizedCode || normalizedCode.length < 4 || normalizedCode.length > 80) {
       return { success: false, message: "Código de pedido inválido." };
     }
-    // Buscamos por ID (primeros 8 caracteres) o por número de factura
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizedCode);
+
+    if (!isUuid && !/^[A-Za-z0-9-]{3,40}$/.test(normalizedCode)) {
+      return { success: false, message: "Código de pedido inválido." };
+    }
+
     const order = await prisma.pedido.findFirst({
-      where: {
-        OR: [
-          { id: { startsWith: normalizedCode.toLowerCase() } },
-          { invoice: { fullNumber: normalizedCode.toUpperCase() } }
-        ]
-      },
+      where: isUuid
+        ? { id: normalizedCode }
+        : { invoice: { fullNumber: normalizedCode.toUpperCase() } },
       include: {
         envio: true,
         items: { include: { variant: { include: { product: true } } } }
