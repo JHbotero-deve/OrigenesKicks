@@ -78,7 +78,7 @@ export default function PosventaPage() {
           <form onSubmit={checkOrder} className="space-y-4 mb-10 pt-4">
             <input
               type="text"
-              placeholder="Pega aquí el código de tu pedido (Ej: 8a2f1b)"
+              placeholder="UUID del pedido o número de factura"
               className="w-full p-6 bg-gray-50 rounded-3xl border-2 border-transparent focus:border-orange-500 outline-none transition-all font-black text-center text-xl tracking-widest uppercase shadow-inner"
               onChange={(e) => setOrderId(e.target.value)}
               required
@@ -131,7 +131,7 @@ export default function PosventaPage() {
               </div>
 
               <div className="bg-orange-600 p-6 rounded-[2rem] text-white flex flex-col md:flex-row items-center justify-between gap-4">
-                 <p className="text-sm font-black italic uppercase">¿Alguna duda con el envío?</p>
+                 <p className="text-sm font-black italic uppercase">¿Necesitas ayuda con el envío?</p>
                  <a href={`https://wa.me/573000000000?text=${encodeURIComponent(`Hola. Mi pedido #${orderId} aparece como ${orderData.status}. Necesito información sobre el envío.`)}`} target="_blank" className="bg-white text-black px-8 py-3 rounded-xl font-black uppercase italic text-[10px] hover:scale-105 transition-transform">
                    Hablar con la Sucursal
                  </a>
