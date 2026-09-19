@@ -20,6 +20,7 @@ interface ProductDetail {
   name: string;
   description?: string | null;
   basePrice: number | string;
+  discountPrice?: number | string | null;
   imageUrl?: string | null;
   model3dUrl?: string | null;
   gender?: string | null;
@@ -35,6 +36,15 @@ interface Props {
 export const ProductDetailView: React.FC<Props> = ({ product }) => {
   const { addItem } = useCartStore();
   const variants = Array.isArray(product.variants) ? product.variants : [];
+  const basePrice = Number(product.basePrice);
+  const discountPrice = product.discountPrice == null ? null : Number(product.discountPrice);
+  const hasValidDiscount =
+    Number.isFinite(basePrice) &&
+    Number.isFinite(discountPrice) &&
+    discountPrice > 0 &&
+    discountPrice < basePrice;
+  const salePrice = hasValidDiscount ? discountPrice : basePrice;
+
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(variants[0] ?? null);
   const [view3d, setView3d] = useState(Boolean(product.model3dUrl));
   const [showSizeGuide, setShowSizeGuide] = useState(false);
@@ -146,13 +156,18 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
             <div className="flex justify-between items-end mb-10">
               <div>
                 <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Precio Directo de Fábrica</p>
+                {hasValidDiscount && (
+                  <p className="text-lg font-bold text-gray-400 line-through">
+                    ${basePrice.toLocaleString()}
+                  </p>
+                )}
                 <p className="text-5xl font-black italic text-gray-900">
-                  ${Number(product.basePrice).toLocaleString()}
+                  ${salePrice.toLocaleString()}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-[10px] font-bold text-green-600 uppercase bg-green-50 px-3 py-1 rounded-full border border-green-100">
-                  Precio competitivo
+                  {hasValidDiscount ? "Precio en oferta" : "Precio competitivo"}
                 </p>
               </div>
             </div>
@@ -161,18 +176,18 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
               <Button
                 className="w-full py-10 bg-black text-white font-black italic uppercase text-xl rounded-[2.5rem] shadow-2xl hover:bg-orange-600 transition-all flex items-center justify-center gap-4"
                 onClick={() => {
-                  if (!selectedVariant || selectedVariant.stock <= 0) return;
+                  if (!selectedVariant || selectedVariant.stock <= 0 || !Number.isFinite(salePrice) || salePrice <= 0) return;
                   addItem({
                     variantId: selectedVariant.id,
                     name: product.name,
-                    price: Number(product.basePrice),
+                    price: salePrice,
                     quantity: 1,
                     size: selectedVariant.size,
                     color: selectedVariant.color,
                     image: product.imageUrl ?? undefined,
                   });
                 }}
-                disabled={!selectedVariant || selectedVariant.stock <= 0}
+                disabled={!selectedVariant || selectedVariant.stock <= 0 || !Number.isFinite(salePrice) || salePrice <= 0}
               >
                 <ShoppingBag size={28} />
                 {selectedVariant?.stock ? "Añadir al Carrito" : "Agotado en esta talla"}
