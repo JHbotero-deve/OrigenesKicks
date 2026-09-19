@@ -6,7 +6,7 @@ import { FileText, Mail, Download, TrendingUp, Calendar } from "lucide-react";
 export const dynamic = 'force-dynamic';
 
 export default async function ReportsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return <div>No autorizado</div>;
 
