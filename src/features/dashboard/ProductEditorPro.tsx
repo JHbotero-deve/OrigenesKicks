@@ -29,7 +29,7 @@ export const ProductEditorPro = () => {
             <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Nombre del Modelo</label>
             <input
               type="text"
-              placeholder="Ej: Jordan Retro 4 'Barrio Edition'"
+              placeholder="Ej: Jordan Retro 4 &apos;Barrio Edition&apos;"
               className="w-full p-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold"
               onChange={(e) => setProductName(e.target.value)}
             />
@@ -69,7 +69,7 @@ export const ProductEditorPro = () => {
              {/* Marco Estético */}
              <div className="bg-white rounded-[2rem] p-6 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] transform rotate-2 hover:rotate-0 transition-transform duration-500 relative group">
                 <div className="absolute -top-3 -right-3 bg-yellow-400 text-black text-[9px] font-black px-3 py-1 rounded-full uppercase italic border-2 border-black z-10 shadow-lg">
-                  100% Colombiano 🇨🇴
+                  100% Colombiano
                 </div>
 
                 <div className="aspect-square rounded-xl overflow-hidden bg-gradient-to-b from-gray-50 to-white flex items-center justify-center mb-6">
@@ -85,7 +85,7 @@ export const ProductEditorPro = () => {
                 </div>
              </div>
              <p className="text-[10px] text-center text-gray-400 mt-8 font-medium uppercase tracking-widest">
-               "Así es como lo verán tus clientes: Profesional, limpio y con el sello nacional."
+               &quot;Así es como lo verán tus clientes: Profesional, limpio y con el sello nacional.&quot;
              </p>
           </div>
         ) : (
