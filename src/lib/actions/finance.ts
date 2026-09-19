@@ -1,12 +1,7 @@
 import prisma from '@/lib/db';
-import { auth } from '@/lib/auth';
+import { requireRole, ROLES_OWNER_ONLY, ROLES_STAFF } from '@/lib/auth-guard';
 
-/**
- * LÓGICA DE CIERRES PARA LA PLAZA DE MERCADO
- * Diseñado para ser extremadamente sencillo y seguro.
- */
-
-export async function calculateDailyTotals(storeId: string) {
+export async function calculateDailyTotals(storeId?: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -15,19 +10,12 @@ export async function calculateDailyTotals(storeId: string) {
 
   const orders = await prisma.pedido.aggregate({
     where: {
-      storeId,
+      ...(storeId ? { storeId } : {}),
       status: { in: ['CONFIRMADO', 'PROCESANDO', 'DESPACHADO', 'ENTREGADO'] },
-      createdAt: {
-        gte: today,
-        lt: tomorrow,
-      },
+      createdAt: { gte: today, lt: tomorrow },
     },
-    _sum: {
-      totalAmount: true,
-    },
-    _count: {
-      id: true,
-    },
+    _sum: { totalAmount: true },
+    _count: { id: true },
   });
 
   return {
@@ -37,46 +25,69 @@ export async function calculateDailyTotals(storeId: string) {
 }
 
 export async function performDailyClosing(data: {
-  storeId: string,
-  userId: string,
-  cashAmount: number,
-  transferAmount: number,
-  observations?: string
+  storeId: string;
+  cashAmount: number;
+  transferAmount: number;
+  observations?: string;
 }) {
+  const auth = await requireRole(ROLES_STAFF);
+
+  if (!auth.ok) {
+    return { success: false, error: 'No tienes permisos para realizar el cierre' };
+  }
+
+  const cashAmount = Number(data.cashAmount);
+  const transferAmount = Number(data.transferAmount);
+
+  if (!data.storeId || !Number.isFinite(cashAmount) || cashAmount < 0 || !Number.isFinite(transferAmount) || transferAmount < 0) {
+    return { success: false, error: 'Los valores del cierre no son válidos' };
+  }
+
+  const user = auth.dbUser;
+  if (user.role !== 'OWNER' && user.role !== 'ADMIN' && data.storeId !== user.workStoreId) {
+    return { success: false, error: 'No tienes acceso a esta tienda' };
+  }
+
   const totals = await calculateDailyTotals(data.storeId);
-  
+  const pending = await prisma.pedido.count({
+    where: {
+      storeId: data.storeId,
+      status: { in: ['RECIBIDO'] },
+      createdAt: { gte: startOfToday(), lt: startOfTomorrow() },
+    },
+  });
+
   const closing = await prisma.dailyClosing.create({
     data: {
       storeId: data.storeId,
-      closedById: data.userId,
+      closedById: user.id,
       totalSales: totals.totalSales,
       totalOrders: totals.totalOrders,
-      pendingOrders: 0, 
-      cashAmount: data.cashAmount,
-      transferAmount: data.transferAmount,
-      observations: data.observations,
+      pendingOrders: pending,
+      cashAmount,
+      transferAmount,
+      observations: data.observations?.trim() || null,
     },
   });
 
   return {
     success: true,
     closing,
-    difference: (data.cashAmount + data.transferAmount) - Number(totals.totalSales),
+    difference: cashAmount + transferAmount - Number(totals.totalSales),
   };
 }
 
-/**
- * REPORTES PARA EL DUEÑO
- */
-
 export async function getFinancialReport(startDate: Date, endDate: Date, storeId?: string) {
+  const auth = await requireRole(ROLES_OWNER_ONLY);
+
+  if (!auth.ok) {
+    return { closings: [], summary: { totalRevenue: 0, totalCash: 0, totalTransfers: 0, totalOrders: 0, totalDiff: 0 } };
+  }
+
   const closings = await prisma.dailyClosing.findMany({
     where: {
-      date: {
-        gte: startDate,
-        lte: endDate,
-      },
-      ...(storeId && { storeId }),
+      date: { gte: startDate, lte: endDate },
+      ...(storeId ? { storeId } : {}),
     },
     orderBy: { date: 'asc' },
   });
@@ -85,60 +96,61 @@ export async function getFinancialReport(startDate: Date, endDate: Date, storeId
   const totalCash = closings.reduce((sum, c) => sum + Number(c.cashAmount), 0);
   const totalTransfers = closings.reduce((sum, c) => sum + Number(c.transferAmount), 0);
   const totalOrders = closings.reduce((sum, c) => sum + c.totalOrders, 0);
-  const totalDiff = closings.reduce((sum, c) => sum + (Number(c.cashAmount) + Number(c.transferAmount) - Number(c.totalSales)), 0);
+  const totalDiff = closings.reduce(
+    (sum, c) => sum + Number(c.cashAmount) + Number(c.transferAmount) - Number(c.totalSales),
+    0
+  );
 
   return {
     closings,
-    summary: {
-      totalRevenue,
-      totalCash,
-      totalTransfers,
-      totalOrders,
-      totalDiff,
-    }
+    summary: { totalRevenue, totalCash, totalTransfers, totalOrders, totalDiff },
   };
 }
 
-/**
- * REPORTE DE PÉRDIDAS Y AJUSTES (MOVIMIENTOS NO VENTA)
- */
 export async function getInventoryLossReport(startDate: Date, endDate: Date, storeId?: string) {
+  const auth = await requireRole(ROLES_OWNER_ONLY);
+
+  if (!auth.ok) {
+    return { details: [], summary: { totalLossValue: 0, totalUnitsMoved: 0 } };
+  }
+
   const logs = await prisma.inventoryLog.findMany({
     where: {
-      createdAt: {
-        gte: startDate,
-        lte: endDate,
-      },
-      changeType: { not: 'SALE' },
-      ...(storeId && { storeId }),
+      createdAt: { gte: startDate, lte: endDate },
+      changeType: 'ADJUSTMENT',
+      quantity: { lt: 0 },
+      ...(storeId ? { storeId } : {}),
     },
-    include: {
-      variant: {
-        include: {
-          product: true
-        }
-      }
-    },
+    include: { variant: { include: { product: true } } },
     orderBy: { createdAt: 'desc' },
   });
 
-  const report = logs.map(log => ({
+  const report = logs.map((log) => ({
     date: log.createdAt,
     product: log.variant.product.name,
-    quantity: log.quantity,
+    quantity: Math.abs(log.quantity),
     reason: log.reason,
     type: log.changeType,
-    impact: Number(log.quantity) * Number(log.variant.product.basePrice)
+    impact: Math.abs(log.quantity) * Number(log.variant.product.basePrice),
   }));
-
-  const totalLossValue = report.reduce((sum, item) => sum + item.impact, 0);
-  const totalUnitsMoved = report.reduce((sum, item) => sum + item.quantity, 0);
 
   return {
     details: report,
     summary: {
-      totalLossValue,
-      totalUnitsMoved,
-    }
+      totalLossValue: report.reduce((sum, item) => sum + item.impact, 0),
+      totalUnitsMoved: report.reduce((sum, item) => sum + item.quantity, 0),
+    },
   };
+}
+
+function startOfToday() {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function startOfTomorrow() {
+  const date = startOfToday();
+  date.setDate(date.getDate() + 1);
+  return date;
 }
