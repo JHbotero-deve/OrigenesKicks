@@ -3,6 +3,7 @@
 import prisma from "./db";
 import { revalidatePath } from "next/cache";
 import { createClient } from "./supabase-server";
+import { requireAuthenticatedUser, requireRole, ROLES_APPROVE_ORDERS, ROLES_DISPATCH, ROLES_OWNER_ONLY } from "./auth-guard";
 
 /**
  * 1. CREACIÓN DEL PEDIDO (Reserva de 24h)
@@ -119,17 +120,9 @@ export async function createOrder(data: {
  * Flujo: Admin -> Verifica Pago -> Genera Factura Legal -> Venta Definitiva
  */
 export async function approveOrder(pedidoId: string): Promise<{ success: boolean; error?: string }> {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "No autorizado" };
-
-  const dbUser = await prisma.user.findUnique({
-    where: { email: user.email }
-  });
-
-  if (!dbUser || !['OWNER', 'ADMIN'].includes(dbUser.role)) {
-    return { success: false, error: "No tienes permiso para aprobar ventas" };
-  }
+  const auth = await requireRole(ROLES_APPROVE_ORDERS);
+  if (!auth.ok) return { success: false, error: "No tienes permiso para aprobar ventas" };
+  const dbUser = auth.dbUser;
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -219,6 +212,9 @@ export async function approveOrder(pedidoId: string): Promise<{ success: boolean
  * 3. TAREAS DE MANTENIMIENTO (Liberación Automática)
  */
 export async function releaseExpiredReservations() {
+  const auth = await requireRole(ROLES_APPROVE_ORDERS);
+  if (!auth.ok) return { success: false, error: "No autorizado" };
+
   const now = new Date();
   try {
     return await prisma.$transaction(async (tx) => {
@@ -273,15 +269,9 @@ export async function manualInventoryRemoval(data: {
   quantity: number;
   reason: string;
 }): Promise<{ success: boolean; error?: string }> {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "No autorizado" };
-
-  const dbUser = await prisma.user.findUnique({
-    where: { email: user.email }
-  });
-
-  if (!dbUser || dbUser.role !== 'OWNER') return { success: false, error: "Solo el dueño puede autorizar retiros manuales" };
+  const auth = await requireRole(ROLES_OWNER_ONLY);
+  if (!auth.ok) return { success: false, error: "Solo el dueño puede autorizar retiros manuales" };
+  const dbUser = auth.dbUser;
 
   try {
     return await prisma.$transaction(async (tx) => {
@@ -353,14 +343,9 @@ export async function getPublicOrderStatus(orderCode: string) {
  * Flujo: Delivery/Admin -> Actualiza Envío -> Sincroniza Pedido
  */
 export async function updateShippingStatus(shippingId: string, status: 'PENDIENTE' | 'EN_RUTA' | 'ENTREGADO' | 'FALLIDO' | 'RETORNADO'): Promise<{ success: boolean; error?: string }> {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "No autorizado" };
-
-  const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
-  if (!dbUser || !['OWNER', 'ADMIN', 'SELLER', 'DELIVERY'].includes(dbUser.role)) {
-    return { success: false, error: "No tienes permisos para actualizar el envío" };
-  }
+  const auth = await requireRole(ROLES_DISPATCH);
+  if (!auth.ok) return { success: false, error: "No tienes permisos para actualizar el envío" };
+  const dbUser = auth.dbUser;
 
   try {
     await prisma.$transaction(async (tx) => {
