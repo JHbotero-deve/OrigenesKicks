@@ -8,6 +8,7 @@ import StoreControls from './StoreControls';
 export default async function StorePage() {
   const { dbUser } = await getSessionUser();
   const storeId = dbUser?.workStoreId ?? null;
+  const role = dbUser?.role ?? null;
 
   const [orders, totals] = await Promise.all([
     getTodaysOrders(storeId ?? undefined),
@@ -30,7 +31,7 @@ export default async function StorePage() {
         </div>
       </header>
 
-      <StoreControls storeId={storeId} />
+      <StoreControls storeId={storeId} role={role} />
 
       <section className='space-y-4'>
         <h2 className='px-1 text-xl font-black text-gray-950'>Pedidos de hoy</h2>
@@ -39,11 +40,11 @@ export default async function StorePage() {
             No hay pedidos registrados hoy.
           </div>
         ) : (
-          orders.map((order) => <OrderCard key={order.id} order={order} />)
+          orders.map((order) => <OrderCard key={order.id} order={order} role={role} />)
         )}
       </section>
 
-      <ClosingSection totals={totals} storeId={storeId} />
+      <ClosingSection totals={totals} storeId={storeId} role={role} />
     </div>
   );
 }
