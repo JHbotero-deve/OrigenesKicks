@@ -36,7 +36,8 @@ export default function ClosingSection({
       if (result.success) {
         setIsOpen(false);
         setFormData({ cashAmount: '', transferAmount: '', observations: '' });
-        const difference = Number(result.difference ?? 0);\n        alert(`Cierre de caja realizado. Diferencia: ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(difference)}`);
+        const difference = Number(result.difference ?? 0);
+        alert(`Cierre de caja realizado. Diferencia: ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(difference)}`);
       } else {
         alert(result.error);
       }
