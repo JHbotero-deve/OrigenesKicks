@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+type Role = 'OWNER' | 'ADMIN' | 'SELLER' | 'DELIVERY' | 'CLIENT';
+
 type OrderStatus =
   | 'RECIBIDO'
   | 'CONFIRMADO'
@@ -37,7 +39,7 @@ const nextStatus: Partial<Record<OrderStatus, { value: OrderStatus; label: strin
   DESPACHADO: { value: 'ENTREGADO', label: 'ENTREGADO' },
 };
 
-export default function OrderCard({ order }: { order: Order }) {
+export default function OrderCard({ order, role }: { order: Order; role: Role | null }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -71,7 +73,13 @@ export default function OrderCard({ order }: { order: Order }) {
     }
   };
 
-  const action = nextStatus[order.status];
+  const canManageOrder = role === 'OWNER' || role === 'ADMIN';
+  const canDispatch = role === 'SELLER' || role === 'DELIVERY';
+  const action = canManageOrder
+    ? nextStatus[order.status]
+    : canDispatch && (order.status === 'PROCESANDO' || order.status === 'DESPACHADO')
+      ? nextStatus[order.status]
+      : undefined;
 
   return (
     <div className='flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between'>
