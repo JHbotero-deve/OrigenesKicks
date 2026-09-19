@@ -57,7 +57,7 @@ export async function createAnalizisApp(data: CreateAnalizisAppData) {
   }
 }
 
-export async function toggleAppStatus(licenseId: string, currentStatus: string) {
+export async function toggleAppStatus(licenseId: string) {
   const auth = await requireRole(ROLES_OWNER_ONLY);
 
   if (!auth.ok) {
@@ -68,16 +68,25 @@ export async function toggleAppStatus(licenseId: string, currentStatus: string) 
     return { success: false, error: "Identificador de licencia inválido." };
   }
 
-  const newStatus = currentStatus === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
-
   try {
-    await prisma.appLicense.update({
+    const license = await prisma.appLicense.findUnique({
       where: { id: licenseId },
+      select: { id: true, status: true },
+    });
+
+    if (!license) {
+      return { success: false, error: "Licencia no encontrada." };
+    }
+
+    const newStatus = license.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
+
+    await prisma.appLicense.update({
+      where: { id: license.id },
       data: { status: newStatus },
     });
 
     revalidatePath("/analizis-control");
-    return { success: true };
+    return { success: true, status: newStatus };
   } catch (error) {
     console.error("Error al cambiar estado de licencia:", error);
     return { success: false, error: "No se pudo cambiar el estado de la licencia." };
