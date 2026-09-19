@@ -1,6 +1,6 @@
 import prisma from "@/lib/db";
 import { createClient } from "@/lib/supabase-server";
-import { approveOrder, updateShippingStatus } from "@/lib/actions";
+import { approveOrder } from "@/lib/actions";
 import { Button } from "@/components/ui/Button";
 import { ShippingStatusController } from "@/components/dashboard/ShippingStatusController";
 import Link from "next/link";
@@ -75,7 +75,7 @@ export default async function OrdersPage() {
       <div className="space-y-4">
         {orders.map(order => {
           // Si el pedido no tiene sucursal, usamos un número por defecto de administración
-          const storePhone = order.store?.phone || "573000000000";
+          const storePhone = order.store?.phone;
           const storeName = order.store?.name || "Administración Central";
 
           return (
@@ -89,13 +89,13 @@ export default async function OrdersPage() {
                       order.status === 'CONFIRMADO' ? 'bg-green-600 text-white' :
                       order.status === 'CANCELADO' ? 'bg-red-600 text-white' : 'bg-orange-500 text-white animate-pulse'
                     }`}>
-                      {order.status === 'RECIBIDO' ? '🛒 RESERVADO (24H)' :
-                       order.status === 'CONFIRMADO' ? '✅ CONFIRMADO' :
-                       order.status === 'CANCELADO' ? '❌ CANCELADO' : order.status}
+                      {order.status === 'RECIBIDO' ? 'RESERVADO (24H)' :
+                       order.status === 'CONFIRMADO' ? 'CONFIRMADO' :
+                       order.status === 'CANCELADO' ? 'CANCELADO' : order.status}
                     </span>
                     <span className="text-[10px] font-bold text-gray-300 tracking-widest">#{order.id.slice(0,8)}</span>
                     <span className="text-[10px] font-black text-blue-600 uppercase border border-blue-200 px-2 py-0.5 rounded">
-                      📍 {storeName}
+                      {storeName}
                     </span>
                   </div>
 
@@ -144,7 +144,7 @@ export default async function OrdersPage() {
                         className="w-full"
                       >
                         <Button className="w-full bg-green-500 hover:bg-green-600 font-black italic text-[11px] uppercase py-6">
-                          📱 Verificiar y Enviar al Local
+                          Verificar y Enviar al Local
                         </Button>
                       </a>
                       <p className="text-[9px] text-center text-gray-400 uppercase font-bold leading-tight">
