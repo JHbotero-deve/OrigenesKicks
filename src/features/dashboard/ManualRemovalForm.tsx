@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { manualInventoryRemoval } from '@/lib/actions';
+import { adjustInventory } from '@/lib/actions/inventory';
 import { Trash2, AlertCircle } from 'lucide-react';
 
 interface ManualRemovalFormProps {
@@ -10,10 +10,15 @@ interface ManualRemovalFormProps {
   productName: string;
   size: string;
   currentStock: number;
+  storeId?: string | null;
 }
 
 export const ManualRemovalForm: React.FC<ManualRemovalFormProps> = ({
-  variantId, productName, size, currentStock
+  variantId,
+  productName,
+  size,
+  currentStock,
+  storeId,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [reason, setReason] = useState('');
@@ -22,26 +27,36 @@ export const ManualRemovalForm: React.FC<ManualRemovalFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reason || reason.trim().length < 5) {
-      alert("Cuéntanos bien por qué estás retirando estos Kicks (mínimo 5 letras).");
+
+    const normalizedReason = reason.trim();
+    if (normalizedReason.length < 5) {
+      alert('El motivo debe tener al menos 5 caracteres.');
+      return;
+    }
+
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > currentStock) {
+      alert('La cantidad indicada no es válida para el stock disponible.');
       return;
     }
 
     setIsSubmitting(true);
-    const res = await manualInventoryRemoval({
+
+    const result = await adjustInventory({
       variantId,
-      quantity,
-      reason
+      quantity: -quantity,
+      reason: normalizedReason,
+      storeId: storeId ?? undefined,
     });
 
-    if (res.success) {
-      alert(`¡Listo! Se sacaron ${quantity} pares de la cuenta. Ya le avisamos al dueño por seguridad.`);
+    if (result.success) {
+      alert(`Se retiraron ${quantity} pares y el movimiento quedó registrado en auditoría.`);
       setIsOpen(false);
       setReason('');
       setQuantity(1);
     } else {
-      alert("No se pudo: " + res.error);
+      alert(`No se pudo realizar el retiro: ${result.error}`);
     }
+
     setIsSubmitting(false);
   };
 
@@ -50,51 +65,69 @@ export const ManualRemovalForm: React.FC<ManualRemovalFormProps> = ({
       <Button
         variant="ghost"
         size="sm"
-        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+        className="text-red-500 hover:bg-red-50 hover:text-red-700"
         onClick={() => setIsOpen(true)}
         disabled={currentStock <= 0}
       >
-        <Trash2 className="w-4 h-4 mr-1" />
+        <Trash2 className="mr-1 h-4 w-4" />
         Retirar
       </Button>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-      <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md border-t-4 border-red-600 animate-in zoom-in-95">
-        <div className="flex items-center gap-2 text-red-600 mb-4">
-          <AlertCircle className="w-6 h-6" />
-          <h3 className="font-black uppercase italic text-lg">Retirar Mercancía Manualmente</h3>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="manual-removal-title"
+    >
+      <div className="w-full max-w-md rounded-xl border-t-4 border-red-600 bg-white p-6 shadow-2xl">
+        <div className="mb-4 flex items-center gap-2 text-red-600">
+          <AlertCircle className="h-6 w-6" />
+          <h3 id="manual-removal-title" className="text-lg font-black uppercase italic">
+            Retirar mercancía manualmente
+          </h3>
         </div>
 
-        <p className="text-xs text-gray-500 mb-6">
-          Vas a sacar stock de <strong className="text-black uppercase">{productName} (Talla {size})</strong> sin una venta de por medio.
-          Esto queda registrado en el **Kardex de Auditoría** para el dueño.
+        <p className="mb-6 text-xs text-gray-500">
+          Vas a retirar stock de{' '}
+          <strong className="uppercase text-black">
+            {productName} (Talla {size})
+          </strong>
+          . El movimiento quedará registrado en el Kardex de auditoría.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[10px] font-bold uppercase mb-1">¿Cuántos pares salen?</label>
+            <label htmlFor="removal-quantity" className="mb-1 block text-[10px] font-bold uppercase">
+              Cantidad
+            </label>
             <input
+              id="removal-quantity"
               type="number"
-              min="1"
+              min={1}
               max={currentStock}
               value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value))}
-              className="w-full p-2 border rounded font-bold"
+              onChange={(event) => setQuantity(Number(event.target.value))}
+              className="w-full rounded border p-2 font-bold"
               required
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold uppercase mb-1">¿Por qué salen? (Motivo real)</label>
+            <label htmlFor="removal-reason" className="mb-1 block text-[10px] font-bold uppercase">
+              Motivo del retiro
+            </label>
             <textarea
+              id="removal-reason"
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Ej: Cambio por garantía, se dañaron en el local, regalo del dueño..."
-              className="w-full p-2 border rounded text-sm h-24 resize-none"
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Ej.: garantía, daño, devolución, ajuste físico de inventario."
+              className="h-24 w-full resize-none rounded border p-2 text-sm"
               required
+              minLength={5}
+              maxLength={500}
             />
           </div>
 
@@ -110,10 +143,10 @@ export const ManualRemovalForm: React.FC<ManualRemovalFormProps> = ({
             </Button>
             <Button
               type="submit"
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              className="flex-1 bg-red-600 text-white hover:bg-red-700"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Procesando..." : "Confirmar Retiro"}
+              {isSubmitting ? 'Procesando...' : 'Confirmar retiro'}
             </Button>
           </div>
         </form>
