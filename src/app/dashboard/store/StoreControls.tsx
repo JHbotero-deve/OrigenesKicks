@@ -3,8 +3,13 @@
 import { useState } from 'react';
 import AdjustInventoryModal from './AdjustInventoryModal';
 
-export default function StoreControls({ storeId }: { storeId: string | null }) {
+type Role = 'OWNER' | 'ADMIN' | 'SELLER' | 'DELIVERY' | 'CLIENT';
+
+export default function StoreControls({ storeId, role }: { storeId: string | null; role: Role | null }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const canAdjust = role === 'OWNER' || role === 'ADMIN';
+
+  if (!canAdjust) return null;
 
   return (
     <>
