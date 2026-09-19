@@ -2,12 +2,9 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { getPublicOrderStatus } from '@/lib/actions';
 import {
-  ShieldCheck,
   RotateCcw,
   Search,
-  MessageCircle,
   CheckCircle2,
   Package,
   Truck,
@@ -29,15 +26,27 @@ export default function PosventaPage() {
     setLoading(true);
     setError('');
 
-    const res = await getPublicOrderStatus(orderId);
+    try {
+      const response = await fetch('/api/orders/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderCode: orderId.trim() }),
+      });
+      const res = await response.json();
 
-    if (res.success) {
+      if (!response.ok || !res.success) {
+        setError(res.message || 'No se pudo consultar el pedido');
+        setOrderData(null);
+        return;
+      }
+
       setOrderData(res);
-    } else {
-      setError(res.message || 'Error desconocido');
+    } catch {
+      setError('No se pudo conectar con el servidor');
       setOrderData(null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const steps = [
@@ -79,7 +88,7 @@ export default function PosventaPage() {
             </Button>
           </form>
 
-          {error && <p className="text-center text-red-600 font-black uppercase italic text-xs mb-8">❌ {error}</p>}
+          {error && <p className="text-center text-red-600 font-black uppercase italic text-xs mb-8">{error}</p>}
 
           {orderData && (
             <div className="space-y-12 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -123,7 +132,7 @@ export default function PosventaPage() {
 
               <div className="bg-orange-600 p-6 rounded-[2rem] text-white flex flex-col md:flex-row items-center justify-between gap-4">
                  <p className="text-sm font-black italic uppercase">¿Alguna duda con el envío?</p>
-                 <a href={`https://wa.me/573000000000?text=Hola! Mi pedido #${orderId} dice que está ${orderData.status}. ¿Me dan más info?`} target="_blank" className="bg-white text-black px-8 py-3 rounded-xl font-black uppercase italic text-[10px] hover:scale-105 transition-transform">
+                 <a href={`https://wa.me/573000000000?text=${encodeURIComponent(`Hola. Mi pedido #${orderId} aparece como ${orderData.status}. Necesito información sobre el envío.`)}`} target="_blank" className="bg-white text-black px-8 py-3 rounded-xl font-black uppercase italic text-[10px] hover:scale-105 transition-transform">
                    Hablar con la Sucursal
                  </a>
               </div>
