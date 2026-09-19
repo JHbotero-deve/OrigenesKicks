@@ -1,9 +1,4 @@
-/**
- * GESTOR DE PAGOS SIMPLIFICADO
- * Este módulo actúa como el puente entre el carrito y la pasarela (Wompi/Manual)
- */
-
-export type PaymentMethod = 'WomPI' | 'MANUAL' | 'CONTRA_ENTREGA';
+export type PaymentMethod = "WomPI" | "MANUAL" | "CONTRA_ENTREGA";
 
 export interface PaymentRequest {
   orderId: string;
@@ -13,23 +8,29 @@ export interface PaymentRequest {
 }
 
 export async function handlePaymentInitiation(request: PaymentRequest) {
-  if (request.method === 'MANUAL' || request.method === 'CONTRA_ENTREGA') {
+  if (!request.orderId || !Number.isFinite(request.amount) || request.amount <= 0) {
+    return { success: false, message: "Datos de pago inválidos.", redirectUrl: null };
+  }
+
+  if (request.currency !== "COP") {
+    return { success: false, message: "Moneda no soportada.", redirectUrl: null };
+  }
+
+  if (request.method === "MANUAL" || request.method === "CONTRA_ENTREGA") {
     return {
       success: true,
-      message: 'Pago registrado como manual/pendiente.',
-      redirectUrl: null
+      message: "Pedido registrado como pago pendiente de confirmación.",
+      redirectUrl: null,
     };
   }
 
-  if (request.method === 'WomPI') {
-    // Aquí irá la integración con el SDK de Wompi
-    // Por ahora simulamos la redirección al checkout
+  if (request.method === "WomPI") {
     return {
-      success: true,
-      message: 'Redirigiendo a pasarela de pago...',
-      redirectUrl: 'https://checkout.wompi.co/simulated-payment' 
+      success: false,
+      message: "El pago en línea todavía no está habilitado.",
+      redirectUrl: null,
     };
   }
 
-  throw new Error('Método de pago no soportado');
+  return { success: false, message: "Método de pago no soportado.", redirectUrl: null };
 }
