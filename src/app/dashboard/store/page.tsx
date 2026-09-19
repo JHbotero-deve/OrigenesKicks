@@ -6,18 +6,25 @@ import StoreControls from './StoreControls';
 
 export default async function StorePage() {
   const orders = await getTodaysOrders();
-  const totals = await calculateDailyTotals('default_store'); // Simplified for now
+  const totals = await calculateDailyTotals('default_store');
+
+  const salesToday = Number(totals.totalSales ?? 0);
+  const formattedSales = new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    maximumFractionDigits: 0,
+  }).format(salesToday);
 
   return (
     <div className='p-4 max-w-4xl mx-auto space-y-6'>
       <header className='flex justify-between items-center bg-blue-600 text-white p-6 rounded-2xl shadow-lg'>
         <div>
-          <h1 className='text-3xl font-bold'>Modo Tienda 👟</h1>
+          <h1 className='text-3xl font-bold'>Modo Tienda</h1>
           <p className='opacity-90'>Gestiona tus ventas rápidas</p>
         </div>
         <div className='text-right'>
           <p className='text-sm uppercase font-semibold opacity-80'>Ventas Hoy</p>
-          <p className='text-4xl font-black'>\</p>
+          <p className='text-4xl font-black'>{formattedSales}</p>
         </div>
       </header>
 
@@ -27,10 +34,10 @@ export default async function StorePage() {
         <h2 className='text-xl font-bold text-gray-700 px-2'>Pedidos de Hoy</h2>
         {orders.length === 0 ? (
           <div className='text-center py-10 text-gray-400 bg-gray-50 rounded-2xl border-2 border-dashed'>
-            No hay pedidos hoy. ¡A vender!
+            No hay pedidos hoy.
           </div>
         ) : (
-          orders.map(order => (
+          orders.map((order) => (
             <OrderCard key={order.id} order={order} />
           ))
         )}
