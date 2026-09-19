@@ -12,7 +12,7 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  MoreVertical
+  FileText
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -26,7 +26,6 @@ export default function DashboardPage() {
     );
   }
 
-  const isStaff = dbUser?.role === 'OWNER' || dbUser?.role === 'ADMIN' || dbUser?.role === 'SELLER';
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
