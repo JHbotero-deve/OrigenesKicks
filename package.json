@@ -17,7 +17,6 @@
     "@prisma/client": "^6.19.3",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.45.1",
-    "bcrypt": "^6.0.0",
     "clsx": "^2.1.1",
     "dotenv": "^16.4.5",
     "jsonwebtoken": "^9.0.2",

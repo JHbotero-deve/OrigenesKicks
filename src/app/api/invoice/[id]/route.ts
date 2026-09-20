@@ -31,7 +31,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return new NextResponse('Factura no encontrada', { status: 404 });
   }
 
-  const isPrivileged = auth.dbUser.role === 'OWNER' || auth.dbUser.role === 'ADMIN';
+  const isOwner = auth.dbUser.role === 'OWNER';
+  const isAdmin = auth.dbUser.role === 'ADMIN';
+  const sameStore = Boolean(auth.dbUser.workStoreId && factura.pedido.storeId === auth.dbUser.workStoreId);
+  const isPrivileged = isOwner || (isAdmin && sameStore);
   if (!isPrivileged && factura.pedido.clientId !== auth.dbUser.id) {
     return new NextResponse('No autorizado', { status: 403 });
   }

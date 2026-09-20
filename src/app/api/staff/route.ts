@@ -32,6 +32,10 @@ export async function POST(request: Request) {
 
   const { name, email, password, role } = parsed.data;
 
+  if (dbUser.role === 'ADMIN' && role === 'ADMIN') {
+    return NextResponse.json({ error: 'Un ADMIN no puede crear otro ADMIN.' }, { status: 403 });
+  }
+
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     return NextResponse.json({ error: 'Ya existe una cuenta con ese correo' }, { status: 409 });
