@@ -9,6 +9,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/origenes
+      NODE_ENV: production
+
     services:
       postgres:
         image: postgres:16
@@ -47,12 +52,7 @@ jobs:
         run: npm run lint
 
       - name: Prepare database
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/origenes
         run: npx prisma db push
 
       - name: Build project
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/origenes
-          NODE_ENV: production
         run: npm run build
