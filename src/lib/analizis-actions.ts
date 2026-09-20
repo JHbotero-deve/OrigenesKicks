@@ -1,7 +1,6 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
-import bcrypt from "bcrypt";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import prisma from "./db";
 import { revalidatePath } from "next/cache";
 import { requireRole, ROLES_OWNER_ONLY } from "./auth-guard";
@@ -33,7 +32,7 @@ export async function createAnalizisApp(data: CreateAnalizisAppData) {
 
   try {
     const licenseKey = `${businessName.toUpperCase().replace(/[^A-Z0-9]+/g, "-").slice(0, 12)}-${randomUUID().slice(0, 8).toUpperCase()}`;
-    const masterPin = await bcrypt.hash(crypto.randomUUID().replace(/\D/g, "").slice(0, 10), 12);
+    const masterPin = createHash("sha256").update(randomBytes(32)).digest("hex");
 
     const license = await prisma.appLicense.create({
       data: {
