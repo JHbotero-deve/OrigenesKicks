@@ -12,7 +12,7 @@ import {
   Users,
 } from "lucide-react";
 
-const ACTIVE_ORDER_STATUSES = ["CONFIRMADO", "PROCESANDO", "DESPACHADO", "ENTREGADO"] as const;
+const ACTIVE_ORDER_STATUSES = ["CONFIRMADO", "PROCESANDO", "DESPACHADO", "ENTREGADO"];
 
 const money = (value: number) =>
   new Intl.NumberFormat("es-CO", {
@@ -147,9 +147,9 @@ export default async function DashboardPage() {
     }),
   ]);
 
-  const monthlySales = Number(currentMonthSales._sum.totalAmount ?? 0);
-  const previousSales = Number(previousMonthSales._sum.totalAmount ?? 0);
-  const totalStock = Number(stockTotals._sum.stock ?? 0);
+  const monthlySales = Number(currentMonthSales._sum?.totalAmount ?? 0);
+  const previousSales = Number(previousMonthSales._sum?.totalAmount ?? 0);
+  const totalStock = Number(stockTotals._sum?.stock ?? 0);
   const salesChange = percent(monthlySales, previousSales);
   const clientsChange = percent(newClients, previousNewClients);
 
@@ -174,7 +174,7 @@ export default async function DashboardPage() {
     ),
   );
 
-  const chartValues = monthlyAggregates.map((item) => Number(item._sum.totalAmount ?? 0));
+  const chartValues = monthlyAggregates.map((item) => Number(item._sum?.totalAmount ?? 0));
   const maxChartValue = Math.max(...chartValues, 1);
 
   const activities = [
