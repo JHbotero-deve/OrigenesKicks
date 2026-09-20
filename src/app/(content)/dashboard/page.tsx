@@ -1,3 +1,4 @@
+import { PedidoStatus } from "@prisma/client";
 import prisma from "@/lib/db";
 import { getSessionUser } from "@/lib/auth-guard";
 import {
@@ -12,7 +13,12 @@ import {
   Users,
 } from "lucide-react";
 
-const ACTIVE_ORDER_STATUSES = ["CONFIRMADO", "PROCESANDO", "DESPACHADO", "ENTREGADO"];
+const ACTIVE_ORDER_STATUSES: PedidoStatus[] = [
+  PedidoStatus.CONFIRMADO,
+  PedidoStatus.PROCESANDO,
+  PedidoStatus.DESPACHADO,
+  PedidoStatus.ENTREGADO,
+];
 
 const money = (value: number) =>
   new Intl.NumberFormat("es-CO", {
