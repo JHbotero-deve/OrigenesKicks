@@ -6,9 +6,19 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: origenes-kicks-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/origenes
+
     services:
       postgres:
         image: postgres:16
@@ -46,15 +56,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Prepare database
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/origenes
-        run: npx prisma db push
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
 
       - name: Build project
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/origenes
-          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
-          NODE_ENV: production
         run: npm run build

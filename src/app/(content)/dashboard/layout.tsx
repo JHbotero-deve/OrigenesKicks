@@ -11,19 +11,24 @@ export default async function DashboardLayout({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (!user?.email) {
     redirect("/login");
   }
 
   const dbUser = await prisma.user.findUnique({
-    where: { email: user.email }
+    where: { email: user.email },
+    select: { role: true },
   });
 
-  const isStaff = dbUser?.role === 'OWNER' || dbUser?.role === 'ADMIN' || dbUser?.role === 'SELLER';
+  const staffRoles = ["OWNER", "ADMIN", "SELLER", "DELIVERY"];
+
+  if (!dbUser || !staffRoles.includes(dbUser.role)) {
+    redirect("/products");
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {isStaff && <AdminSidebar />}
+      <AdminSidebar />
       <main className="flex-1 overflow-y-auto">
         <div className="p-8 max-w-7xl mx-auto">
           {children}
