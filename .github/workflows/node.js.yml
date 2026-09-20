@@ -6,10 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: origenes-kicks-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
-
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/origenes
 
@@ -50,8 +56,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Prepare database
-        run: npx prisma db push
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
 
       - name: Build project
         run: npm run build
