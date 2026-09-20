@@ -1,6 +1,11 @@
 [build]
-  command = "npx prisma generate && next build"
+  command = "npm run build"
   publish = ".next"
 
 [build.environment]
+
+review/senior-integral
   NODE_VERSION = "22"
+
+  NODE_VERSION = "24"
+
