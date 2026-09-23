@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
@@ -8,7 +8,7 @@ import { Trash2, AlertCircle } from 'lucide-react';
 interface ManualRemovalFormProps {
   variantId: string;
   productName: string;
-  size: string;
+  size: string | null;
   currentStock: number;
   storeId?: string | null;
 }
@@ -154,3 +154,4 @@ export const ManualRemovalForm: React.FC<ManualRemovalFormProps> = ({
     </div>
   );
 };
+

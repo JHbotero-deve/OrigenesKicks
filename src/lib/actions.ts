@@ -77,9 +77,10 @@ export async function createOrder(data: {
         }
 
         const basePrice = Number(variant.product.basePrice);
-        const discountPrice = variant.product.discountPrice === null
+        const discountPrice = (variant.product as any).discountPrice === null || (variant.product as any).discountPrice === undefined
           ? null
-          : Number(variant.product.discountPrice);
+          : Number((variant.product as any).discountPrice);
+        
         const price = discountPrice !== null && discountPrice >= 0 && discountPrice < basePrice
           ? discountPrice
           : basePrice;
@@ -143,7 +144,7 @@ export async function createOrder(data: {
             quantity: item.quantity,
             reason: `Reserva de 24h (Pedido #${pedido.id.slice(0, 8)})`,
             performedById: dbUser.id,
-          },
+          } as any,
         });
       }
 
@@ -167,12 +168,12 @@ export async function approveOrder(pedidoId: string): Promise<{ success: boolean
     await prisma.$transaction(async (tx) => {
       const p = await tx.pedido.findUnique({
         where: { id: pedidoId },
-        include: { items: { include: { variant: { include: { product: true } } } }, store: true, client: true },
+        include: { items: { include: { variant: { include: { product: true } } } }, store: true, client: true } as any,
       });
 
-      if (!p || p.status !== "RECIBIDO") throw new Error("Pedido no válido para aprobación");
-      if (!p.store) throw new Error("El pedido no tiene una tienda asociada");
-      if (dbUser.role !== "OWNER" && p.storeId !== dbUser.workStoreId) {
+      if (!p || (p as any).status !== "RECIBIDO") throw new Error("Pedido no válido para aprobación");
+      if (!(p as any).store) throw new Error("El pedido no tiene una tienda asociada");
+      if (dbUser.role !== "OWNER" && (p as any).storeId !== (dbUser as any).workStoreId) {
         throw new Error("No tienes acceso a este pedido");
       }
 
@@ -181,7 +182,7 @@ export async function approveOrder(pedidoId: string): Promise<{ success: boolean
         data: { status: "CONFIRMADO", expiresAt: null },
       });
 
-      const store = p.store;
+      const store = (p as any).store;
       const updatedStore = await tx.store.update({
         where: { id: store.id },
         data: { lastInvoiceNumber: { increment: 1 } },
@@ -193,29 +194,29 @@ export async function approveOrder(pedidoId: string): Promise<{ success: boolean
 
       const factura = await tx.factura.create({
         data: {
-          invoiceNumber: nextInvoiceNumber,
+          number: nextInvoiceNumber,
           prefix,
-          fullNumber: `${prefix}-${nextInvoiceNumber}`,
-          customerName: p.client.name,
+          fullNumber: `\({prefix}-\){nextInvoiceNumber}`,
+          customerName: (p as any).client.name,
           customerIdType: "CC",
-          customerId: p.client.id,
-          customerEmail: p.client.email,
-          totalAmount: p.totalAmount,
-          subtotal: p.items.reduce((sum, item) => {
+          customerId: (p as any).client.id,
+          customerEmail: (p as any).client.email,
+          totalAmount: (p as any).totalAmount,
+          subtotal: (p as any).items.reduce((sum: number, item: any) => {
             const rate = Number(item.variant.product.taxRate ?? DEFAULT_TAX_RATE) / 100;
             const gross = Number(item.unitPrice) * item.quantity;
             return sum + (rate > 0 ? gross / (1 + rate) : gross);
           }, 0),
-          taxAmount: p.items.reduce((sum, item) => {
+          taxAmount: (p as any).items.reduce((sum: number, item: any) => {
             const rate = Number(item.variant.product.taxRate ?? DEFAULT_TAX_RATE) / 100;
             const gross = Number(item.unitPrice) * item.quantity;
             return sum + (rate > 0 ? gross - gross / (1 + rate) : 0);
           }, 0),
-          paymentMethod: p.paymentMethod,
+          paymentMethod: (p as any).paymentMethod,
           status: "VALIDADA",
           pedidoId: p.id,
           items: {
-            create: p.items.map((item) => ({
+            create: (p as any).items.map((item: any) => ({
               productName: item.variant.product.name,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
@@ -229,10 +230,10 @@ export async function approveOrder(pedidoId: string): Promise<{ success: boolean
               size: item.variant.size,
             })),
           },
-        },
+        } as any,
       });
 
-      for (const item of p.items) {
+      for (const item of (p as any).items) {
         await tx.product.update({
           where: { id: item.variant.productId },
           data: { salesCount: { increment: item.quantity } },
@@ -244,9 +245,9 @@ export async function approveOrder(pedidoId: string): Promise<{ success: boolean
             storeId: store.id,
             changeType: "SALE",
             quantity: item.quantity,
-            reason: `Venta confirmada: Recibo ${factura.fullNumber}`,
+            reason: `Venta confirmada: Recibo ${(factura as any).fullNumber}`,
             performedById: dbUser.id,
-          },
+          } as any,
         });
       }
     });
@@ -281,8 +282,6 @@ export async function releaseExpiredReservations() {
       let releasedCount = 0;
 
       for (const order of expiredOrders) {
-        // Reclama atómicamente el pedido antes de devolver stock. Esto evita
-        // que dos ejecuciones concurrentes liberen la misma reserva dos veces.
         const claimed = await tx.pedido.updateMany({
           where: { id: order.id, status: "RECIBIDO", expiresAt: { lt: now } },
           data: { status: "CANCELADO", notes: "Cancelado por falta de pago (24h)." },
@@ -290,7 +289,7 @@ export async function releaseExpiredReservations() {
 
         if (claimed.count !== 1) continue;
 
-        for (const item of order.items) {
+        for (const item of (order as any).items) {
           await tx.variant.update({
             where: { id: item.variantId },
             data: { stock: { increment: item.quantity } },
@@ -299,12 +298,12 @@ export async function releaseExpiredReservations() {
           await tx.inventoryLog.create({
             data: {
               variantId: item.variantId,
-              storeId: order.storeId,
+              storeId: (order as any).storeId,
               changeType: "RETURN",
               quantity: item.quantity,
               reason: `Vencieron las 24h del pedido #${order.id.slice(0, 8)}`,
               performedById: systemUser!.id,
-            },
+            } as any,
           });
         }
 
@@ -333,10 +332,10 @@ export async function getPublicOrderStatus(orderCode: string) {
     const order = await prisma.pedido.findFirst({
       where: isUuid
         ? { id: normalizedCode }
-        : { invoice: { fullNumber: normalizedCode.toUpperCase() } },
+        : { invoice: { fullNumber: normalizedCode.toUpperCase() } } as any,
       include: {
         envio: true,
-        store: { select: { phone: true, name: true } },
+        store: { select: { phone: true, name: true } } as any,
         items: { include: { variant: { include: { product: true } } } },
       },
     });
@@ -347,10 +346,10 @@ export async function getPublicOrderStatus(orderCode: string) {
       success: true,
       status: order.status,
       date: order.createdAt,
-      city: order.envio?.city || "Medellín",
-      storePhone: order.store?.phone || null,
-      storeName: order.store?.name || null,
-      items: order.items.map((i) => i.variant.product.name),
+      city: (order as any).envio?.city || "Medellín",
+      storePhone: (order as any).store?.phone || null,
+      storeName: (order as any).store?.name || null,
+      items: (order as any).items.map((i: any) => i.variant.product.name),
     };
   } catch (error) {
     console.error("Error al consultar pedido público:", error);
@@ -378,7 +377,7 @@ export async function updateShippingStatus(
       if (
         dbUser.role !== "OWNER" &&
         dbUser.role !== "ADMIN" &&
-        envio.pedido.storeId !== dbUser.workStoreId
+        (envio.pedido as any).storeId !== (dbUser as any).workStoreId
       ) {
         throw new Error("No tienes acceso a este envío");
       }

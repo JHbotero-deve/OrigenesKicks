@@ -1,4 +1,4 @@
-import { ProductList } from "@/features/products/ProductList";
+﻿import { ProductList } from "@/features/products/ProductList";
 import { PromoBanner } from "@/features/products/PromoBanner";
 import { SpecialOffersSection } from "@/features/products/SpecialOffersSection";
 import { StoresShowcase } from "@/components/layout/StoresShowcase";
@@ -12,13 +12,21 @@ export default async function ProductsPage() {
   // Tarea de mantenimiento en segundo plano
   await releaseExpiredReservations();
 
-  const allProducts = await prisma.product.findMany({
-    where: { active: true },
-    include: { variants: {
-      include: { store: true }
-    } },
-    orderBy: { salesCount: 'desc' },
-  });
+const allProducts = await prisma.product.findMany({
+  where: {
+    active: true
+  },
+  include: {
+    variants: { 
+      include: {
+        store: true
+      }
+    }
+  },
+  orderBy: {
+    salesCount: "desc"
+  }
+});
 
   const stores = await prisma.store.findMany({
     where: { active: true }
@@ -66,3 +74,4 @@ export default async function ProductsPage() {
     </div>
   );
 }
+

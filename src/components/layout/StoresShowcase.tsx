@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from 'react';
 import { MapPin, Clock, Phone, Camera } from 'lucide-react';
@@ -6,17 +6,20 @@ import { MapPin, Clock, Phone, Camera } from 'lucide-react';
 interface Store {
   id: string;
   name: string;
-  address: string;
-  city: string;
-  phone: string;
+  address: string | null;
+  city: string | null;
+  phone: string | null;
   imageUrl?: string | null;
 }
 
-interface Props {
-  stores: Store[];
+// después
+interface Store {
+  address: string | null;
+  city: string | null;
+  phone: string | null;
 }
 
-export const StoresShowcase: React.FC<Props> = ({ stores }) => {
+export const StoresShowcase: React.FC<{ stores: Store[] }> = ({ stores }) => {
   return (
     <section className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4">
@@ -81,7 +84,7 @@ export const StoresShowcase: React.FC<Props> = ({ stores }) => {
                   </div>
 
                   <a
-                    href={`https://wa.me/${store.phone.replace(/\D/g, '')}?text=Hola! Quiero visitar la sede ${store.name}, ¿me dan la ubicación exacta?`}
+                    href={`https://wa.me/${store.phone?.replace(/\D/g, '') ?? ''}?text=Hola! Quiero visitar la sede ${store.name}, ¿me dan la ubicación exacta?`}
                     target="_blank"
                     className="w-full bg-black text-white text-center py-4 rounded-2xl font-black uppercase italic text-xs tracking-widest hover:bg-orange-600 transition-colors shadow-lg"
                   >
@@ -96,3 +99,6 @@ export const StoresShowcase: React.FC<Props> = ({ stores }) => {
     </section>
   );
 };
+
+
+

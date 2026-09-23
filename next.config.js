@@ -9,6 +9,7 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  allowedDevOrigins: ['192.168.1.2'],
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

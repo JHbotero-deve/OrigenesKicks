@@ -1,4 +1,4 @@
-import prisma from "@/lib/db";
+﻿import prisma from "@/lib/db";
 import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 
@@ -59,11 +59,11 @@ export default async function AuditLogsPage() {
                   {new Date(log.createdAt).toLocaleString()}
                 </td>
                 <td className="p-4">
-                  <p className="text-xs font-black uppercase italic">{log.performedBy.name}</p>
-                  <p className="text-[9px] text-gray-400">{log.performedBy.email} ({
-                    log.performedBy.role === 'ADMIN' ? 'ADMINISTRADOR' :
-                    log.performedBy.role === 'SELLER' ? 'VENDEDOR' :
-                    log.performedBy.role === 'DELIVERY' ? 'REPARTO' : 'CLIENTE'
+                  <p className="text-xs font-black uppercase italic">{log.performedBy?.name}</p>
+                  <p className="text-[9px] text-gray-400">{log.performedBy?.email} ({
+                    log.performedBy?.role === 'ADMIN' ? 'ADMINISTRADOR' :
+                    log.performedBy?.role === 'SELLER' ? 'VENDEDOR' :
+                    log.performedBy?.role === 'DELIVERY' ? 'REPARTO' : 'CLIENTE'
                   })</p>
                 </td>
                 <td className="p-4">
@@ -99,3 +99,4 @@ export default async function AuditLogsPage() {
     </div>
   );
 }
+
