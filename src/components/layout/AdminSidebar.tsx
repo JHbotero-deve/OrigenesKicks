@@ -20,6 +20,7 @@ export const AdminSidebar = () => {
   const menuItems = [
     { name: 'Resumen Diario', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Pedidos y Ventas', href: '/dashboard/orders', icon: ShoppingBag },
+    { name: 'Productos', href: '/dashboard/products', icon: Package },
     { name: 'Mi Inventario', href: '/dashboard/inventory', icon: Package },
     { name: 'Mis Proveedores', href: '/dashboard/providers', icon: Truck },
     { name: 'Ofertas del Barrio', href: '/dashboard/offers', icon: Percent },
