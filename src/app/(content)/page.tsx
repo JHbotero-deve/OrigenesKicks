@@ -1,19 +1,11 @@
 import Link from "next/link";
 import { ArrowRight, Box } from "lucide-react";
-import prisma from "@/lib/db";
 import { PublicityStand } from "@/components/layout/PublicityStand";
 import { StoresShowcase } from "@/components/layout/StoresShowcase";
 
-export const dynamic = 'force-dynamic';
-
 export default async function HomePage() {
-  const featured = await prisma.product.findMany({
-    where: { active: true },
-    orderBy: { salesCount: 'desc' },
-    take: 3,
-  });
-
-  const stores = await prisma.store.findMany({ where: { active: true } });
+  const featured: never[] = [];
+  const stores: never[] = [];
 
   return (
     <div className="space-y-4 -mx-4 -my-8">
