@@ -40,6 +40,7 @@ export default async function ProductsPage() {
     salesCount: Number(product.salesCount ?? 0),
     active: Boolean(product.active),
     imageUrl: product.imageUrl ?? product.image_url ?? null,
+    model3dUrl: product.model3d_url ?? null,
     variants: variantsByProduct.get(product.id) ?? [],
   }));
   const specialProducts = allProducts.filter((product) => product.isSpecial);
