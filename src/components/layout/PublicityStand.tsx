@@ -42,8 +42,8 @@ export const PublicityStand = () => {
             <div className="relative group">
               <div className="absolute inset-0 bg-black rounded-3xl blur-2xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
               <img
-                src="https://images.unsplash.com/photo-1549298916-b41d501d3772?q=80&w=2012&auto=format&fit=crop"
-                className="rounded-3xl border-4 border-black relative z-10 transform group-hover:-rotate-2 transition-transform duration-500"
+                src="/kicks-banner.svg"
+                className="w-full aspect-video object-cover rounded-3xl border-4 border-black relative z-10 transform group-hover:-rotate-2 transition-transform duration-500"
                 alt="Producción Nacional"
               />
               <div className="absolute -bottom-6 -right-6 bg-yellow-400 border-4 border-black p-6 rounded-3xl z-20 shadow-xl hidden md:block">
