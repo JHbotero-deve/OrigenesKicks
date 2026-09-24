@@ -74,7 +74,7 @@ export const CartDrawer: React.FC = () => {
       {isOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-black/50" onClick={() => setIsOpen(false)} />
-          <div className="relative w-full max-w-md bg-white h-full shadow-xl p-6 flex flex-col">
+          <div className="relative w-full max-w-md bg-white h-full max-h-dvh shadow-xl p-4 sm:p-6 flex flex-col overflow-hidden">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold">Tu Carrito</h2>
               <button onClick={() => setIsOpen(false)}><X /></button>
@@ -107,9 +107,9 @@ export const CartDrawer: React.FC = () => {
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
                   >
-                    <option value="TRANSFERENCIA">💳 Transferencia (Nequi/Daviplata)</option>
-                    <option value="CONTRA_ENTREGA_MEDELLIN">🚀 Pago Contra-entrega Medellín (100% SEGURO)</option>
-                    <option value="EFECTIVO">🏠 Pago en Tienda Física</option>
+                    <option value="TRANSFERENCIA">Transferencia (Nequi/Daviplata)</option>
+                    <option value="CONTRA_ENTREGA_MEDELLIN">Pago Contra-entrega Medellín</option>
+                    <option value="EFECTIVO">Pago en Tienda Física</option>
                   </select>
                 </div>
 
