@@ -49,16 +49,16 @@ export const Navbar: React.FC = () => {
       </div>
 
       <nav className="bg-white border-b border-gray-100 py-3">
-        <div className="max-w-[1600px] mx-auto px-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 shrink-0 group">
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-2">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 shrink-0 group min-w-0">
             <div className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center font-black text-xl italic border-2 border-black group-hover:bg-orange-600 transition-colors">
               OK
             </div>
             <div className="flex flex-col">
-              <h1 className="text-xl font-black italic tracking-tighter leading-none">
+              <h1 className="text-base sm:text-xl font-black italic tracking-tighter leading-none">
                 ORÍGENES<span className="text-orange-600">KICKS</span>
               </h1>
-              <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest leading-none mt-1">
+              <p className="hidden sm:block text-[8px] font-bold text-gray-400 uppercase tracking-widest leading-none mt-1">
                 MEDELLÍN • SKATE & STREETWEAR
               </p>
             </div>
@@ -94,9 +94,9 @@ export const Navbar: React.FC = () => {
             </div>
 
             <Link href="/dashboard">
-              <button className="flex items-center gap-2 bg-gray-50 border border-gray-100 px-5 py-2.5 rounded-2xl hover:bg-orange-50 hover:border-orange-200 transition-all group">
+              <button className="flex items-center gap-2 bg-gray-50 border border-gray-100 px-3 sm:px-5 py-2.5 rounded-2xl hover:bg-orange-50 hover:border-orange-200 transition-all group">
                 <User size={18} className="text-orange-600 group-hover:scale-110 transition-transform" />
-                <span className="text-[11px] font-black uppercase italic text-gray-800">Panel</span>
+                <span className="hidden sm:inline text-[11px] font-black uppercase italic text-gray-800">Panel</span>
               </button>
             </Link>
           </div>
