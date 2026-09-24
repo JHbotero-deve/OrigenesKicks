@@ -1,19 +1,10 @@
 import { createBrowserClient } from "@supabase/ssr";
 
-function getConfig() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    throw new Error("Faltan NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en el entorno de ejecución.");
-  }
-
-  return { url, anonKey };
-}
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://sywrurccihbunpxljcud.supabase.co";
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_fQndGPPr7bq65EBL8N_eUg_qIza7jSX";
 
 export function getSupabaseClient() {
-  const { url, anonKey } = getConfig();
-  return createBrowserClient(url, anonKey);
+  return createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
 export const supabase = {
