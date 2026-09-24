@@ -3,19 +3,23 @@ import { PromoBanner } from "@/features/products/PromoBanner";
 import { SpecialOffersSection } from "@/features/products/SpecialOffersSection";
 import { StoresShowcase } from "@/components/layout/StoresShowcase";
 import { PublicityStand } from "@/components/layout/PublicityStand";
-import { createClient } from "@/lib/supabase-server";
+import { createAdminClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
 type Product = Record<string, any>;
 
 export default async function ProductsPage() {
-  const supabase = await createClient();
-  const [{ data: products }, { data: variants }, { data: stores }] = await Promise.all([
+  const supabase = createAdminClient();
+  const [{ data: products, error: productsError }, { data: variants, error: variantsError }, { data: stores, error: storesError }] = await Promise.all([
     supabase.from("products").select("*").eq("active", true).order("salesCount", { ascending: false }),
     supabase.from("product_variants").select("*").eq("active", true),
     supabase.from("stores").select("*").eq("active", true),
   ]);
+
+  if (productsError) throw new Error(`No se pudieron cargar los productos: ${productsError.message}`);
+  if (variantsError) throw new Error(`No se pudieron cargar las variantes: ${variantsError.message}`);
+  if (storesError) throw new Error(`No se pudieron cargar las tiendas: ${storesError.message}`);
 
   const storeMap = new Map((stores ?? []).map((store) => [store.id, store]));
   const variantsByProduct = new Map<string, Product[]>();
