@@ -24,7 +24,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
           const variants = product.variants ?? [];
 
           return (
-            <div key={product.id} className="group bg-white border-2 border-gray-100 rounded-[2.5rem] p-4 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden flex flex-col h-full">
+            <div key={product.id} className="group bg-[#f1eee7] border-2 border-[#d8d2c7] rounded-[2.5rem] p-4 shadow-sm hover:shadow-2xl hover:border-orange-300 transition-all duration-500 relative overflow-hidden flex flex-col h-full">
               {product.salesCount > 10 && (
                 <div className="absolute top-4 right-[-35px] bg-black text-white text-[8px] font-black py-1 px-10 transform rotate-45 z-10 uppercase tracking-widest italic shadow-lg">
                   Los Más Pedidos
@@ -32,7 +32,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
               )}
 
               <Link href={productPath} className="block group/link flex-1">
-                <div className="relative aspect-square overflow-hidden rounded-[2rem] bg-gray-50 mb-6">
+                <div className="relative aspect-square overflow-hidden rounded-[2rem] bg-[#e5e0d7] mb-6">
                   <img
                     src={product.imageUrl || "/placeholder-shoe.svg"}
                     alt={product.name}
@@ -44,7 +44,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                   />
 
                   <div className="absolute inset-0 bg-black/0 group-hover/link:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover/link:opacity-100">
-                    <div className="bg-white text-black px-6 py-3 rounded-full font-black uppercase italic text-[10px] shadow-2xl border-2 border-black flex items-center gap-2 transform -rotate-2">
+                    <div className="bg-[#f8f6f1] text-black px-6 py-3 rounded-full font-black uppercase italic text-[10px] shadow-2xl border-2 border-black flex items-center gap-2 transform -rotate-2">
                       <Eye size={14} /> Ver en Detalle
                     </div>
                   </div>
@@ -87,7 +87,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                   <Rotate3d size={20} />
                 </button>
 
-              <div className="space-y-3 mt-4 pt-4 border-t border-gray-100">
+              <div className="space-y-3 mt-4 pt-4 border-t border-[#d3cdc2]">
                 <div className="flex justify-between items-center">
                   <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">
                     Tallas Nacionales
@@ -114,7 +114,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                           image: product.imageUrl
                         });
                       }}
-                      className="bg-gray-50 hover:bg-black hover:text-white transition-all px-3 py-2 rounded-xl text-[10px] font-black italic border border-gray-100 flex-1 min-w-[50px] flex flex-col items-center leading-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-gray-50 disabled:hover:text-black"
+                      className="bg-[#e7e2d9] hover:bg-black hover:text-white transition-all px-3 py-2 rounded-xl text-[10px] font-black italic border border-[#d3cdc2] flex-1 min-w-[50px] flex flex-col items-center leading-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#e7e2d9] disabled:hover:text-black"
                       type="button"
                     >
                       <span>{variant.stock > 0 ? variant.size : 'Agotado'}</span>
@@ -138,7 +138,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
 
       {quickViewProduct && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl relative border-2 border-orange-500">
+          <div className="bg-[#f1eee7] w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl relative border-2 border-orange-500">
             <button
               onClick={() => setQuickViewProduct(null)}
               className="absolute top-6 right-6 z-50 bg-black text-white p-3 rounded-full hover:bg-orange-600 transition-all shadow-xl"
@@ -149,14 +149,14 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
             </button>
 
             <div className="grid grid-cols-1 md:grid-cols-2">
-              <div className="h-[320px] sm:h-[440px] md:h-[600px] bg-gray-50 border-r border-gray-100">
+              <div className="h-[320px] sm:h-[440px] md:h-[600px] bg-[#e5e0d7] border-r border-[#d3cdc2]">
                 <Product3DViewer
                   modelUrl={quickViewProduct.model3dUrl}
                   posterUrl={quickViewProduct.imageUrl}
                   productName={quickViewProduct.name}
                 />
               </div>
-              <div className="p-5 sm:p-8 md:p-5 sm:p-8 md:p-10 flex flex-col justify-center min-w-0 min-w-0 bg-white">
+              <div className="p-5 sm:p-8 md:p-5 sm:p-8 md:p-10 flex flex-col justify-center min-w-0 bg-[#f1eee7]">
                 <span className="bg-orange-100 text-orange-800 text-[9px] font-black px-3 py-1 rounded-full uppercase italic mb-4 inline-block w-fit">
                   Fábrica Nacional
                 </span>
