@@ -88,7 +88,6 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
                 modelUrl={product.model3dUrl}
                 posterUrl={product.imageUrl ?? undefined}
                 productName={product.name}
-                color={selectedVariant?.color}
               />
             ) : (
               <div className="h-[360px] sm:h-[500px] lg:h-[700px] flex items-center justify-center p-12">
