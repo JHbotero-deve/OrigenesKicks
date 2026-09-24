@@ -3,6 +3,7 @@
 import prisma from "./db";
 import { revalidatePath } from "next/cache";
 import { requireAuthenticatedUser, requireRole, ROLES_APPROVE_ORDERS, ROLES_DISPATCH } from "./auth-guard";
+import { sendOrderEmail } from "./mail";
 
 const DEFAULT_TAX_RATE = 19;
 const MAX_SHIPPING_FIELD_LENGTH = 200;
@@ -150,6 +151,32 @@ export async function createOrder(data: {
 
       return { success: true, pedidoId: pedido.id };
     });
+
+    if (result.success && result.pedidoId) {
+      const emailItems = await prisma.pedidoItem.findMany({
+        where: { pedidoId: result.pedidoId },
+        include: { variant: { include: { product: true } } },
+      });
+      const createdOrder = await prisma.pedido.findUnique({
+        where: { id: result.pedidoId },
+        select: { totalAmount: true },
+      });
+      const mailResult = await sendOrderEmail(
+        dbUser.email,
+        result.pedidoId,
+        Number(createdOrder?.totalAmount ?? 0),
+        emailItems.map((item) => ({
+          name: item.variant.product.name,
+          size: item.variant.size ?? "-",
+          color: item.variant.color ?? "-",
+          quantity: item.quantity,
+          price: Number(item.unitPrice),
+        })),
+      );
+      if (!mailResult.success) {
+        console.warn("Pedido creado; no se pudo enviar la constancia por correo:", mailResult.error);
+      }
+    }
 
     revalidatePath("/products");
     revalidatePath("/dashboard/orders");

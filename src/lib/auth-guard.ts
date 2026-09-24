@@ -19,9 +19,21 @@ export async function getSessionUser() {
     return { authUser: null, dbUser: null };
   }
 
-  const dbUser = await prisma.user.findUnique({
+  let dbUser = await prisma.user.findUnique({
     where: { email: authUser.email },
   });
+
+  if (!dbUser) {
+    dbUser = await prisma.user.create({
+      data: {
+        id: authUser.id,
+        email: authUser.email,
+        name: String(authUser.user_metadata?.name || authUser.email.split("@")[0]).slice(0, 100),
+        password: "",
+        role: "CLIENT",
+      },
+    });
+  }
 
   return { authUser, dbUser };
 }

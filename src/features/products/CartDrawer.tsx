@@ -46,7 +46,7 @@ export const CartDrawer: React.FC = () => {
     });
 
     if (res.success) {
-      alert(`¡Pedido reservado, parcero! Te enviamos la constancia al correo. Tienes 24 horas para confirmar el pago y que no te quiten los Kicks.`);
+      alert(`¡Pedido reservado! Tienes 24 horas para confirmar el pago. Revisa el estado de tu pedido desde tu cuenta.`);
       clearCart();
       setIsOpen(false);
       setAddress('');

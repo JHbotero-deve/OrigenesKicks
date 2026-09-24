@@ -5,16 +5,17 @@ import { ProductDetailView } from "@/features/products/ProductDetailView";
 
 export const dynamic = 'force-dynamic';
 
-export default async function ProductDetailPage({ params }: { params: { id: string } }) {
+export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const product = await prisma.product.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { variants: true }
   });
 
   if (!product) {
     // Intentar buscar por slug si no se encuentra por ID
     const productBySlug = await prisma.product.findUnique({
-      where: { slug: params.id },
+      where: { slug: id },
       include: { variants: true }
     });
 
