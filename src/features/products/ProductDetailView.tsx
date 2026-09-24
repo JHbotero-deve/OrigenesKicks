@@ -72,7 +72,7 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
             {view3d && product.model3dUrl ? (
               <Product3DViewer modelUrl={product.model3dUrl} posterUrl={product.imageUrl ?? undefined} />
             ) : (
-              <div className="h-[600px] lg:h-[700px] flex items-center justify-center p-12">
+              <div className="h-[360px] sm:h-[500px] lg:h-[700px] flex items-center justify-center p-12">
                 <img
                   src={product.imageUrl || "/placeholder-shoe.png"}
                   alt={product.name}
