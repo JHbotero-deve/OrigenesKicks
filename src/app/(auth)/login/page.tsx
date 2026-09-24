@@ -24,6 +24,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     let active = true;
+    const queryError = new URLSearchParams(window.location.search).get("error");
+    if (queryError === "session" || queryError === "required") setError("Tu sesión no está disponible. Inicia sesión para continuar.");
+    if (queryError === "system" || queryError === "dashboard") setError("La sesión es válida, pero no pudimos abrir la información de la tienda. Inténtalo de nuevo.");
     supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
       if (data.session?.user) {
