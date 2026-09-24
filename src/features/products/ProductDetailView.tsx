@@ -47,7 +47,7 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
   const salePrice = hasValidDiscount && discountPrice !== null ? discountPrice : basePrice;
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(variants[0] ?? null);
-  const [view3d, setView3d] = useState(Boolean(product.model3dUrl));
+  const [view3d, setView3d] = useState(false);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
 
   const handleWhatsApp = () => {
@@ -69,8 +69,12 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
       <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-16">
         <div className="relative">
           <div className="w-full rounded-[3rem] overflow-hidden bg-white shadow-sm border border-gray-100 transition-all duration-500">
-            {view3d && product.model3dUrl ? (
-              <Product3DViewer modelUrl={product.model3dUrl} posterUrl={product.imageUrl ?? undefined} />
+            {view3d ? (
+              <Product3DViewer
+                modelUrl={product.model3dUrl}
+                posterUrl={product.imageUrl ?? undefined}
+                productName={product.name}
+              />
             ) : (
               <div className="h-[360px] sm:h-[500px] lg:h-[700px] flex items-center justify-center p-12">
                 <img
@@ -81,8 +85,7 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
               </div>
             )}
 
-            {product.model3dUrl && (
-              <button
+            <button
                 type="button"
                 aria-label={view3d ? "Ver fotografía del producto" : "Activar visor 3D"}
                 onClick={() => setView3d(!view3d)}
@@ -90,7 +93,6 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
               >
                 {view3d ? "Ver Foto Real" : "Activar Visor 3D"}
               </button>
-            )}
           </div>
         </div>
 
