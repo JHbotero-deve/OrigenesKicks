@@ -32,7 +32,15 @@ export default async function ProductsPage() {
   }
 
   const allProducts = (products ?? []).map((product) => ({
-    ...product,
+    id: product.id,
+    name: product.name,
+    description: product.description ?? null,
+    basePrice: Number(product.basePrice ?? product.price ?? 0),
+    discountPrice: product.discountPrice == null ? null : Number(product.discountPrice),
+    isSpecial: Boolean(product.isSpecial),
+    salesCount: Number(product.salesCount ?? 0),
+    active: Boolean(product.active),
+    imageUrl: product.imageUrl ?? product.image_url ?? null,
     variants: variantsByProduct.get(product.id) ?? [],
   }));
   const specialProducts = allProducts.filter((product) => product.isSpecial);
@@ -63,7 +71,7 @@ export default async function ProductsPage() {
       <PublicityStand />
       <StoresShowcase stores={stores ?? []} />
       <div className="text-center py-10 opacity-60">
-        <p className="text-[10px] font-black uppercase tracking-[1em] text-gray-400">Orígenes Kicks 2026</p>
+        <p className="text-[10px] font-black uppercase tracking-[1em] text-gray-600">Orígenes Kicks 2026</p>
       </div>
     </div>
   );
