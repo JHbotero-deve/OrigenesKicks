@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { PublicImage } from "@/components/ui/PublicImage";
 
 interface Props {
   modelUrl?: string | null;
@@ -28,11 +29,7 @@ export const Product3DViewer: React.FC<Props> = ({
             Este producto todavía no tiene un modelo 3D real asociado.
           </p>
           {posterUrl && (
-            <img
-              src={posterUrl}
-              alt={productName || "Producto"}
-              className="mx-auto mt-5 h-40 w-40 object-contain"
-            />
+            <PublicImage src={posterUrl} alt={productName || "Producto"} width={160} height={160} className="mx-auto mt-5 h-40 w-40 object-contain" sizes="160px" />
           )}
         </div>
       </div>
@@ -43,11 +40,7 @@ export const Product3DViewer: React.FC<Props> = ({
     return (
       <div className={`relative flex min-h-[320px] w-full items-center justify-center overflow-hidden rounded-3xl bg-[#f7f7f7] p-8 ${className}`}>
         {posterUrl && (
-          <img
-            src={posterUrl}
-            alt={productName || "Producto"}
-            className="h-full max-h-[520px] w-full object-contain"
-          />
+          <PublicImage src={posterUrl} alt={productName || "Producto"} width={1000} height={520} className="h-full max-h-[520px] w-full object-contain" sizes="(max-width: 768px) 100vw, 1000px" />
         )}
         <div className="absolute inset-x-4 bottom-4 rounded-2xl bg-white/95 p-3 text-center shadow-lg backdrop-blur">
           <p className="text-[10px] font-black uppercase tracking-widest text-red-700">
