@@ -102,7 +102,7 @@ export const CartDrawer: React.FC = () => {
               </section>
 
               {items.length > 0 && <section className="space-y-5 px-5 py-5 sm:px-6">
-                {user ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4"><p className="mb-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Cliente autenticado</p><p className="text-sm font-black text-gray-900">{dbUser.name || "Cliente"}</p><p className="text-xs text-gray-500">{user.email}</p></div> : <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-bold text-orange-900">Inicia sesión para continuar con la compra y asociar el pedido a tu cuenta.</div>}
+                {user && dbUser ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4"><p className="mb-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Cliente autenticado</p><p className="text-sm font-black text-gray-900">{dbUser.name || "Cliente"}</p><p className="text-xs text-gray-500">{user.email}</p></div> : <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-bold text-orange-900">Inicia sesión para continuar con la compra y asociar el pedido a tu cuenta.</div>}
 
                 <div>
                   <div className="mb-3 flex items-center gap-2"><Truck size={17} className="text-orange-600" /><h3 className="text-sm font-black uppercase italic">Datos de entrega</h3></div>
