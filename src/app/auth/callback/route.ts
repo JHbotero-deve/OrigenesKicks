@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase-server";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
+  const requestedNext = url.searchParams.get("next");
+  const next = requestedNext === "/reset-password" ? requestedNext : "/auth/redirect";
 
   if (!code) return NextResponse.redirect(new URL("/login?error=confirmation", url.origin));
 
@@ -12,7 +14,7 @@ export async function GET(request: Request) {
 
   if (error) return NextResponse.redirect(new URL("/login?error=confirmation", url.origin));
 
-  const response = NextResponse.redirect(new URL("/auth/redirect", url.origin));
+  const response = NextResponse.redirect(new URL(next, url.origin));
   response.headers.set("Cache-Control", "private, no-store");
   return response;
 }
