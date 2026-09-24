@@ -4,6 +4,7 @@ import prisma from "./db";
 import { revalidatePath } from "next/cache";
 import { requireAuthenticatedUser, requireRole, ROLES_APPROVE_ORDERS, ROLES_DISPATCH } from "./auth-guard";
 import { sendOrderEmail } from "./mail";
+import crypto from "node:crypto";
 
 const DEFAULT_TAX_RATE = 19;
 const MAX_SHIPPING_FIELD_LENGTH = 200;
@@ -33,7 +34,7 @@ export async function createOrder(data: {
     if (!Array.isArray(data.items) || data.items.length === 0) {
       return { success: false, error: "El pedido no contiene productos" };
     }
-    const allowedPaymentMethods = ["TRANSFERENCIA", "CONTRA_ENTREGA_MEDELLIN", "EFECTIVO"];
+    const allowedPaymentMethods = ["WOMPI", "TRANSFERENCIA", "CONTRA_ENTREGA_MEDELLIN", "EFECTIVO"];
     if (!allowedPaymentMethods.includes(data.paymentMethod)) {
       return { success: false, error: "Método de pago no válido" };
     }
@@ -61,6 +62,8 @@ export async function createOrder(data: {
         return { success: false, error: "Datos de envío inválidos" };
       }
     }
+
+    const paymentReference = data.paymentMethod === "WOMPI" ? `OK-${crypto.randomUUID()}` : null;
 
     const result = await prisma.$transaction(async (tx) => {
       let calculatedTotal = 0;
@@ -117,6 +120,9 @@ export async function createOrder(data: {
           storeId: assignedStoreId,
           totalAmount: calculatedTotal,
           paymentMethod: data.paymentMethod,
+          paymentProvider: data.paymentMethod === "WOMPI" ? "WOMPI" : null,
+          paymentReference,
+          paymentStatus: data.paymentMethod === "WOMPI" ? "PENDING" : "PENDING",
           status: "RECIBIDO",
           expiresAt,
           notes: data.notes?.trim() || null,
@@ -300,7 +306,7 @@ export async function releaseExpiredReservations() {
   try {
     return await prisma.$transaction(async (tx) => {
       const expiredOrders = await tx.pedido.findMany({
-        where: { status: "RECIBIDO", expiresAt: { lt: now } },
+        where: { status: "RECIBIDO", expiresAt: { lt: now }, NOT: { paymentStatus: "APPROVED" } },
         include: { items: true },
       });
 
@@ -316,7 +322,7 @@ export async function releaseExpiredReservations() {
 
       for (const order of expiredOrders) {
         const claimed = await tx.pedido.updateMany({
-          where: { id: order.id, status: "RECIBIDO", expiresAt: { lt: now } },
+          where: { id: order.id, status: "RECIBIDO", expiresAt: { lt: now }, NOT: { paymentStatus: "APPROVED" } },
           data: { status: "CANCELADO", notes: "Cancelado por falta de pago (24h)." },
         });
 
