@@ -10,6 +10,7 @@ export function PublicImage(props: Props) {
   return (
     <Image
       {...props}
+      alt={props.alt ?? ""}
       loader={({ src }) => src}
       unoptimized
     />
