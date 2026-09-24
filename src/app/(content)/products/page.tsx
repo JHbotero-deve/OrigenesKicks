@@ -44,6 +44,9 @@ export default async function ProductsPage() {
         <div className="mb-10 text-center">
           <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-2">Vitrina Principal de Kicks</h1>
           <p className="text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">Horma Nacional • Calidad de Exportación • Reserva por 24h</p>
+          <a href="/products/3d-demo" className="mt-5 inline-flex rounded-full bg-black px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-orange-600">
+            Probar exhibición 3D
+          </a>
         </div>
         {regularProducts.length === 0 ? (
           <div className="text-center py-20 border-2 border-dashed border-gray-200 rounded-3xl">
