@@ -57,6 +57,7 @@ model Product {
   active        Boolean   @default(true)
   salesCount    Int       @default(0)
   imageUrl      String?
+  model3dUrl    String?   @map("model3d_url")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
