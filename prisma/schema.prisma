@@ -114,6 +114,10 @@ model Pedido {
   status        PedidoStatus @default(RECIBIDO)
   totalAmount   Float        @default(0)
   paymentMethod String?
+  paymentProvider String?
+  paymentReference String? @unique
+  paymentTransactionId String?
+  paymentStatus String? @default("PENDING")
   notes         String?
   expiresAt     DateTime?
   createdAt     DateTime     @default(now())
