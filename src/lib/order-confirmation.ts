@@ -25,7 +25,12 @@ export async function confirmOrderAsSale(
 
   if (order.status !== "RECIBIDO") {
     if (order.factura) {
-      return {\n        success: true,\n        invoiceId: order.factura.id,\n        fullNumber: order.factura.fullNumber,\n        alreadyConfirmed: true,\n      };
+      return {
+        success: true,
+        invoiceId: order.factura.id,
+        fullNumber: order.factura.fullNumber,
+        alreadyConfirmed: true,
+      };
     }
     throw new Error("El pedido ya no está pendiente de confirmación.");
   }
