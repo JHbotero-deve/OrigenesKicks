@@ -19,27 +19,27 @@ export default function RegisterPage() {
     setError(null);
     setLoading(true);
 
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name },
+      },
     });
-    const data = await res.json();
 
-    if (!res.ok) {
-      setError(data.error || 'No se pudo completar el registro');
+    if (signUpError) {
+      setError(signUpError.message || 'No se pudo crear la cuenta');
       setLoading(false);
       return;
     }
 
-    // La cuenta ya quedó creada y confirmada en el servidor;
-    // ahora iniciamos sesión normalmente con las mismas credenciales.
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-    if (signInError) {
-      router.push('/login');
+    if (data.session) {
+      router.push('/products');
       return;
     }
-    router.push('/products');
+
+    setError('Cuenta creada. Revisa tu correo para confirmar la cuenta antes de ingresar.');
+    setLoading(false);
   };
 
   return (
