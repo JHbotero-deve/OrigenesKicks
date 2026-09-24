@@ -64,7 +64,7 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Tu nombre"
-                className="w-full pl-12 p-4 bg-gray-500 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
+                className="w-full pl-12 p-4 bg-gray-50 text-gray-900 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
                 required
               />
             </div>
@@ -79,7 +79,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ejemplo@correo.com"
-                className="w-full pl-12 p-4 bg-gray-500 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
+                className="w-full pl-12 p-4 bg-gray-50 text-gray-900 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
                 required
                 autoComplete="email"
               />
@@ -89,13 +89,13 @@ export default function RegisterPage() {
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase text-gray-700 ml-2">Contraseña</label>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700" size={18} />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Mínimo 8 caracteres"
-                className="w-full pl-12 p-4 bg-gray-500 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
+                className="w-full pl-12 p-4 bg-gray-50 text-gray-900 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
                 required
                 minLength={8}
                 autoComplete="new-password"
