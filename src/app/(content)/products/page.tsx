@@ -44,14 +44,14 @@ export default async function ProductsPage() {
       <div className="px-4 max-w-[1600px] mx-auto">
         <div className="mb-10 text-center">
           <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-2">Vitrina Principal de Kicks</h1>
-          <p className="text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">Horma Nacional • Calidad de Exportación • Reserva por 24h</p>
+          <p className="text-gray-700 text-xs font-bold uppercase tracking-[0.2em]">Horma Nacional • Calidad de Exportación • Reserva por 24h</p>
           <Link href="/products/3d-demo" className="mt-5 inline-flex rounded-full bg-black px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-orange-600">
             Probar exhibición 3D
           </Link>
         </div>
         {regularProducts.length === 0 ? (
           <div className="text-center py-20 border-2 border-dashed border-gray-200 rounded-3xl">
-            <p className="text-gray-400 font-black uppercase italic tracking-widest text-sm">Surtiendo la bodega... ¡Vuelve pronto!</p>
+            <p className="text-gray-600 font-black uppercase italic tracking-widest text-sm">Surtiendo la bodega... ¡Vuelve pronto!</p>
           </div>
         ) : (
           <ProductList products={regularProducts as any} />
@@ -62,7 +62,7 @@ export default async function ProductsPage() {
       </div>
       <PublicityStand />
       <StoresShowcase stores={stores ?? []} />
-      <div className="text-center py-10 opacity-30">
+      <div className="text-center py-10 opacity-60">
         <p className="text-[10px] font-black uppercase tracking-[1em] text-gray-400">Orígenes Kicks 2026</p>
       </div>
     </div>
