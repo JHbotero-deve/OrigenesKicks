@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 700" role="img" aria-labelledby="t d">
+<title id="t">Orígenes Kicks</title><desc id="d">Gráfico promocional de Orígenes Kicks</desc>
+<defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#111827"/><stop offset="1" stop-color="#f97316"/></linearGradient></defs>
+<rect width="1600" height="700" fill="url(#g)"/>
+<circle cx="1320" cy="80" r="300" fill="#fff" opacity=".06"/><circle cx="1450" cy="650" r="420" fill="#000" opacity=".16"/>
+<g transform="translate(820 120) rotate(-8)">
+<path d="M40 300c190-45 260-180 390-250 70-38 155-44 220 5 57 43 72 105 133 154 57 45 133 69 210 113l-28 85H55z" fill="#fff"/>
+<path d="M65 407h910v70H65z" fill="#111827"/><path d="M160 352h520v30H160z" fill="#f97316"/>
+</g>
+<text x="80" y="120" font-family="Arial,sans-serif" font-size="74" font-weight="900" fill="#fff">ORÍGENES KICKS</text>
+<text x="82" y="185" font-family="Arial,sans-serif" font-size="30" font-weight="700" fill="#fff" opacity=".86">CALZADO DEL BARRIO • MEDELLÍN</text>
+</svg>
