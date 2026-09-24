@@ -47,7 +47,7 @@ export const CartDrawer: React.FC = () => {
     const finalName = (dbUser?.name || customerName || "Cliente Orígenes Kicks").trim();
     const finalEmail = (user?.email || customerEmail).trim().toLowerCase();
     if (!finalName) return setError("Completa el nombre del cliente.");
-    if (!finalEmail || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(finalEmail)) return setError("Ingresa un correo válido.");
+    if (!finalEmail || !/^\S+@\S+\.\S+$/.test(finalEmail)) return setError("Ingresa un correo válido.");
     if (items.length === 0) return setError("El carrito está vacío.");
     if (requiresDelivery && (!address.trim() || !phone.trim() || !city.trim())) return setError("Completa ciudad, dirección y teléfono para coordinar la entrega.");
     if (!/^\+?[0-9\s()-]{7,20}$/.test(phone.trim())) return setError("Ingresa un número de teléfono válido.");
