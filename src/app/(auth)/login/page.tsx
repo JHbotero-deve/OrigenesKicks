@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -15,6 +16,9 @@ function loginErrorMessage(message: string) {
 }
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const queryError = searchParams.get("error");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -24,9 +28,6 @@ export default function LoginPage() {
 
   useEffect(() => {
     let active = true;
-    const queryError = new URLSearchParams(window.location.search).get("error");
-    if (queryError === "session" || queryError === "required") setError("Tu sesión no está disponible. Inicia sesión para continuar.");
-    if (queryError === "system" || queryError === "dashboard") setError("La sesión es válida, pero no pudimos abrir la información de la tienda. Inténtalo de nuevo.");
     supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
       if (data.session?.user) {
@@ -115,7 +116,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {error && <p role="alert" className="text-red-700 text-[11px] bg-red-50 border border-red-200 rounded-xl py-3 px-3 font-bold text-center">{error}</p>}
+          {(error || queryError === "session" || queryError === "required" || queryError === "system" || queryError === "dashboard") && <p role="alert" className="text-red-700 text-[11px] bg-red-50 border border-red-200 rounded-xl py-3 px-3 font-bold text-center">{error || (queryError === "session" || queryError === "required" ? "Tu sesión no está disponible. Inicia sesión para continuar." : "La sesión es válida, pero no pudimos abrir la información de la tienda. Inténtalo de nuevo.")}</p>}
 
           <div className="text-right">
             <Link href="/forgot-password" className="text-xs font-bold text-orange-600 hover:text-orange-700 hover:underline">¿Olvidaste tu contraseña?</Link>
