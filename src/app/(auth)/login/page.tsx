@@ -34,29 +34,29 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] flex flex-col items-center justify-center p-4 font-sans">
-      <div className="w-full max-w-[420px] bg-white rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-10 border border-gray-100">
+    <div className="min-h-screen bg-[#e5e0d7] flex flex-col items-center justify-center p-4 font-sans">
+      <div className="w-full max-w-[420px] bg-[#f1eee7] rounded-[3rem] shadow-[0_24px_60px_rgba(0,0,0,0.16)] p-8 sm:p-10 border-2 border-[#d8d2c7]">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-black italic uppercase tracking-tighter">
             Orígenes <span className="text-orange-600">Kicks</span>
           </h1>
-          <p className="text-gray-900 text-[10px] font-bold uppercase tracking-widest mt-2">
+          <p className="text-black text-[10px] font-bold uppercase tracking-widest mt-2">
             Acceso seguro
           </p>
-          <p className="mt-2 text-[10px] font-medium text-gray-500">Administrador, vendedor, repartidor y cliente ingresan con sus credenciales. El rol se asigna desde el sistema.</p>
+          <p className="mt-2 text-[10px] font-medium text-gray-700">Administrador, vendedor, repartidor y cliente ingresan con sus credenciales. El rol se asigna desde el sistema.</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase text-gray-900 ml-2">Correo</label>
+            <label className="text-[10px] font-black uppercase text-black ml-2">Correo</label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700" size={18} />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18} />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ejemplo@correo.com"
-                className="w-full pl-12 p-4 bg-gray-50 text-gray-900 placeholder:text-gray-400 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
+                className="w-full pl-12 p-4 bg-[#e7e2d9] text-black placeholder:text-gray-500 rounded-2xl border-2 border-[#d3cdc2] focus:border-orange-600 outline-none transition-all font-bold text-sm"
                 required
                 autoComplete="email"
               />
@@ -64,7 +64,7 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase text-gray-700 ml-2">Contraseña</label>
+            <label className="text-[10px] font-black uppercase text-black ml-2">Contraseña</label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700" size={18} />
               <input
@@ -87,7 +87,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p className="text-red-600 text-[11px] font-bold uppercase text-center">{error}</p>
+            <p className="text-red-700 text-[11px] bg-red-50 border border-red-200 rounded-xl py-2 px-3 font-bold uppercase text-center">{error}</p>
           )}
 
           <div className="text-right">
@@ -99,7 +99,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white p-5 rounded-2xl font-black uppercase italic hover:bg-gray-800 transition-colors shadow-xl mt-4 flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full bg-black text-white p-5 rounded-2xl font-black uppercase italic hover:bg-orange-600 transition-colors shadow-xl mt-4 flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {loading ? 'Ingresando...' : 'Ingresar'} {!loading && <ArrowRight size={16} />}
           </button>
