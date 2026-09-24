@@ -78,7 +78,7 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
             ) : (
               <div className="h-[360px] sm:h-[500px] lg:h-[700px] flex items-center justify-center p-12">
                 <img
-                  src={product.imageUrl || "/placeholder-shoe.png"}
+                  src={product.imageUrl || "/placeholder-shoe.svg"}
                   alt={product.name}
                   className="w-full h-full object-contain mix-blend-multiply drop-shadow-2xl"
                 />
