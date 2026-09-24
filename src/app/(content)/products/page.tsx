@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ProductList } from "@/features/products/ProductList";
 import { PromoBanner } from "@/features/products/PromoBanner";
 import { SpecialOffersSection } from "@/features/products/SpecialOffersSection";
