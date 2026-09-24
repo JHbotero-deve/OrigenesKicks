@@ -1,27 +1,53 @@
-import prisma from "@/lib/db";
 import { notFound } from "next/navigation";
-import { Product3DViewer } from "@/components/products/Product3DViewer";
+import { createClient } from "@/lib/supabase-server";
 import { ProductDetailView } from "@/features/products/ProductDetailView";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: { variants: true }
-  });
+  const supabase = await createClient();
 
-  if (!product) {
-    // Intentar buscar por slug si no se encuentra por ID
-    const productBySlug = await prisma.product.findUnique({
-      where: { slug: id },
-      include: { variants: true }
-    });
+  const { data: product, error: productError } = await supabase
+    .from("products")
+    .select("*")
+    .or(`id.eq.${id},slug.eq.${id}`)
+    .maybeSingle();
 
-    if (!productBySlug) notFound();
-    return <ProductDetailView product={productBySlug as any} />;
-  }
+  if (productError || !product) notFound();
 
-  return <ProductDetailView product={product as any} />;
+  const [{ data: variants }, { data: stores }] = await Promise.all([
+    supabase.from("product_variants").select("*").eq("product_id", product.id).eq("active", true),
+    supabase.from("stores").select("*").eq("active", true),
+  ]);
+
+  const storeMap = new Map((stores ?? []).map((store) => [store.id, store]));
+
+  return (
+    <ProductDetailView
+      product={{
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        basePrice: product.basePrice,
+        discountPrice: product.discountPrice,
+        imageUrl: product.image_url,
+        model3dUrl: product.model3d_url,
+        gender: product.gender,
+        category: product.category,
+        usage: product.usage,
+        variants: (variants ?? []).map((variant) => ({
+          id: variant.id,
+          size: String(variant.size ?? ""),
+          color: String(variant.color ?? ""),
+          stock: Number(variant.stock ?? 0),
+          store: storeMap.get(variant.store_id) ?? null,
+        })),
+      }}
+    />
+  );
 }
