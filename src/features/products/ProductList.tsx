@@ -5,7 +5,7 @@ import { Product } from '@/types/product';
 import { useCartStore } from '@/stores/useCartStore';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import { X, Rotate3d, ShoppingBag, Eye } from 'lucide-react';
+import { X, Rotate3d } from 'lucide-react';
 import { Product3DViewer } from '@/components/products/Product3DViewer';
 
 interface ProductListProps {
