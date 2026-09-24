@@ -6,6 +6,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import { Product3DViewer } from "@/components/products/Product3DViewer";
 import { ShoppingBag, ChevronLeft, MessageCircle, X } from "lucide-react";
 import Link from "next/link";
+import { PublicImage } from "@/components/ui/PublicImage";
 
 interface ProductVariant {
   id: string;
@@ -91,14 +92,13 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
               />
             ) : (
               <div className="h-[360px] sm:h-[500px] lg:h-[700px] flex items-center justify-center p-12">
-                <img
+                <PublicImage
                   src={product.imageUrl || "/placeholder-shoe.svg"}
                   alt={product.name}
+                  width={1000}
+                  height={1000}
                   className="w-full h-full object-contain mix-blend-multiply drop-shadow-2xl"
-                  onError={(event) => {
-                    event.currentTarget.onerror = null;
-                    event.currentTarget.src = "/placeholder-shoe.svg";
-                  }}
+                  sizes="(max-width: 1024px) 100vw, 60vw"
                 />
               </div>
             )}
