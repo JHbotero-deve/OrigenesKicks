@@ -162,7 +162,7 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
                     ${basePrice.toLocaleString()}
                   </p>
                 )}
-                <p className="text-5xl font-black italic text-gray-900">
+                <p className="text-3xl sm:text-4xl lg:text-5xl font-black italic text-gray-900">
                   ${salePrice.toLocaleString()}
                 </p>
               </div>
