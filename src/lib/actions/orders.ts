@@ -69,9 +69,22 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
     let invoice: { id: string; fullNumber: string } | null = null;
 
     if (status === 'CONFIRMADO' && order.status === 'RECIBIDO') {
+      if (order.paymentMethod === 'WOMPI' && order.paymentStatus !== 'APPROVED') {
+        return { success: false, error: 'No se puede confirmar una venta Wompi sin pago aprobado.' };
+      }
+
       const result = await prisma.$transaction(async (tx) => {
-        if (order.status !== 'RECIBIDO') {
+        const current = await tx.pedido.findUnique({
+          where: { id: order.id },
+          select: { status: true, paymentMethod: true, paymentStatus: true },
+        });
+
+        if (!current || current.status !== 'RECIBIDO') {
           throw new Error('El pedido ya fue procesado.');
+        }
+
+        if (current.paymentMethod === 'WOMPI' && current.paymentStatus !== 'APPROVED') {
+          throw new Error('No se puede confirmar una venta Wompi sin pago aprobado.');
         }
 
         return confirmOrderAsSale(tx, order.id, user.id);
@@ -86,9 +99,57 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
         fullNumber: result.fullNumber,
       };
     } else {
-      await prisma.pedido.update({
-        where: { id: orderId },
-        data: { status },
+      await prisma.$transaction(async (tx) => {
+        const current = await tx.pedido.findUnique({
+          where: { id: orderId },
+          select: { status: true, paymentMethod: true, paymentStatus: true, storeId: true },
+        });
+
+        if (!current) throw new Error('Pedido no encontrado.');
+
+        if (status === 'CANCELADO') {
+          if (current.paymentMethod === 'WOMPI' && current.paymentStatus === 'APPROVED') {
+            throw new Error('No se puede cancelar un pedido Wompi pagado sin gestionar primero el reembolso.');
+          }
+
+          const claimed = await tx.pedido.updateMany({
+            where: { id: orderId, status: current.status },
+            data: { status: 'CANCELADO' },
+          });
+
+          if (claimed.count !== 1) {
+            throw new Error('El pedido cambió mientras se procesaba la cancelación.');
+          }
+
+          for (const item of order.items) {
+            const restored = await tx.variant.updateMany({
+              where: { id: item.variantId },
+              data: { stock: { increment: item.quantity } },
+            });
+
+            if (restored.count !== 1) {
+              throw new Error('No se pudo restaurar el inventario del pedido cancelado.');
+            }
+
+            await tx.inventoryLog.create({
+              data: {
+                variantId: item.variantId,
+                storeId: current.storeId,
+                changeType: 'RETURN',
+                quantity: item.quantity,
+                reason: `Pedido cancelado · #${order.id.slice(0, 8)}`,
+                performedById: user.id,
+              },
+            });
+          }
+
+          return;
+        }
+
+        await tx.pedido.update({
+          where: { id: orderId },
+          data: { status },
+        });
       });
     }
 
