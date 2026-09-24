@@ -10,12 +10,15 @@ export async function createClient() {
   const cookieStore = await cookies();
   return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
-      get(name: string) { return cookieStore.get(name)?.value; },
-      set(name: string, value: string, options: CookieOptions) {
-        try { cookieStore.set({ name, value, ...options }); } catch {}
+      getAll() {
+        return cookieStore.getAll();
       },
-      remove(name: string, options: CookieOptions) {
-        try { cookieStore.set({ name, value: "", ...options }); } catch {}
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set({ name, value, ...options });
+          });
+        } catch {}
       },
     },
   });
