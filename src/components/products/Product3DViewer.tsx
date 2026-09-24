@@ -6,6 +6,7 @@ interface Props {
   modelUrl?: string | null;
   posterUrl?: string;
   productName?: string;
+  color?: string | null;
   className?: string;
 }
 
@@ -61,9 +62,24 @@ function roundedBox(THREE: any, width: number, height: number, depth: number, ra
   return geometry;
 }
 
-function buildSneaker(THREE: any) {
+function colorHex(color?: string | null) {
+  const value = (color || "").trim().toLowerCase();
+  if (value.includes("rojo") || value.includes("red")) return 0xdc2626;
+  if (value.includes("azul") || value.includes("blue")) return 0x2563eb;
+  if (value.includes("verde") || value.includes("green")) return 0x16a34a;
+  if (value.includes("amarillo") || value.includes("yellow")) return 0xeab308;
+  if (value.includes("blanco") || value.includes("white")) return 0xf3f4f6;
+  if (value.includes("gris") || value.includes("gray") || value.includes("grey")) return 0x6b7280;
+  if (value.includes("beige") || value.includes("crema") || value.includes("cream")) return 0xd6c7a1;
+  if (value.includes("cafe") || value.includes("café") || value.includes("marron") || value.includes("marrón") || value.includes("brown")) return 0x7c4a2d;
+  if (value.includes("rosado") || value.includes("rosa") || value.includes("pink")) return 0xec4899;
+  if (value.includes("naranja") || value.includes("orange")) return 0xf97316;
+  return 0x20242c;
+}
+
+function buildSneaker(THREE: any, productColor?: string | null) {
   const shoe = new THREE.Group();
-  const dark = new THREE.MeshStandardMaterial({ color: 0x20242c, roughness: 0.48 });
+  const dark = new THREE.MeshStandardMaterial({ color: colorHex(productColor), roughness: 0.48 });
   const white = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.72 });
   const orange = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.42 });
   const lace = new THREE.MeshStandardMaterial({ color: 0xe8e8e8, roughness: 0.6 });
@@ -120,6 +136,7 @@ export const Product3DViewer: React.FC<Props> = ({
   modelUrl,
   posterUrl,
   productName,
+  color,
   className = "",
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -162,7 +179,7 @@ export const Product3DViewer: React.FC<Props> = ({
       floor.position.y = -1.08;
       scene.add(floor);
 
-      const shoe = buildSneaker(THREE);
+      const shoe = buildSneaker(THREE, color);
       shoe.rotation.y = 0.55;
       shoe.rotation.x = -0.08;
       scene.add(shoe);
@@ -176,6 +193,7 @@ export const Product3DViewer: React.FC<Props> = ({
       let currentZoom = 7.8;
 
       const pointerDown = (e: PointerEvent) => {
+        e.stopPropagation();
         dragging = true;
         lastX = e.clientX;
         lastY = e.clientY;
@@ -183,6 +201,7 @@ export const Product3DViewer: React.FC<Props> = ({
         canvas.style.cursor = "grabbing";
       };
       const pointerMove = (e: PointerEvent) => {
+        e.stopPropagation();
         if (!dragging) return;
         rotationY += (e.clientX - lastX) * 0.012;
         rotationX += (e.clientY - lastY) * 0.008;
@@ -190,12 +209,14 @@ export const Product3DViewer: React.FC<Props> = ({
         lastX = e.clientX;
         lastY = e.clientY;
       };
-      const pointerUp = () => {
+      const pointerUp = (e?: PointerEvent) => {
+        e?.stopPropagation();
         dragging = false;
         canvas.style.cursor = "grab";
       };
       const wheel = (e: WheelEvent) => {
         e.preventDefault();
+        e.stopPropagation();
         targetZoom = Math.max(5.1, Math.min(10.5, targetZoom + e.deltaY * 0.006));
       };
       const resize = () => {
@@ -261,12 +282,13 @@ export const Product3DViewer: React.FC<Props> = ({
         stateRef.current = null;
       }
     };
-  }, [modelUrl]);
+  }, [modelUrl, color]);
 
   if (modelUrl) {
     return (
       <div className={"w-full h-[520px] lg:h-[620px] bg-white rounded-3xl overflow-hidden relative group shadow-inner " + className}>
         <model-viewer
+          onClick={(event: React.MouseEvent) => event.stopPropagation()}
           src={modelUrl}
           poster={posterUrl || undefined}
           alt={"Visor 3D de " + (productName || "Calzado")}
@@ -290,7 +312,7 @@ export const Product3DViewer: React.FC<Props> = ({
 
   return (
     <div className={"w-full h-[520px] lg:h-[620px] bg-[#f7f7f7] rounded-3xl overflow-hidden relative group shadow-inner " + className}>
-      <canvas ref={canvasRef} className="block h-full w-full touch-none" aria-label={"Modelo 3D de " + (productName || "calzado")} />
+      <canvas ref={canvasRef} className="block h-full w-full touch-none" onClick={(event) => event.stopPropagation()} aria-label={"Modelo 3D de " + (productName || "calzado")} />
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-[#f7f7f7]">
           <div className="flex flex-col items-center gap-3">
