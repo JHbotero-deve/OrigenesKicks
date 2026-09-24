@@ -3,17 +3,33 @@ import { PromoBanner } from "@/features/products/PromoBanner";
 import { SpecialOffersSection } from "@/features/products/SpecialOffersSection";
 import { StoresShowcase } from "@/components/layout/StoresShowcase";
 import { PublicityStand } from "@/components/layout/PublicityStand";
-import prisma from "@/lib/db";
+import { createClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
+type Product = Record<string, any>;
+
 export default async function ProductsPage() {
-  const allProducts = await prisma.product.findMany({
-    where: { active: true },
-    include: { variants: { include: { store: true } } },
-    orderBy: { salesCount: "desc" },
-  });
-  const stores = await prisma.store.findMany({ where: { active: true } });
+  const supabase = await createClient();
+  const [{ data: products }, { data: variants }, { data: stores }] = await Promise.all([
+    supabase.from("products").select("*").eq("active", true).order("salesCount", { ascending: false }),
+    supabase.from("product_variants").select("*").eq("active", true),
+    supabase.from("stores").select("*").eq("active", true),
+  ]);
+
+  const storeMap = new Map((stores ?? []).map((store) => [store.id, store]));
+  const variantsByProduct = new Map<string, Product[]>();
+
+  for (const variant of variants ?? []) {
+    const list = variantsByProduct.get(variant.product_id) ?? [];
+    list.push({ ...variant, store: storeMap.get(variant.store_id) ?? null });
+    variantsByProduct.set(variant.product_id, list);
+  }
+
+  const allProducts = (products ?? []).map((product) => ({
+    ...product,
+    variants: variantsByProduct.get(product.id) ?? [],
+  }));
   const specialProducts = allProducts.filter((product) => product.isSpecial);
   const regularProducts = allProducts.filter((product) => !product.isSpecial);
 
@@ -37,7 +53,7 @@ export default async function ProductsPage() {
         <SpecialOffersSection specialProducts={specialProducts as any} />
       </div>
       <PublicityStand />
-      <StoresShowcase stores={stores as any} />
+      <StoresShowcase stores={stores ?? []} />
       <div className="text-center py-10 opacity-30">
         <p className="text-[10px] font-black uppercase tracking-[1em] text-gray-400">Orígenes Kicks 2026</p>
       </div>
