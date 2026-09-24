@@ -167,8 +167,8 @@ export async function createOrder(data: {
         Number(createdOrder?.totalAmount ?? 0),
         emailItems.map((item) => ({
           name: item.variant.product.name,
-          size: item.variant.size,
-          color: item.variant.color,
+          size: item.variant.size ?? "-",
+          color: item.variant.color ?? "-",
           quantity: item.quantity,
           price: Number(item.unitPrice),
         })),
