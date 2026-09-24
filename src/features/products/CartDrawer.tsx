@@ -8,7 +8,7 @@ import { ShoppingBag, Trash2, X, CheckCircle2, ShieldCheck, MapPin, CreditCard, 
 
 export const CartDrawer: React.FC = () => {
   const { items, removeItem, clearCart, getTotalPrice } = useCartStore();
-  const { user } = useAuth();
+  const { user, dbUser } = useAuth();
   const [isOpen, setIsOpen] = React.useState(false);
   const [paymentMethod, setPaymentMethod] = React.useState("TRANSFERENCIA");
   const [address, setAddress] = React.useState("");
@@ -37,7 +37,7 @@ export const CartDrawer: React.FC = () => {
   const handleCheckout = async () => {
     setError("");
     setSuccess("");
-    if (!user) return setError("Inicia sesión antes de confirmar la compra.");
+    if (!user || !dbUser) return setError("Inicia sesión antes de confirmar la compra.");
     if (items.length === 0) return setError("El carrito está vacío.");
     if (requiresDelivery && (!address.trim() || !phone.trim() || !city.trim())) return setError("Completa ciudad, dirección y teléfono para coordinar la entrega.");
     if (!/^\+?[0-9\s()-]{7,20}$/.test(phone.trim())) return setError("Ingresa un número de teléfono válido.");
@@ -52,7 +52,7 @@ export const CartDrawer: React.FC = () => {
     } : undefined;
 
     const res = await createOrder({
-      clientId: user.id,
+      clientId: dbUser.id,
       items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity, unitPrice: item.price })),
       paymentMethod,
       totalAmount: totalPrice,
@@ -102,7 +102,7 @@ export const CartDrawer: React.FC = () => {
               </section>
 
               {items.length > 0 && <section className="space-y-5 px-5 py-5 sm:px-6">
-                {user ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4"><p className="mb-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Cliente autenticado</p><p className="text-sm font-black text-gray-900">{user.name || "Cliente"}</p><p className="text-xs text-gray-500">{user.email}</p></div> : <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-bold text-orange-900">Inicia sesión para continuar con la compra y asociar el pedido a tu cuenta.</div>}
+                {user ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4"><p className="mb-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Cliente autenticado</p><p className="text-sm font-black text-gray-900">{dbUser.name || "Cliente"}</p><p className="text-xs text-gray-500">{user.email}</p></div> : <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-bold text-orange-900">Inicia sesión para continuar con la compra y asociar el pedido a tu cuenta.</div>}
 
                 <div>
                   <div className="mb-3 flex items-center gap-2"><Truck size={17} className="text-orange-600" /><h3 className="text-sm font-black uppercase italic">Datos de entrega</h3></div>
