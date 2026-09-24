@@ -105,7 +105,14 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="mt-8 text-center text-[10px] font-bold uppercase tracking-wide text-gray-400">La creación de cuenta de cliente se realiza desde el carrito, después de revisar el pedido.</p>
+        <div className="mt-8 text-center">
+  <p className="text-[10px] font-bold uppercase tracking-wide text-gray-600">
+    ¿No tienes cuenta?
+  </p>
+  <Link href="/register" className="inline-block mt-2 text-xs font-black uppercase text-orange-600 hover:underline">
+    Crear cuenta de cliente
+  </Link>
+</div>
       </div>
     </div>
   );
