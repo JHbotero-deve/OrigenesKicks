@@ -3,6 +3,7 @@
 import prisma from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { requireRole, ROLES_DISPATCH } from '@/lib/auth-guard';
+import { confirmOrderAsSale } from '@/lib/order-confirmation';
 
 type OrderStatus = 'CONFIRMADO' | 'PROCESANDO' | 'DESPACHADO' | 'ENTREGADO' | 'CANCELADO';
 
