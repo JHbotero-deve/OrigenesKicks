@@ -59,7 +59,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                   <div className="flex items-center gap-2 mb-6">
                     {product.discountPrice ? (
                       <>
-                        <span className="text-2xl font-black text-red-600 italic">
+                        <span className="text-2xl font-black text-orange-600 italic">
                           ${Number(product.discountPrice).toLocaleString()}
                         </span>
                         <span className="text-sm text-gray-400 line-through font-bold">
