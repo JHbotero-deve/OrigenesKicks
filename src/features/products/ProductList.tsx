@@ -33,13 +33,15 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
 
               <Link href={productPath} className="block group/link flex-1">
                 <div className="relative aspect-square overflow-hidden rounded-[2rem] bg-gray-50 mb-6">
-                  {product.imageUrl && (
-                    <img
-                      src={product.imageUrl}
-                      alt={product.name}
-                      className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-700 drop-shadow-xl p-4"
-                    />
-                  )}
+                  <img
+                    src={product.imageUrl || "/placeholder-shoe.svg"}
+                    alt={product.name}
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = "/placeholder-shoe.svg";
+                    }}
+                    className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-700 drop-shadow-xl p-4"
+                  />
 
                   <div className="absolute inset-0 bg-black/0 group-hover/link:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover/link:opacity-100">
                     <div className="bg-white text-black px-6 py-3 rounded-full font-black uppercase italic text-[10px] shadow-2xl border-2 border-black flex items-center gap-2 transform -rotate-2">
@@ -62,7 +64,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                         <span className="text-2xl font-black text-orange-600 italic">
                           ${Number(product.discountPrice).toLocaleString()}
                         </span>
-                        <span className="text-sm text-gray-400 line-through font-bold">
+                        <span className="text-sm text-gray-500 line-through font-bold">
                           ${Number(product.basePrice).toLocaleString()}
                         </span>
                       </>
@@ -162,7 +164,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                 <h2 className="text-2xl sm:text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-gray-900 leading-none mb-4">
                   {quickViewProduct.name}
                 </h2>
-                <p className="text-gray-500 font-medium italic mb-8 leading-tight">
+                <p className="text-gray-600 font-medium italic mb-8 leading-tight">
                   Interactúa con el modelo 3D a la izquierda. Gíralo y revisa el detalle del producto.
                 </p>
                 <Link href={`/products/${quickViewProduct.id}`} className="w-full">
