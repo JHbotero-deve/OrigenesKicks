@@ -1,4 +1,4 @@
-import prisma from "@/lib/db";
+﻿import prisma from "@/lib/db";
 import { createClient } from "@/lib/supabase-server";
 import { approveOrder } from "@/lib/actions";
 import { Button } from "@/components/ui/Button";
@@ -113,7 +113,7 @@ export default async function OrdersPage() {
                     </div>
                     <div>
                       <p className="text-[9px] font-black text-gray-400 uppercase">Método de Pago</p>
-                      <p className="text-xs font-bold text-gray-600 uppercase">{order.paymentMethod.replace(/_/g, ' ')}</p>
+                      <p className="text-xs font-bold text-gray-600 uppercase">{order.paymentMethod?.replace(/_/g, ' ')}</p>
                     </div>
                     <div>
                       <p className="text-[9px] font-black text-gray-400 uppercase">Fecha</p>
@@ -195,3 +195,4 @@ export default async function OrdersPage() {
     </div>
   );
 }
+

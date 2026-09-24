@@ -47,7 +47,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-[420px] bg-white rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-10 border border-gray-100">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-black italic uppercase tracking-tighter">
-            Oríg<span className="text-orange-600">enes</span>Kicks
+          <span className="text-orange-600">Origenes Kick</span>
           </h1>
           <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-2">
             Crea tu cuenta
@@ -56,30 +56,30 @@ export default function RegisterPage() {
 
         <form onSubmit={handleRegister} className="space-y-5">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Nombre</label>
+            <label className="text-[10px] font-black uppercase text-gray-700 ml-2">Nombre</label>
             <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700" size={18} />
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Tu nombre"
-                className="w-full pl-12 p-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
+                className="w-full pl-12 p-4 bg-gray-500 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
                 required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Correo</label>
+            <label className="text-[10px] font-black uppercase text-gray-700 ml-2">Correo</label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ejemplo@correo.com"
-                className="w-full pl-12 p-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
+                className="w-full pl-12 p-4 bg-gray-500 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
                 required
                 autoComplete="email"
               />
@@ -87,7 +87,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Contraseña</label>
+            <label className="text-[10px] font-black uppercase text-gray-700 ml-2">Contraseña</label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
               <input
@@ -95,7 +95,7 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Mínimo 8 caracteres"
-                className="w-full pl-12 p-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
+                className="w-full pl-12 p-4 bg-gray-500 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold text-sm"
                 required
                 minLength={8}
                 autoComplete="new-password"

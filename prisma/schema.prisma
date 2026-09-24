@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,126 +5,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-}
-
-// --- ESTRUCTURA MULTI-SUCURSAL (Pensando en grande) ---
-
-// --- REPORTES Y CIERRES (Para el Dueño) ---
-
-model DailyClosing {
-  id            String   @id @default(uuid())
-  storeId       String   @map("store_id")
-  store         Store    @relation(fields: [storeId], references: [id])
-  closedById    String   @map("closed_by_id")
-  closedBy      User     @relation("ClosedBy", fields: [closedById], references: [id])
-
-  date          DateTime @default(now())
-  totalSales    Decimal  @map("total_sales")
-  totalOrders   Int      @map("total_orders")
-  pendingOrders Int      @map("pending_orders")
-  cashAmount    Decimal  @map("cash_amount")
-  transferAmount Decimal @map("transfer_amount")
-
-  observations  String?
-  sentToEmail   Boolean  @default(false) @map("sent_to_email")
-
-  createdAt     DateTime @default(now()) @map("created_at")
-
-  @@map("daily_closings")
-}
-
-// --- SEGURIDAD Y LICENCIA (Propiedad de AnalizisEstudio) ---
-
-model AppLicense {
-  id            String   @id @default(uuid())
-  licenseKey    String   @unique @map("license_key")
-  ownerEmail    String   @map("owner_email") // Correo del dueño que compró la app
-  masterPin     String   @map("master_pin")  // PIN secreto de acceso (ej: 9988)
-  status        String   @default("ACTIVE")  // ACTIVE, SUSPENDED
-  lastCheck     DateTime @default(now()) @map("last_check")
-
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt      @map("updated_at")
-
-  @@map("app_licenses")
-}
-
-model Store {
-  id           String   @id @default(uuid())
-  name         String   // Nombre del local
-  address      String
-  city         String
-  phone        String   // WhatsApp del local
-  imageUrl     String?  @map("image_url") // Foto de la fachada/local
-  managerId    String?  @unique @map("manager_id")
-  manager      User?    @relation("StoreManager", fields: [managerId], references: [id])
-  active       Boolean  @default(true)
-  
-  invoicePrefix String @default("FK") @map("invoice_prefix")
-  lastInvoiceNumber Int @default(0) @map("last_invoice_number")
-  
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt      @map("updated_at")
-
-  pedidos     Pedido[]
-  variants    Variant[]
-  employees   User[]    @relation("StoreEmployees")
-  inventoryLogs InventoryLog[]
-  dailyClosings DailyClosing[]
-
-  @@map("stores")
-}
-
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  password  String
-  role      Role     @default(CLIENT)
-
-  // Relaciones de seguridad
-  managedStore Store?  @relation("StoreManager")
-  workStoreId  String? @map("work_store_id")
-  workStore    Store?  @relation("StoreEmployees", fields: [workStoreId], references: [id])
-
-  permissions  String[] @default([]) // Permisos granulares: ["INV_EDIT", "PRICE_EDIT", "VOID_INVOICE"]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
-
-  apartados         Apartado[]
-  pedidos           Pedido[]
-  abonosVerificados Abono[]   @relation("VerifiedBy")
-  inventoryLogs     InventoryLog[] @relation("PerformedBy")
-  dailyClosings     DailyClosing[] @relation("ClosedBy")
-  cart              Cart? // Restaurando relación con el carrito
-
-  @@map("users")
-}
-
-// --- SISTEMA DE CARRITO PERSISTENTE ---
-
-model Cart {
-  id        String     @id @default(uuid())
-  userId    String     @unique @map("user_id")
-  user      User       @relation(fields: [userId], references: [id])
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt      @map("updated_at")
-  items     CartItem[]
-
-  @@map("carts")
-}
-
-model CartItem {
-  id        String   @id @default(uuid())
-  cartId    String   @map("cart_id")
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  variantId String   @map("variant_id")
-  variant   Variant  @relation(fields: [variantId], references: [id])
-  quantity  Int      @default(1)
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("cart_items")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -138,277 +16,251 @@ enum Role {
   OWNER
 }
 
-// --- INVENTARIO Y PRODUCTOS ---
-
-model Provider {
-  id          String   @id @default(uuid())
-  name        String
-  contactName String?  @map("contact_name")
-  phone       String?
-  email       String?
-  address     String?
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt      @map("updated_at")
-
-  inventoryLogs InventoryLog[]
-  @@map("providers")
-}
-
-model Product {
-  id            String    @id @default(uuid())
-  name          String
-  slug          String    @unique // URL amigable: tenis-pro-colombia
-  description   String?
-  basePrice     Decimal   @map("base_price")
-  discountPrice Decimal?  @map("discount_price")
-  category      String?
-  gender        Gender    @default(UNISEX)
-  usage         Usage     @default(DIARIO)
-  active        Boolean   @default(true)
-  isSpecial     Boolean   @default(false) @map("is_special")
-  salesCount    Int       @default(0)     @map("sales_count")
-  imageUrl      String?   @map("image_url")
-  model3dUrl    String?   @map("model_3d_url") // Para el visor 3D
-  sku           String?
-  taxRate       Decimal?  @map("tax_rate")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt      @map("updated_at")
-
-  variants    Variant[]
-  @@map("products")
-}
-
-enum Gender {
-  HOMBRE
-  MUJER
-  UNISEX
-}
-
-enum Usage {
-  DEPORTE
-  DIARIO
-  TRABAJO
-  URBANO
-}
-
-model Variant {
-  id        String   @id @default(uuid())
-  productId String   @map("product_id")
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  storeId   String?  @map("store_id")
-  store     Store?   @relation(fields: [storeId], references: [id])
-  size      String
-  color     String
-  stock     Int      @default(0)
-  sku       String   @unique
-  
-  pedidoItems   PedidoItem[]
-  apartadoItems ApartadoItem[]
-  inventoryLogs InventoryLog[]
-  cartItems     CartItem[] // Restaurando relación con los items del carrito
-  @@map("product_variants")
-}
-
-model InventoryLog {
-  id          String   @id @default(uuid())
-  variantId   String   @map("variant_id")
-  variant     Variant  @relation(fields: [variantId], references: [id])
-  storeId     String?  @map("store_id")
-  store       Store?   @relation(fields: [storeId], references: [id])
-  changeType  String   @map("change_type") // PURCHASE, SALE, RETURN, ADJUSTMENT
-  quantity    Int
-  reason      String
-
-  performedById String @map("performed_by_id")
-  performedBy   User   @relation("PerformedBy", fields: [performedById], references: [id])
-
-  providerId  String?  @map("provider_id")
-  provider    Provider? @relation(fields: [providerId], references: [id])
-
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  @@map("inventory_logs")
-}
-
-// --- SISTEMA DE PEDIDOS ---
-
-model Pedido {
-  id            String       @id @default(uuid())
-  clientId      String       @map("client_id")
-  client        User         @relation(fields: [clientId], references: [id])
-  storeId       String?      @map("store_id")
-  store         Store?       @relation(fields: [storeId], references: [id])
-  totalAmount   Decimal      @map("total_amount")
-  status        PedidoStatus @default(RECIBIDO)
-  paymentMethod String       @map("payment_method")
-  notes         String?
-  expiresAt     DateTime?    @map("expires_at")
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt      @map("updated_at")
-
-  items         PedidoItem[]
-  envio         Envio?
-  invoice       Factura?
-
-  @@map("orders")
-}
-
 enum PedidoStatus {
   RECIBIDO
   CONFIRMADO
   PROCESANDO
   DESPACHADO
   ENTREGADO
-  RECHAZADO
   CANCELADO
+  RECHAZADO
+}
+
+model User {
+  id          String         @id @default(cuid())
+  email       String         @unique
+  password    String
+  name        String?
+  role        Role           @default(CLIENT)
+  workStoreId String?        @map("work_store_id")
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  workStore        Store?         @relation("StoreStaff", fields: [workStoreId], references: [id])
+  pedidos          Pedido[]
+  performedLogs    InventoryLog[]
+  closedClosings   DailyClosing[]
+
+  @@map("users")
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  name          String
+  slug          String    @unique
+  description   String?
+  price         Float
+  basePrice     Float?
+  discountPrice Float?
+  isSpecial     Boolean   @default(false)
+  stock         Int       @default(0)
+  active        Boolean   @default(true)
+  salesCount    Int       @default(0)
+  imageUrl      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  variants      Variant[]
+
+  @@map("products")
+}
+
+model Store {
+  id                String         @id @default(cuid())
+  name              String
+  address           String?
+  city              String?
+  phone             String?
+  invoicePrefix     String         @default("FAC")
+  lastInvoiceNumber Int            @default(0)
+  active            Boolean        @default(true)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  variants          Variant[]
+  pedidos           Pedido[]
+  inventoryLogs     InventoryLog[]
+  dailyClosings     DailyClosing[]
+  staff             User[]         @relation("StoreStaff")
+
+  @@map("stores")
+}
+
+model Variant {
+  id            String         @id @default(cuid())
+  productId     String         @map("product_id")
+  storeId       String         @map("store_id")
+  size          String?
+  sku           String?
+  color         String?
+  price         Float?
+  stock         Int            @default(0)
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store         Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  pedidoItems   PedidoItem[]
+  inventoryLogs InventoryLog[]
+
+  @@map("product_variants")
+}
+
+model Pedido {
+  id            String       @id @default(cuid())
+  clientId      String       @map("client_id")
+  storeId       String?      @map("store_id")
+  status        PedidoStatus @default(RECIBIDO)
+  totalAmount   Float        @default(0)
+  paymentMethod String?
+  notes         String?
+  expiresAt     DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  client        User         @relation(fields: [clientId], references: [id])
+  store         Store?       @relation(fields: [storeId], references: [id])
+  items         PedidoItem[]
+  factura       Factura?
+  envio         Envio?
+
+  @@map("pedidos")
 }
 
 model PedidoItem {
-  id        String   @id @default(uuid())
-  pedidoId  String   @map("pedido_id")
-  pedido    Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  variantId String   @map("variant_id")
-  variant   Variant  @relation(fields: [variantId], references: [id])
-  quantity  Int
-  unitPrice Decimal  @map("unit_price")
+  id        String  @id @default(cuid())
+  pedidoId  String  @map("pedido_id")
+  variantId String  @map("variant_id")
+  quantity  Int     @default(1)
+  unitPrice Float
 
-  @@map("order_items")
+  pedido    Pedido  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  variant   Variant @relation(fields: [variantId], references: [id])
+
+  @@map("pedido_items")
 }
 
-model Envio {
-  id              String      @id @default(uuid())
-  pedidoId        String      @unique @map("pedido_id")
-  pedido          Pedido      @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  address         String
-  city            String
-  department      String?     @default("Antioquia")
-  phone           String?
-  trackingNumber  String?     @map("tracking_number")
-  deliveryDate    DateTime?   @map("delivery_date")
-  status          EnvioStatus @default(PENDIENTE)
-  notes           String?
+model Provider {
+  id            String         @id @default(cuid())
+  name          String
+  phone         String?
+  createdAt     DateTime       @default(now())
 
-  @@map("shippings")
+  inventoryLogs InventoryLog[]
+
+  @@map("providers")
 }
 
-enum EnvioStatus {
-  PENDIENTE
-  EN_RUTA
-  ENTREGADO
-  FALLIDO
-  RETORNADO
-}
+model InventoryLog {
+  id            String    @id @default(cuid())
+  variantId     String    @map("variant_id")
+  storeId       String?   @map("store_id")
+  performedById String?   @map("performed_by_id")
+  providerId    String?   @map("provider_id")
+  quantity      Int
+  impact        Float     @default(0)
+  changeType    String    @default("ADJUSTMENT")
+  reason        String?
+  createdAt     DateTime  @default(now())
 
-// --- FACTURACIÓN ELECTRÓNICA (DIAN) ---
+  variant       Variant   @relation(fields: [variantId], references: [id])
+  store         Store?    @relation(fields: [storeId], references: [id])
+  performedBy   User?     @relation(fields: [performedById], references: [id])
+  provider      Provider? @relation(fields: [providerId], references: [id])
+
+  @@map("inventory_logs")
+}
 
 model Factura {
-  id              String    @id @default(uuid())
-  invoiceNumber   Int       @map("invoice_number")
-  prefix          String
-  fullNumber      String    @map("full_number")
-  customerName    String    @map("customer_name")
-  customerIdType  String    @map("customer_id_type")
-  customerId      String    @map("customer_id")
-  customerEmail   String?   @map("customer_email")
-  customerPhone   String?   @map("customer_phone")
-  customerAddress String?   @map("customer_address")
-  subtotal        Decimal
-  taxAmount       Decimal   @map("tax_amount")
-  totalAmount     Decimal   @map("total_amount")
-  taxDetails      String?   @map("tax_details")
-  paymentMethod   String    @map("payment_method")
-  paymentDueDate  DateTime? @map("payment_due_date")
-  cufe            String?
-  cufeQrCode      String?   @map("cufe_qr_code")
-  status          FacturaStatus @default(PENDIENTE)
-  pedidoId        String    @unique @map("pedido_id")
-  pedido          Pedido    @relation(fields: [pedidoId], references: [id])
-  issueDate       DateTime  @default(now()) @map("issue_date")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt      @map("updated_at")
-  notes           String?
-  
-  items           FacturaItem[]
+  id            String        @id @default(cuid())
+  pedidoId      String        @unique @map("pedido_id")
+  prefix        String
+  invoiceNumber Int
+  fullNumber    String
+  customerName  String
+  customerEmail String?
+  customerId    String
+  paymentMethod String
+  subtotal      Float
+  taxAmount     Float
+  totalAmount   Float
+  issueDate     DateTime      @default(now())
+  createdAt     DateTime      @default(now())
 
-  @@map("invoices")
-}
+  pedido        Pedido        @relation(fields: [pedidoId], references: [id])
+  items         FacturaItem[]
 
-enum FacturaStatus {
-  PENDIENTE
-  VALIDADA
-  ENVIADA
-  ACEPTADA
-  RECHAZADA
-  ANULADA
+  @@map("facturas")
 }
 
 model FacturaItem {
-  id            String   @id @default(uuid())
-  facturaId     String   @map("factura_id")
-  factura       Factura  @relation(fields: [facturaId], references: [id], onDelete: Cascade)
-  productName   String   @map("product_name")
-  productSku    String?  @map("product_sku")
-  description   String?
-  quantity      Int
-  unitPrice     Decimal  @map("unit_price")
-  taxRate       Decimal  @map("tax_rate")
-  taxAmount     Decimal  @map("tax_amount")
-  lineTotal     Decimal  @map("line_total")
-  size          String?
-  color         String?
-  
-  @@map("invoice_items")
+  id          String  @id @default(cuid())
+  facturaId   String  @map("factura_id")
+  productName String
+  size        String?
+  quantity    Int
+  unitPrice   Float
+  taxAmount   Float
+  lineTotal   Float
+
+  factura     Factura @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+
+  @@map("factura_items")
 }
 
-// --- SISTEMA DE APARTADOS (LAYAWAY) ---
+model Envio {
+  id        String   @id @default(cuid())
+  pedidoId  String   @unique @map("pedido_id")
+  address   String?
+  city      String?
+  phone     String?
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-model Apartado {
-  id          String         @id @default(uuid())
-  clientId    String         @map("client_id")
-  client      User           @relation(fields: [clientId], references: [id])
-  totalAmount Decimal        @map("total_amount")
-  balanceDue  Decimal        @map("balance_due")
-  status      ApartadoStatus @default(PENDIENTE)
-  dueDate     DateTime       @map("due_date")
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt      @map("updated_at")
+  pedido    Pedido   @relation(fields: [pedidoId], references: [id])
 
-  items       ApartadoItem[]
-  abonos      Abono[]
-
-  @@map("layaways")
+  @@map("envios")
 }
 
-enum ApartadoStatus {
-  PENDIENTE
-  COMPLETADO
-  EXPIRADO
-  CANCELADO
+model DailyClosing {
+  id             String   @id @default(cuid())
+  storeId        String?  @map("store_id")
+  closedById     String?  @map("closed_by_id")
+  date           DateTime @default(now())
+  totalSales     Float
+  cashAmount     Float
+  transferAmount Float
+  totalOrders    Int
+  pendingOrders  Int      @default(0)
+  observations   String?
+  createdAt      DateTime @default(now())
+
+  store          Store?   @relation(fields: [storeId], references: [id])
+  closedBy       User?    @relation(fields: [closedById], references: [id])
+
+  @@map("daily_closings")
 }
 
-model ApartadoItem {
-  id         String   @id @default(uuid())
-  apartadoId String   @map("apartado_id")
-  apartado   Apartado @relation(fields: [apartadoId], references: [id], onDelete: Cascade)
-  variantId  String   @map("variant_id")
-  variant    Variant  @relation(fields: [variantId], references: [id])
-  quantity   Int
-  unitPrice  Decimal  @map("unit_price")
+model AppLicense {
+  id         String    @id @default(cuid())
+  licenseKey String    @unique
+  ownerEmail String
+  masterPin  String?
+  status     String    @default("ACTIVE")
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
-  @@map("layaway_items")
+  @@map("app_licenses")
 }
 
-model Abono {
-  id           String   @id @default(uuid())
-  apartadoId   String   @map("apartado_id")
-  apartado     Apartado @relation(fields: [apartadoId], references: [id], onDelete: Cascade)
-  amount       Decimal
-  paymentRef   String?  @map("payment_ref")
-  verified     Boolean  @default(false)
-  verifiedById String?  @map("verified_by_id")
-  verifiedBy   User?    @relation("VerifiedBy", fields: [verifiedById], references: [id])
-  createdAt    DateTime @default(now()) @map("created_at")
+model Administracion {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
 
-  @@map("layaway_payments")
+  @@map("administración")
 }

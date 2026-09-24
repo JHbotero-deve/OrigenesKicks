@@ -1,20 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, Box } from "lucide-react";
-import prisma from "@/lib/db";
 import { PublicityStand } from "@/components/layout/PublicityStand";
-import { StoresShowcase } from "@/components/layout/StoresShowcase";
-
-export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const featured = await prisma.product.findMany({
-    where: { active: true },
-    orderBy: { salesCount: 'desc' },
-    take: 3,
-  });
-
-  const stores = await prisma.store.findMany({ where: { active: true } });
-
   return (
     <div className="space-y-4 -mx-4 -my-8">
       {/* HERO */}
@@ -50,43 +38,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* DESTACADOS */}
-      {featured.length > 0 && (
-        <section className="max-w-[1400px] mx-auto px-6 py-16">
-          <div className="mb-10">
-            <span className="bg-black text-white text-[10px] font-black px-3 py-1 uppercase italic tracking-[0.2em] mb-4 inline-block">
-              Lo más pedido
-            </span>
-            <h2 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter">
-              Empezá por acá
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featured.map((p) => (
-              <Link
-                key={p.id}
-                href={`/products/${p.id}`}
-                className="group bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-xl transition-shadow"
-              >
-                <div className="h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
-                  {p.imageUrl ? (
-                    <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                  ) : (
-                    <Box className="text-gray-300" size={48} />
-                  )}
-                </div>
-                <div className="p-5">
-                  <p className="font-black uppercase italic text-sm">{p.name}</p>
-                  <p className="text-orange-600 font-black mt-1">${Number(p.basePrice).toLocaleString()}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
       <PublicityStand />
-      {stores.length > 0 && <StoresShowcase stores={stores} />}
 
       {/* CTA FINAL */}
       <section className="max-w-[1400px] mx-auto px-6 py-16 text-center">

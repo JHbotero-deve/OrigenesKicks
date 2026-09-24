@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import prisma from '@/lib/db';
 import { revalidatePath } from 'next/cache';
@@ -9,9 +9,7 @@ type OrderStatus = 'CONFIRMADO' | 'PROCESANDO' | 'DESPACHADO' | 'ENTREGADO' | 'C
 export type StoreOrder = {
   id: string;
   status: 'RECIBIDO' | 'CONFIRMADO' | 'PROCESANDO' | 'DESPACHADO' | 'ENTREGADO' | 'CANCELADO' | 'RECHAZADO';
-  client: {
-    name: string;
-  };
+  client: { name: string | null };
 };
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus) {
@@ -121,3 +119,4 @@ function startOfTomorrow() {
   date.setDate(date.getDate() + 1);
   return date;
 }
+

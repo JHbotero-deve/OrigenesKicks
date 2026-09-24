@@ -16,7 +16,7 @@ export const PublicityStand = () => {
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <span className="bg-black text-white px-4 py-1 rounded-full text-xs font-black uppercase italic tracking-widest mb-6 inline-block">
-                Directo de Fábrica 🇨🇴
+                Directo de Fábrica
               </span>
               <h2 className="text-4xl md:text-6xl font-black text-black uppercase italic leading-none mb-6 tracking-tighter">
                 Siente el Barrio en cada paso

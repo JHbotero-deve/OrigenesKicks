@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 
@@ -17,7 +17,7 @@ type Order = {
   id: string;
   status: OrderStatus;
   client: {
-    name: string;
+    name: string | null;
     phone?: string | null;
   };
 };
@@ -115,3 +115,5 @@ export default function OrderCard({ order, role }: { order: Order; role: Role | 
     </div>
   );
 }
+
+
