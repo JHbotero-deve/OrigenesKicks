@@ -4,6 +4,7 @@ import React from "react";
 import { Button } from "@/components/ui/Button";
 import { useCartStore } from "@/stores/useCartStore";
 import { Zap, ShoppingBag, ShieldCheck } from "lucide-react";
+import { PublicImage } from "@/components/ui/PublicImage";
 
 interface ProductVariant { id: string; size: string; color: string; stock: number; }
 interface ProductCardData {
@@ -33,7 +34,7 @@ export const ProductCard: React.FC<Props> = ({ product }) => {
         <span className="bg-black text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase italic tracking-tighter">{product.usage ?? "Diario"}</span>
       </div>
       <div className="relative aspect-square overflow-hidden bg-[#e5e0d7]">
-        <img src={product.imageUrl || "/placeholder-shoe.svg"} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+        <PublicImage src={product.imageUrl || "/placeholder-shoe.svg"} alt={product.name} width={600} height={600} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" sizes="(max-width: 768px) 100vw, 600px" />
       </div>
       <div className="p-6 flex flex-col flex-1">
         <div className="flex justify-between items-start mb-2">
