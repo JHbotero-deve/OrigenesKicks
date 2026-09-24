@@ -27,13 +27,13 @@ export const ProductCard: React.FC<Props> = ({ product }) => {
   const hasDiscount = Number.isFinite(salePrice) && Number.isFinite(basePrice) && salePrice < basePrice;
 
   return (
-    <div className="group bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col h-full">
+    <div className="group bg-[#f1eee7] rounded-3xl overflow-hidden border border-[#d8d2c7] shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col h-full">
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-1">
         <span className="bg-yellow-400 text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase italic tracking-tighter shadow-sm">Fábrica Nacional</span>
         <span className="bg-black text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase italic tracking-tighter">{product.usage ?? "Diario"}</span>
       </div>
-      <div className="relative aspect-square overflow-hidden bg-gray-50">
-        <img src={product.imageUrl || "/placeholder-shoe.png"} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+      <div className="relative aspect-square overflow-hidden bg-[#e5e0d7]">
+        <img src={product.imageUrl || "/placeholder-shoe.svg"} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
       </div>
       <div className="p-6 flex flex-col flex-1">
         <div className="flex justify-between items-start mb-2">
@@ -52,7 +52,7 @@ export const ProductCard: React.FC<Props> = ({ product }) => {
           <div className="flex flex-wrap gap-2">
             {variants.map((variant) => (
               <button type="button" key={variant.id} disabled={variant.stock <= 0} onClick={() => setSelectedVariant(variant)}
-                className={`w-9 h-9 rounded-xl text-[11px] font-black transition-all border-2 disabled:opacity-30 disabled:cursor-not-allowed ${selectedVariant?.id === variant.id ? "border-black bg-black text-white" : "border-gray-100 text-gray-400 hover:border-gray-300"}`}>
+                className={`w-9 h-9 rounded-xl text-[11px] font-black transition-all border-2 disabled:opacity-30 disabled:cursor-not-allowed ${selectedVariant?.id === variant.id ? "border-black bg-black text-white" : "border-[#d3cdc2] text-gray-500 hover:border-orange-300"}`}>
                 {variant.size}
               </button>
             ))}
