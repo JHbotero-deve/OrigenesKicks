@@ -50,6 +50,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                       modelUrl={product.model3dUrl}
                       posterUrl={product.imageUrl}
                       productName={product.name}
+                      color={variants[0]?.color}
                       className="!h-full !min-h-0 rounded-[2rem]"
                     />
                     <button
