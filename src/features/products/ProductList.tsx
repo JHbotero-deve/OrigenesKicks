@@ -156,7 +156,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                 />
               </div>
               <div className="p-10 flex flex-col justify-center bg-white">
-                <span className="bg-yellow-400 text-black text-[9px] font-black px-3 py-1 rounded-full uppercase italic mb-4 inline-block w-fit">
+                <span className="bg-orange-100 text-orange-800 text-[9px] font-black px-3 py-1 rounded-full uppercase italic mb-4 inline-block w-fit">
                   Fábrica Nacional
                 </span>
                 <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-gray-900 leading-none mb-4">
