@@ -16,7 +16,13 @@
   }
 }
 
-html, body {\n  width: 100%;\n  max-width: 100%;\n  overflow-x: hidden;\n}\n\nbody {
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-start-rgb));
 }
