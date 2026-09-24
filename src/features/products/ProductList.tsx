@@ -155,7 +155,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                   posterUrl={quickViewProduct.imageUrl}
                 />
               </div>
-              <div className="p-5 sm:p-8 md:p-10 flex flex-col justify-center min-w-0 bg-white">
+              <div className="p-5 sm:p-8 md:p-5 sm:p-8 md:p-10 flex flex-col justify-center min-w-0 min-w-0 bg-white">
                 <span className="bg-orange-100 text-orange-800 text-[9px] font-black px-3 py-1 rounded-full uppercase italic mb-4 inline-block w-fit">
                   Fábrica Nacional
                 </span>
