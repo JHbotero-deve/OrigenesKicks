@@ -23,6 +23,7 @@ type OrderStatus =
 
 type TrackingResponse = {
   success: boolean;
+  trackingCode?: string;
   status?: OrderStatus;
   city?: string;
   storePhone?: string | null;
@@ -82,7 +83,7 @@ export default function PosventaPage() {
 
   const phone = String(orderData?.storePhone || '').replace(/\D/g, '');
   const whatsappMessage = orderData?.status
-    ? `Hola. Mi pedido #${orderId.trim()} aparece como ${orderData.status}. Necesito información sobre el envío.`
+    ? `Hola. Mi pedido ${orderData.trackingCode || orderId.trim().toUpperCase()} aparece como ${orderData.status}. Necesito información sobre el envío.`
     : '';
 
   return (
@@ -109,12 +110,12 @@ export default function PosventaPage() {
 
           <form onSubmit={checkOrder} className="mb-10 space-y-4 pt-4">
             <label htmlFor="order-code" className="sr-only">
-              UUID del pedido o número de factura
+              Código de seguimiento
             </label>
             <input
               id="order-code"
               type="text"
-              placeholder="UUID del pedido o número de factura"
+              placeholder="Ej. OK-A1B2C3D4E5"
               value={orderId}
               onChange={(e) => setOrderId(e.target.value)}
               className="w-full rounded-3xl border-2 border-transparent bg-gray-50 p-6 text-center text-xl font-black uppercase tracking-widest outline-none transition-all focus:border-orange-500"
@@ -142,7 +143,9 @@ export default function PosventaPage() {
             <div className="space-y-12">
               <div className="flex flex-col justify-between gap-4 rounded-3xl border border-gray-100 bg-gray-50 p-6 md:flex-row md:items-center">
                 <div className="text-center md:text-left">
-                  <p className="text-[10px] font-black uppercase text-gray-400">Resumen del pedido</p>
+                  <p className="text-[10px] font-black uppercase text-gray-400">Código de seguimiento</p>
+                  <p className="text-lg font-black uppercase tracking-widest text-orange-600">{orderData.trackingCode || orderId.trim().toUpperCase()}</p>
+                  <p className="mt-3 text-[10px] font-black uppercase text-gray-400">Resumen del pedido</p>
                   <p className="text-lg font-black uppercase">{orderData.items.join(' + ')}</p>
                 </div>
                 <div className="text-center md:text-right">
