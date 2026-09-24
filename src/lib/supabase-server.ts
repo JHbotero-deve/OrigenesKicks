@@ -3,17 +3,29 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://sywrurccihbunpxljcud.supabase.co";
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_fQndGPPr7bq65EBL8N_eUg_qIza7jSX";
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "https://sywrurccihbunpxljcud.supabase.co";
+
+const SUPABASE_ANON_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "sb_publishable_fQndGPPr7bq65EBL8N_eUg_qIza7jSX";
+
+type SupabaseCookie = {
+  name: string;
+  value: string;
+  options?: CookieOptions;
+};
 
 export async function createClient() {
   const cookieStore = await cookies();
+
   return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: SupabaseCookie[]) {
         try {
           cookiesToSet.forEach(({ name, value, options }) => {
             cookieStore.set({ name, value, ...options });
@@ -26,7 +38,11 @@ export async function createClient() {
 
 export function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) throw new Error("Falta SUPABASE_SERVICE_ROLE_KEY en el entorno de ejecución.");
+
+  if (!serviceRoleKey) {
+    throw new Error("Falta SUPABASE_SERVICE_ROLE_KEY en el entorno de ejecución.");
+  }
+
   return createSupabaseClient(SUPABASE_URL, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
