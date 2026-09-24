@@ -27,7 +27,10 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   try {
     const order = await prisma.pedido.findUnique({
       where: { id: orderId },
-      include: { client: { select: { name: true } } },
+      include: {
+        client: { select: { name: true } },
+        items: { select: { variantId: true, quantity: true } },
+      },
     });
 
     if (!order) {
