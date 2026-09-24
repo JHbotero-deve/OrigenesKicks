@@ -77,17 +77,15 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                 </div>
               </Link>
 
-              {product.model3dUrl && (
-                <button
+              <button
                   onClick={() => setQuickViewProduct(product)}
-                  className="absolute bottom-[110px] right-8 bg-orange-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-xl hover:bg-black transition-all z-20 animate-bounce"
-                  title="Ver en 3D"
+                  className="absolute bottom-[110px] right-8 bg-orange-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-xl hover:bg-black transition-all z-20"
+                  title="Ver modelo 3D"
                   aria-label={`Ver ${product.name} en 3D`}
                   type="button"
                 >
                   <Rotate3d size={20} />
                 </button>
-              )}
 
               <div className="space-y-3 mt-4 pt-4 border-t border-gray-100">
                 <div className="flex justify-between items-center">
@@ -155,6 +153,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                 <Product3DViewer
                   modelUrl={quickViewProduct.model3dUrl}
                   posterUrl={quickViewProduct.imageUrl}
+                  productName={quickViewProduct.name}
                 />
               </div>
               <div className="p-5 sm:p-8 md:p-5 sm:p-8 md:p-10 flex flex-col justify-center min-w-0 min-w-0 bg-white">
