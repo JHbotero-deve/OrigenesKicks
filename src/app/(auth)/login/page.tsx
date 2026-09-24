@@ -41,8 +41,9 @@ export default function LoginPage() {
             Orígenes <span className="text-orange-600">Kicks</span>
           </h1>
           <p className="text-gray-900 text-[10px] font-bold uppercase tracking-widest mt-2">
-            Ingresa a tu cuenta
+            Acceso seguro
           </p>
+          <p className="mt-2 text-[10px] font-medium text-gray-500">Administrador, vendedor, repartidor y cliente ingresan con sus credenciales. El rol se asigna desde el sistema.</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
@@ -104,10 +105,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="mt-8 text-center text-[11px] font-bold text-gray-700 uppercase">
-          ¿No tienes cuenta?{' '}
-          <Link href="/register" className="text-orange-600 hover:underline">Regístrate</Link>
-        </p>
+        <p className="mt-8 text-center text-[10px] font-bold uppercase tracking-wide text-gray-400">La creación de cuenta de cliente se realiza desde el carrito, después de revisar el pedido.</p>
       </div>
     </div>
   );
