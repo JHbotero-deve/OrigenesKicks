@@ -6,6 +6,7 @@ import { createOrder } from "@/lib/actions";
 import { initiateWompiCheckout } from "@/lib/payments";
 import { useAuth } from "@/contexts/AuthContext";
 import { ShoppingBag, Trash2, X, CheckCircle2, ShieldCheck, MapPin, CreditCard, Truck } from "lucide-react";
+import { PublicImage } from "@/components/ui/PublicImage";
 
 export const CartDrawer: React.FC = () => {
   const { items, removeItem, clearCart, getTotalPrice } = useCartStore();
@@ -117,7 +118,7 @@ export const CartDrawer: React.FC = () => {
                 <div className="space-y-3">
                   {items.length === 0 ? <p className="rounded-2xl bg-gray-50 px-4 py-8 text-center text-sm font-medium text-gray-500">El carrito está vacío.</p> : items.map((item) => (
                     <div key={item.variantId} className="flex gap-3 rounded-2xl border border-gray-100 p-3">
-                      {item.image ? <img src={item.image} alt={item.name} className="h-16 w-16 shrink-0 rounded-xl object-cover" /> : <div className="h-16 w-16 shrink-0 rounded-xl bg-gray-100" aria-hidden="true" />}
+                      {item.image ? <PublicImage src={item.image} alt={item.name} width={64} height={64} className="h-16 w-16 shrink-0 rounded-xl object-cover" sizes="64px" /> : <div className="h-16 w-16 shrink-0 rounded-xl bg-gray-100" aria-hidden="true" />}
                       <div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-gray-900">{item.name}</p><p className="mt-1 text-[10px] font-bold uppercase text-gray-400">Talla {item.size} · {item.color}</p><p className="mt-1 text-sm font-black">\${item.price.toLocaleString("es-CO")} · Cant. {item.quantity}</p></div>
                       <button type="button" onClick={() => removeItem(item.variantId)} className="self-start rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600" aria-label={"Eliminar " + item.name}><Trash2 size={16} /></button>
                     </div>
