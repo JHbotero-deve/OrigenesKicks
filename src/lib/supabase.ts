@@ -14,6 +14,9 @@ export const supabase = {
     signInWithPassword: (
       credentials: Parameters<ReturnType<typeof createBrowserClient>["auth"]["signInWithPassword"]>[0]
     ) => getSupabaseClient().auth.signInWithPassword(credentials),
+    signUp: (
+      credentials: Parameters<ReturnType<typeof createBrowserClient>["auth"]["signUp"]>[0]
+    ) => getSupabaseClient().auth.signUp(credentials),
     onAuthStateChange: (
       ...args: Parameters<ReturnType<typeof createBrowserClient>["auth"]["onAuthStateChange"]>
     ) => getSupabaseClient().auth.onAuthStateChange(...args),
