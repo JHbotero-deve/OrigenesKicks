@@ -7,6 +7,7 @@ import Link from "next/link";
 import { X, Rotate3d, ShoppingBag } from "lucide-react";
 import { Product3DViewer } from "@/components/products/Product3DViewer";
 import { Button } from "@/components/ui/Button";
+import { PublicImage } from "@/components/ui/PublicImage";
 
 interface ProductListProps { products: Product[]; }
 
@@ -44,10 +45,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                 </>
               ) : (
                 <>
-                  <img src={product.imageUrl || "/placeholder-shoe.svg"} alt={product.name}
-                    className="h-full w-full object-contain p-4 mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
-                    onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/placeholder-shoe.svg"; }}
-                  />
+                  <PublicImage src={product.imageUrl || "/placeholder-shoe.svg"} alt={product.name} width={600} height={600} className="h-full w-full object-contain p-4 mix-blend-multiply transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 600px" />
                   {has3D && (
                     <button type="button" onClick={() => setActive3DProductId(product.id)}
                       className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-black px-3 py-2 text-[9px] font-black uppercase italic tracking-wider text-white shadow-xl hover:bg-orange-600"

@@ -111,6 +111,9 @@ model Variant {
 model Pedido {
   id            String       @id @default(cuid())
   clientId      String       @map("client_id")
+  trackingCode  String       @unique @map("tracking_code")
+  customerName  String?
+  customerEmail String?
   storeId       String?      @map("store_id")
   status        PedidoStatus @default(RECIBIDO)
   totalAmount   Float        @default(0)

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Camera, Sparkles, ImageIcon, Plus, Trash2, Box } from "lucide-react";
 import { createProduct } from "@/lib/actions/products";
 import { Button } from "@/components/ui/Button";
+import { PublicImage } from "@/components/ui/PublicImage";
 
 const sizes = ["35","36","37","38","39","40","41","42","43","44","45"];
 type VariantDraft = { size: string; color: string; stock: string };
@@ -143,7 +144,7 @@ export const ProductEditorPro = () => {
           {previewUrl ? (
             <div className="w-full max-w-sm">
               <div className="rounded-[2rem] bg-white p-5 shadow-xl">
-                <div className="mb-5 flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-gray-50"><img src={previewUrl} alt="Vista previa" className="h-full w-full object-contain" /></div>
+                <div className="mb-5 flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-gray-50"><PublicImage src={previewUrl} alt="Vista previa" width={600} height={600} className="h-full w-full object-contain" sizes="600px" /></div>
                 <h3 className="text-xl font-black uppercase italic leading-none">{productName || "Nombre del Kick"}</h3>
                 <p className="mt-2 text-lg font-black italic">${displayedPrice.toLocaleString("es-CO")}</p>
                 {model3dUrl && <p className="mt-3 rounded-full bg-black px-3 py-2 text-center text-[9px] font-black uppercase tracking-widest text-white">Modelo 3D preparado</p>}

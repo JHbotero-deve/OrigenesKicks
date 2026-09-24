@@ -1,17 +1,17 @@
 import prisma from '@/lib/db';
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const TRACKING_PATTERN = /^OK-[A-F0-9]{10}$/;
 
 export async function getPublicOrderStatus(orderCode: string) {
-  const normalizedCode = orderCode?.trim();
+  const normalizedCode = orderCode?.trim().toUpperCase();
 
-  if (!normalizedCode || !UUID_PATTERN.test(normalizedCode)) {
-    return { success: false, message: 'Código de pedido inválido.' };
+  if (!normalizedCode || !TRACKING_PATTERN.test(normalizedCode)) {
+    return { success: false, message: 'Código de seguimiento inválido.' };
   }
 
   try {
     const order = await prisma.pedido.findUnique({
-      where: { id: normalizedCode },
+      where: { trackingCode: normalizedCode },
       include: {
         items: {
           include: {
@@ -21,20 +21,25 @@ export async function getPublicOrderStatus(orderCode: string) {
           },
         },
         envio: true,
+        store: { select: { phone: true, name: true } },
       },
     });
 
     if (!order) {
       return {
         success: false,
-        message: 'Pedido no encontrado. Por favor, verifica el código.',
+        message: 'Pedido no encontrado. Verifica el código de seguimiento.',
       };
     }
 
     return {
       success: true,
+      trackingCode: order.trackingCode,
       status: order.status,
-      city: order.envio?.city || 'Colombia',
+      date: order.createdAt,
+      city: order.envio?.city || 'Medellín',
+      storePhone: order.store?.phone || null,
+      storeName: order.store?.name || null,
       items: order.items.map((item) => item.variant.product.name),
     };
   } catch (error) {

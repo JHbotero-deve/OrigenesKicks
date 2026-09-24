@@ -91,8 +91,11 @@ export async function POST(request: Request) {
         await confirmOrderAsSale(tx, order.id, null);
       });
     } else {
-      await prisma.pedido.update({
-        where: { id: order.id },
+      await prisma.pedido.updateMany({
+        where: {
+          id: order.id,
+          paymentStatus: { not: "APPROVED" },
+        },
         data: {
           paymentStatus: status,
           paymentTransactionId: transaction.id || null,

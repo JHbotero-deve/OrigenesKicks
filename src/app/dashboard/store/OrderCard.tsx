@@ -42,6 +42,7 @@ const nextStatus: Partial<Record<OrderStatus, { value: OrderStatus; label: strin
 export default function OrderCard({ order, role }: { order: Order; role: Role | null }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [invoice, setInvoice] = useState<{ id: string; fullNumber: string } | null>(null);
 
   const handleStatusChange = async (status: OrderStatus) => {
     setLoading(true);
@@ -61,7 +62,10 @@ export default function OrderCard({ order, role }: { order: Order; role: Role | 
         return;
       }
 
-      if (result.whatsappLink) {
+      if (result.invoice) {
+        setInvoice(result.invoice);
+        window.open('/api/invoice/' + result.invoice.id, '_blank', 'noopener,noreferrer');
+      } else if (result.whatsappLink) {
         window.open(result.whatsappLink, '_blank', 'noopener,noreferrer');
       }
 
@@ -98,6 +102,9 @@ export default function OrderCard({ order, role }: { order: Order; role: Role | 
             <p className='mt-2 text-sm font-medium text-red-600' role='alert'>
               {error}
             </p>
+          )}
+          {invoice && (
+            <p className='mt-2 text-sm font-bold text-green-700' role='status'>Factura generada: {invoice.fullNumber}</p>
           )}
         </div>
       </div>

@@ -4,6 +4,7 @@ import { releaseExpiredReservationsInternal } from "@/lib/reservations";
 import { approveOrder } from "@/lib/actions";
 import { Button } from "@/components/ui/Button";
 import { ShippingStatusController } from "@/components/dashboard/ShippingStatusController";
+import { PublicImage } from "@/components/ui/PublicImage";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -79,7 +80,7 @@ export default async function OrdersPage() {
 
                 <div className="space-y-2 border-t border-gray-100 pt-4">
                   {order.items.map((item) => <div key={item.id} className="flex items-center gap-3 rounded-xl bg-gray-50 p-3">
-                    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-white">{item.variant.product.imageUrl && <img src={item.variant.product.imageUrl} alt="" className="h-full w-full object-cover" />}</div>
+                    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-white">{item.variant.product.imageUrl && <PublicImage src={item.variant.product.imageUrl} alt={item.variant.product.name} width={36} height={36} className="h-full w-full object-cover" sizes="36px" />}</div>
                     <div className="min-w-0 flex-1"><p className="truncate text-xs font-black uppercase">{item.variant.product.name}</p><p className="text-[9px] uppercase text-gray-500">Talla {item.variant.size || "-"} · {item.variant.color || "-"} · {item.quantity} unidad(es)</p></div>
                   </div>)}
                 </div>

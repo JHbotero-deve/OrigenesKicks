@@ -4,9 +4,9 @@ import { useCartStore } from "@/stores/useCartStore";
 import { Button } from "@/components/ui/Button";
 import { createOrder } from "@/lib/actions";
 import { initiateWompiCheckout } from "@/lib/payments";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { ShoppingBag, Trash2, X, CheckCircle2, ShieldCheck, MapPin, CreditCard, Truck } from "lucide-react";
+import { PublicImage } from "@/components/ui/PublicImage";
 
 export const CartDrawer: React.FC = () => {
   const { items, removeItem, clearCart, getTotalPrice } = useCartStore();
@@ -20,10 +20,9 @@ export const CartDrawer: React.FC = () => {
   const [notes, setNotes] = React.useState("");
   const [acceptedTerms, setAcceptedTerms] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
-  const [registerName, setRegisterName] = React.useState("");
-  const [registerEmail, setRegisterEmail] = React.useState("");
-  const [registerPassword, setRegisterPassword] = React.useState("");
-  const [registering, setRegistering] = React.useState(false);
+  const [customerName, setCustomerName] = React.useState("");
+  const [customerEmail, setCustomerEmail] = React.useState("");
+  const [lastTrackingCode, setLastTrackingCode] = React.useState("");
   const [error, setError] = React.useState("");
   const [success, setSuccess] = React.useState("");
 
@@ -37,48 +36,18 @@ export const CartDrawer: React.FC = () => {
     setNeighborhood("");
     setNotes("");
     setAcceptedTerms(false);
+    setCustomerName("");
+    setCustomerEmail("");
     setError("");
-  };
-
-  const handleRegister = async () => {
-    setError("");
-    setSuccess("");
-    if (!registerName.trim() || !registerEmail.trim() || registerPassword.length < 8) {
-      setError("Completa nombre, correo y una contraseña de mínimo 8 caracteres.");
-      return;
-    }
-
-    setRegistering(true);
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: registerEmail.trim(),
-      password: registerPassword,
-      options: {
-        data: { name: registerName.trim() },
-        emailRedirectTo: window.location.origin + "/auth/callback",
-      },
-    });
-    setRegistering(false);
-
-    if (signUpError) {
-      setError(signUpError.message || "No se pudo crear la cuenta.");
-      return;
-    }
-
-    if (data.session) {
-      setRegisterName("");
-      setRegisterEmail("");
-      setRegisterPassword("");
-      setSuccess("Cuenta creada como cliente. Ya puedes continuar con el pedido.");
-      return;
-    }
-
-    setSuccess("Cuenta creada. Revisa tu correo, confirma la cuenta y luego ingresa para continuar con el pedido.");
   };
 
   const handleCheckout = async () => {
     setError("");
     setSuccess("");
-    if (!user || !dbUser) return setError("Inicia sesión antes de confirmar la compra.");
+    const finalName = (dbUser?.name || customerName || "Cliente Orígenes Kicks").trim();
+    const finalEmail = (user?.email || customerEmail).trim().toLowerCase();
+    if (!finalName) return setError("Completa el nombre del cliente.");
+    if (!finalEmail || !/^\S+@\S+\.\S+$/.test(finalEmail)) return setError("Ingresa un correo válido.");
     if (items.length === 0) return setError("El carrito está vacío.");
     if (requiresDelivery && (!address.trim() || !phone.trim() || !city.trim())) return setError("Completa ciudad, dirección y teléfono para coordinar la entrega.");
     if (!/^\+?[0-9\s()-]{7,20}$/.test(phone.trim())) return setError("Ingresa un número de teléfono válido.");
@@ -93,7 +62,9 @@ export const CartDrawer: React.FC = () => {
     } : undefined;
 
     const res = await createOrder({
-      clientId: dbUser.id,
+      clientId: dbUser?.id,
+      customerName: finalName,
+      customerEmail: finalEmail,
       items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity, unitPrice: item.price })),
       paymentMethod,
       totalAmount: totalPrice,
@@ -103,8 +74,9 @@ export const CartDrawer: React.FC = () => {
 
     setSubmitting(false);
     if (res.success) {
+      setLastTrackingCode(res.trackingCode ?? "");
       if (paymentMethod === "WOMPI" && res.pedidoId) {
-        const payment = await initiateWompiCheckout(res.pedidoId);
+        const payment = await initiateWompiCheckout(res.pedidoId, res.trackingCode);
         if (!payment.success || !payment.checkoutUrl) {
           setError(payment.error ?? "No se pudo iniciar el pago con Wompi.");
           setSubmitting(false);
@@ -115,7 +87,7 @@ export const CartDrawer: React.FC = () => {
         window.location.assign(payment.checkoutUrl);
         return;
       }
-      setSuccess("Pedido " + (res.pedidoId?.slice(0, 8).toUpperCase() ?? "") + " creado correctamente. La reserva queda activa durante 24 horas.");
+      setSuccess("Pedido " + (res.trackingCode ?? "") + " creado correctamente. Guarda este código para consultar el estado en Rastreo de Kicks.");
       clearCart();
       resetCheckout();
     } else {
@@ -146,7 +118,7 @@ export const CartDrawer: React.FC = () => {
                 <div className="space-y-3">
                   {items.length === 0 ? <p className="rounded-2xl bg-gray-50 px-4 py-8 text-center text-sm font-medium text-gray-500">El carrito está vacío.</p> : items.map((item) => (
                     <div key={item.variantId} className="flex gap-3 rounded-2xl border border-gray-100 p-3">
-                      {item.image ? <img src={item.image} alt={item.name} className="h-16 w-16 shrink-0 rounded-xl object-cover" /> : <div className="h-16 w-16 shrink-0 rounded-xl bg-gray-100" aria-hidden="true" />}
+                      {item.image ? <PublicImage src={item.image} alt={item.name} width={64} height={64} className="h-16 w-16 shrink-0 rounded-xl object-cover" sizes="64px" /> : <div className="h-16 w-16 shrink-0 rounded-xl bg-gray-100" aria-hidden="true" />}
                       <div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-gray-900">{item.name}</p><p className="mt-1 text-[10px] font-bold uppercase text-gray-400">Talla {item.size} · {item.color}</p><p className="mt-1 text-sm font-black">\${item.price.toLocaleString("es-CO")} · Cant. {item.quantity}</p></div>
                       <button type="button" onClick={() => removeItem(item.variantId)} className="self-start rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600" aria-label={"Eliminar " + item.name}><Trash2 size={16} /></button>
                     </div>
@@ -154,16 +126,16 @@ export const CartDrawer: React.FC = () => {
                 </div>
               </section>
 
+              {lastTrackingCode && items.length === 0 && <section className="mx-5 my-5 rounded-3xl border-2 border-orange-200 bg-orange-50 p-6 text-center sm:mx-6"><p className="text-[10px] font-black uppercase tracking-widest text-orange-700">Pedido creado</p><p className="mt-2 text-2xl font-black tracking-widest text-black">{lastTrackingCode}</p><p className="mt-2 text-xs font-medium text-orange-950">Guarda este código. No necesitas crear una cuenta para consultar el estado.</p><a href="/posventa" className="mt-4 inline-flex rounded-xl bg-black px-5 py-3 text-[10px] font-black uppercase text-white hover:bg-orange-600">Rastrear pedido</a></section>}
+
               {items.length > 0 && <section className="space-y-5 px-5 py-5 sm:px-6">
-                {user && dbUser ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4"><p className="mb-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Cliente autenticado</p><p className="text-sm font-black text-gray-900">{dbUser.name || "Cliente"}</p><p className="text-xs text-gray-500">{user.email}</p></div> : <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
-                  <p className="text-sm font-black uppercase text-orange-950">Crear cuenta para continuar</p>
-                  <p className="mt-1 text-xs leading-relaxed text-orange-900">Primero revisa tu pedido. El registro público crea únicamente cuentas de cliente; los roles administrativos se asignan internamente.</p>
+                {user && dbUser ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4"><p className="mb-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Cliente</p><p className="text-sm font-black text-gray-900">{dbUser.name || "Cliente"}</p><p className="text-xs text-gray-500">{user.email}</p></div> : <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
+                  <p className="text-sm font-black uppercase text-orange-950">Datos del cliente</p>
+                  <p className="mt-1 text-xs leading-relaxed text-orange-900">No necesitas crear una cuenta. Usaremos estos datos para registrar la compra, enviarte la constancia y darte un código de seguimiento.</p>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <input value={registerName} onChange={(e) => setRegisterName(e.target.value)} placeholder="Nombre completo" className="w-full rounded-xl border-2 border-orange-200 bg-white p-3 text-sm outline-none focus:border-black" />
-                    <input value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} type="email" placeholder="Correo" className="w-full rounded-xl border-2 border-orange-200 bg-white p-3 text-sm outline-none focus:border-black" />
+                    <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} autoComplete="name" placeholder="Nombre completo" className="w-full rounded-xl border-2 border-orange-200 bg-white p-3 text-sm outline-none focus:border-black" />
+                    <input value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} type="email" autoComplete="email" placeholder="Correo electrónico" className="w-full rounded-xl border-2 border-orange-200 bg-white p-3 text-sm outline-none focus:border-black" />
                   </div>
-                  <input value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} type="password" minLength={8} placeholder="Contraseña, mínimo 8 caracteres" className="mt-3 w-full rounded-xl border-2 border-orange-200 bg-white p-3 text-sm outline-none focus:border-black" />
-                  <Button disabled={registering} className="mt-3 w-full rounded-xl bg-orange-600 py-4 text-xs font-black uppercase text-white hover:bg-orange-700" onClick={handleRegister}>{registering ? "Creando cuenta..." : "Crear cuenta de cliente"}</Button>
                 </div>}
 
                 <div>
@@ -179,7 +151,7 @@ export const CartDrawer: React.FC = () => {
                   <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full rounded-xl border-2 border-gray-200 bg-white p-3 text-sm font-bold text-black outline-none transition focus:border-black">
                     <option value="WOMPI">Wompi — pago en línea</option><option value="TRANSFERENCIA">Transferencia — Nequi / Daviplata</option><option value="CONTRA_ENTREGA_MEDELLIN">Contra-entrega — Medellín</option><option value="EFECTIVO">Pago en tienda física</option>
                   </select>
-                  <div className="mt-3 rounded-xl bg-gray-50 p-3 text-[10px] leading-relaxed text-gray-500">{paymentMethod === "WOMPI" ? "Serás dirigido al Checkout seguro de Wompi para completar el pago. El estado definitivo se confirma mediante webhook en el servidor." : paymentMethod === "CONTRA_ENTREGA_MEDELLIN" ? "El pago se realiza al recibir el pedido. La entrega se coordina con el teléfono registrado." : paymentMethod === "TRANSFERENCIA" ? "Después de reservar, el equipo valida el pedido y te indica el proceso de pago." : "La reserva queda asociada a tu cuenta para finalizarla en la tienda física."}</div>
+                  <div className="mt-3 rounded-xl bg-gray-50 p-3 text-[10px] leading-relaxed text-gray-500">{paymentMethod === "WOMPI" ? "Serás dirigido al Checkout seguro de Wompi para completar el pago. El estado definitivo se confirma mediante webhook en el servidor." : paymentMethod === "CONTRA_ENTREGA_MEDELLIN" ? "El pago se realiza al recibir el pedido. La entrega se coordina con el teléfono registrado." : paymentMethod === "TRANSFERENCIA" ? "Después de reservar, el equipo valida el pedido y te indica el proceso de pago." : "Puedes finalizar la compra en la tienda física con el código de seguimiento que recibirás."}</div>
                 </div>
 
                 <div><label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-500">Observaciones del pedido</label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} rows={3} placeholder="Apartamento, referencia de entrega o indicaciones adicionales" className="w-full resize-none rounded-xl border-2 border-gray-200 p-3 text-sm outline-none transition focus:border-black" /><p className="mt-1 text-right text-[9px] text-gray-400">{notes.length}/500</p></div>
@@ -195,7 +167,7 @@ export const CartDrawer: React.FC = () => {
                 <div className="border-t border-gray-100 pt-4">
                   <div className="mb-3 flex items-center justify-between"><span className="text-xs font-bold uppercase text-gray-500">Total del pedido</span><span className="text-2xl font-black">\${totalPrice.toLocaleString("es-CO")}</span></div>
                   <Button disabled={submitting} className="w-full rounded-2xl bg-black py-6 text-base font-black uppercase italic text-white hover:bg-orange-600" onClick={handleCheckout}>{submitting ? "Procesando pedido..." : "Confirmar pedido"}</Button>
-                  <p className="mt-3 flex items-center justify-center gap-2 text-center text-[9px] font-bold uppercase tracking-widest text-gray-400"><MapPin size={12} /> Compra asociada a tu cuenta</p>
+                  <p className="mt-3 flex items-center justify-center gap-2 text-center text-[9px] font-bold uppercase tracking-widest text-gray-400"><MapPin size={12} /> No necesitas crear una cuenta para comprar</p>
                 </div>
               </section>}
             </div>

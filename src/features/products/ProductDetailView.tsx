@@ -6,6 +6,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import { Product3DViewer } from "@/components/products/Product3DViewer";
 import { ShoppingBag, ChevronLeft, MessageCircle, X } from "lucide-react";
 import Link from "next/link";
+import { PublicImage } from "@/components/ui/PublicImage";
 
 interface ProductVariant {
   id: string;
@@ -46,7 +47,8 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
     discountPrice < basePrice;
   const salePrice = hasValidDiscount && discountPrice !== null ? discountPrice : basePrice;
 
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(variants[0] ?? null);
+  const initialVariant = variants.find((variant) => variant.stock > 0) ?? variants[0] ?? null;
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(initialVariant);
   const [view3d, setView3d] = useState(false);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const availableColors = Array.from(new Set(variants.map((variant) => variant.color).filter(Boolean)));
@@ -88,18 +90,16 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
                 modelUrl={product.model3dUrl}
                 posterUrl={product.imageUrl ?? undefined}
                 productName={product.name}
-                color={selectedVariant?.color}
               />
             ) : (
               <div className="h-[360px] sm:h-[500px] lg:h-[700px] flex items-center justify-center p-12">
-                <img
+                <PublicImage
                   src={product.imageUrl || "/placeholder-shoe.svg"}
                   alt={product.name}
+                  width={1000}
+                  height={1000}
                   className="w-full h-full object-contain mix-blend-multiply drop-shadow-2xl"
-                  onError={(event) => {
-                    event.currentTarget.onerror = null;
-                    event.currentTarget.src = "/placeholder-shoe.svg";
-                  }}
+                  sizes="(max-width: 1024px) 100vw, 60vw"
                 />
               </div>
             )}

@@ -58,7 +58,7 @@ export default function RegisterPage() {
     }
 
     if (data.session) {
-      window.location.assign("/auth/redirect");
+      router.push("/auth/redirect");
       return;
     }
 

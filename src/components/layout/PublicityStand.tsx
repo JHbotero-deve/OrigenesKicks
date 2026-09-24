@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ShieldCheck, Truck, RotateCcw, Award } from 'lucide-react';
+import { PublicImage } from "@/components/ui/PublicImage";
 
 export const PublicityStand = () => {
   return (
@@ -41,10 +42,13 @@ export const PublicityStand = () => {
 
             <div className="relative group">
               <div className="absolute inset-0 bg-black rounded-3xl blur-2xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
-              <img
+              <PublicImage
                 src="/kicks-banner.svg"
-                className="w-full aspect-video object-cover rounded-3xl border-4 border-black relative z-10 transform group-hover:-rotate-2 transition-transform duration-500"
                 alt="Producción Nacional"
+                width={1200}
+                height={675}
+                className="w-full aspect-video object-cover rounded-3xl border-4 border-black relative z-10 transform group-hover:-rotate-2 transition-transform duration-500"
+                sizes="(max-width: 1024px) 100vw, 1200px"
               />
               <div className="absolute -bottom-6 -right-6 bg-yellow-400 border-4 border-black p-6 rounded-3xl z-20 shadow-xl hidden md:block">
                 <p className="text-black font-black italic text-2xl uppercase leading-none">Hecho con<br/>El Corazón</p>

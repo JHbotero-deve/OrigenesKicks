@@ -16,18 +16,37 @@ function publicActionError(error: unknown, fallback: string) {
 }
 
 export async function createOrder(data: {
-  clientId: string;
+  clientId?: string;
+  customerName: string;
+  customerEmail?: string;
   items: { variantId: string; quantity: number; unitPrice: number }[];
   paymentMethod: string;
   totalAmount: number;
   shippingAddress?: { address: string; city: string; phone: string };
   notes?: string;
-}): Promise<{ success: boolean; pedidoId?: string; error?: string }> {
+}): Promise<{ success: boolean; pedidoId?: string; trackingCode?: string; error?: string }> {
   try {
     const auth = await requireAuthenticatedUser();
-    if (!auth.ok) return { success: false, error: "Debes iniciar sesión para realizar un pedido" };
+    const dbUser = auth.ok ? auth.dbUser : null;
+    const guestName = data.customerName?.trim() || "";
+    const guestEmail = data.customerEmail?.trim().toLowerCase() || "";
 
-    const dbUser = auth.dbUser;
+    if (!dbUser && guestName.length < 2) {
+      return { success: false, error: "Escribe el nombre completo del cliente." };
+    }
+
+    if (!dbUser && guestEmail && !/^\S+@\S+\.\S+$/.test(guestEmail)) {
+      return { success: false, error: "Ingresa un correo válido." };
+    }
+
+    if (guestName.length > 100 || guestEmail.length > 150) {
+      return { success: false, error: "Los datos del cliente son demasiado largos." };
+    }
+
+    if (!dbUser && data.paymentMethod === "WOMPI" && !guestEmail) {
+      return { success: false, error: "Para pagar con Wompi necesitas indicar un correo." };
+    }
+
     await releaseExpiredReservationsInternal();
 
     if (!Array.isArray(data.items) || data.items.length === 0) {
@@ -74,6 +93,7 @@ export async function createOrder(data: {
     }
 
     const paymentReference = data.paymentMethod === "WOMPI" ? `OK-${crypto.randomUUID()}` : null;
+    const trackingCode = `OK-${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
 
     const result = await prisma.$transaction(async (tx) => {
       let calculatedTotal = 0;
@@ -96,11 +116,7 @@ export async function createOrder(data: {
         }
 
         const stockUpdate = await tx.variant.updateMany({
-          where: {
-            id: variant.id,
-            active: true,
-            stock: { gte: quantity },
-          },
+          where: { id: variant.id, active: true, stock: { gte: quantity } },
           data: { stock: { decrement: quantity } },
         });
 
@@ -131,11 +147,26 @@ export async function createOrder(data: {
         throw new Error("No se pudo determinar la tienda del pedido.");
       }
 
+      const client =
+        dbUser ??
+        (await tx.user.create({
+          data: {
+            email: `guest-${crypto.randomUUID()}@origenes.local`,
+            password: "",
+            name: guestName,
+            role: "CLIENT",
+          },
+          select: { id: true, email: true, name: true },
+        }));
+
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
       const pedido = await tx.pedido.create({
         data: {
-          clientId: dbUser.id,
+          clientId: client.id,
+          trackingCode,
+          customerName: dbUser ? dbUser.name : guestName,
+          customerEmail: dbUser ? dbUser.email : guestEmail || null,
           storeId: assignedStoreId,
           totalAmount: calculatedTotal,
           paymentMethod: data.paymentMethod,
@@ -157,7 +188,7 @@ export async function createOrder(data: {
             },
           }),
         },
-        select: { id: true },
+        select: { id: true, trackingCode: true },
       });
 
       for (const item of itemsWithRealPrices) {
@@ -167,13 +198,13 @@ export async function createOrder(data: {
             storeId: assignedStoreId,
             changeType: "RESERVATION",
             quantity: item.quantity,
-            reason: `Reserva de 24h · Pedido #${pedido.id.slice(0, 8)}`,
-            performedById: dbUser.id,
+            reason: `Reserva de 24h · Pedido #${pedido.trackingCode}`,
+            performedById: dbUser?.id ?? null,
           },
         });
       }
 
-      return { success: true, pedidoId: pedido.id };
+      return { success: true, pedidoId: pedido.id, trackingCode: pedido.trackingCode };
     });
 
     if (result.success && result.pedidoId) {
@@ -184,24 +215,27 @@ export async function createOrder(data: {
 
       const createdOrder = await prisma.pedido.findUnique({
         where: { id: result.pedidoId },
-        select: { totalAmount: true },
+        select: { totalAmount: true, customerEmail: true },
       });
 
-      const mailResult = await sendOrderEmail(
-        dbUser.email,
-        result.pedidoId,
-        Number(createdOrder?.totalAmount ?? 0),
-        emailItems.map((item) => ({
-          name: item.variant.product.name,
-          size: item.variant.size ?? "-",
-          color: item.variant.color ?? "-",
-          quantity: item.quantity,
-          price: Number(item.unitPrice),
-        })),
-      );
+      const mailTarget = createdOrder?.customerEmail || dbUser?.email;
+      if (mailTarget) {
+        const mailResult = await sendOrderEmail(
+          mailTarget,
+          result.pedidoId,
+          Number(createdOrder?.totalAmount ?? 0),
+          emailItems.map((item) => ({
+            name: item.variant.product.name,
+            size: item.variant.size ?? "-",
+            color: item.variant.color ?? "-",
+            quantity: item.quantity,
+            price: Number(item.unitPrice),
+          })),
+        );
 
-      if (!mailResult.success) {
-        console.warn("Pedido creado; no se pudo enviar la constancia por correo:", mailResult.error);
+        if (!mailResult.success) {
+          console.warn("Pedido creado; no se pudo enviar la constancia por correo:", mailResult.error);
+        }
       }
     }
 
@@ -213,7 +247,6 @@ export async function createOrder(data: {
     return { success: false, error: publicActionError(error, "No se pudo crear el pedido") };
   }
 }
-
 export async function approveOrder(pedidoId: string): Promise<{ success: boolean; error?: string }> {
   const auth = await requireRole(ROLES_APPROVE_ORDERS);
   if (!auth.ok) return { success: false, error: "No tienes permiso para aprobar ventas" };
@@ -270,50 +303,6 @@ export async function releaseExpiredReservations() {
     return result;
   } catch (error) {
     return { success: false, error: publicActionError(error, "No se pudieron liberar las reservas vencidas") };
-  }
-}
-
-export async function getPublicOrderStatus(orderCode: string) {
-  try {
-    const normalizedCode = orderCode?.trim();
-    if (!normalizedCode || normalizedCode.length < 4 || normalizedCode.length > 80) {
-      return { success: false, message: "Código de pedido inválido." };
-    }
-
-    const isUuid =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-        normalizedCode,
-      );
-
-    if (!isUuid && !/^[A-Za-z0-9-]{3,40}$/.test(normalizedCode)) {
-      return { success: false, message: "Código de pedido inválido." };
-    }
-
-    const order = await prisma.pedido.findFirst({
-      where: isUuid
-        ? { id: normalizedCode }
-        : { factura: { fullNumber: normalizedCode.toUpperCase() } },
-      include: {
-        envio: true,
-        store: { select: { phone: true, name: true } },
-        items: { include: { variant: { include: { product: true } } } },
-      },
-    });
-
-    if (!order) return { success: false, message: "No encontramos ningún pedido con ese código." };
-
-    return {
-      success: true,
-      status: order.status,
-      date: order.createdAt,
-      city: order.envio?.city || "Medellín",
-      storePhone: order.store?.phone || null,
-      storeName: order.store?.name || null,
-      items: order.items.map((item) => item.variant.product.name),
-    };
-  } catch (error) {
-    console.error("Error al consultar pedido público:", error);
-    return { success: false, message: "Error al consultar el sistema." };
   }
 }
 

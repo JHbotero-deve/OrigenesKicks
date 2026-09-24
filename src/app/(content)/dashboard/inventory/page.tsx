@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { AlertTriangle, Package, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { ManualRemovalForm } from "@/features/dashboard/ManualRemovalForm";
+import { PublicImage } from "@/components/ui/PublicImage";
 
 export const dynamic = 'force-dynamic';
 
@@ -56,7 +57,7 @@ export default async function InventoryPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {lowStockVariants.map(variant => (
               <div key={variant.id} className="bg-white p-4 rounded-lg shadow-sm border border-orange-100 flex items-center gap-4">
-                {variant.imageUrl && <img src={variant.imageUrl} className="w-12 h-12 object-cover rounded" />}
+                {variant.imageUrl && <PublicImage src={variant.imageUrl} alt={variant.productName} width={48} height={48} className="w-12 h-12 object-cover rounded" sizes="48px" />}
                 <div className="flex-1">
                   <p className="text-xs font-bold uppercase truncate">{variant.productName}</p>
                   <p className="text-[10px] text-gray-500">Talla: {variant.size} | Ref: {variant.sku}</p>

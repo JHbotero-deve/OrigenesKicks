@@ -15,30 +15,38 @@ function sha256(value: string) {
   return crypto.createHash("sha256").update(value, "utf8").digest("hex");
 }
 
-export async function initiateWompiCheckout(pedidoId: string) {
+export async function initiateWompiCheckout(pedidoId: string, trackingCode?: string) {
   const auth = await requireAuthenticatedUser();
-  if (!auth.ok) return { success: false, error: "Debes iniciar sesión para pagar." };
 
   if (!WOMPI_PUBLIC_KEY || !WOMPI_INTEGRITY_SECRET) {
     console.error("Wompi no está configurado: faltan WOMPI_PUBLIC_KEY o WOMPI_INTEGRITY_SECRET.");
     return { success: false, error: "El pago en línea no está disponible temporalmente." };
   }
 
-  const order = await prisma.pedido.findUnique({
-    where: { id: pedidoId },
+  const order = await prisma.pedido.findFirst({
+    where: {
+      id: pedidoId,
+      ...(auth.ok
+        ? {}
+        : { trackingCode: trackingCode?.trim().toUpperCase() || "__INVALID__" }),
+    },
     select: {
       id: true,
+      trackingCode: true,
       clientId: true,
       totalAmount: true,
       paymentMethod: true,
       paymentReference: true,
       paymentStatus: true,
+      customerEmail: true,
+      customerName: true,
       client: { select: { email: true, name: true } },
       envio: { select: { address: true, city: true, phone: true } },
     },
   });
 
-  if (!order || order.clientId !== auth.dbUser.id) {
+  if (!order) return { success: false, error: "Pedido no encontrado." };
+  if (auth.ok && order.clientId !== auth.dbUser.id) {
     return { success: false, error: "Pedido no encontrado." };
   }
 
@@ -67,9 +75,9 @@ export async function initiateWompiCheckout(pedidoId: string) {
     "amount-in-cents": String(amountInCents),
     reference,
     "signature:integrity": signature,
-    "redirect-url": APP_URL + "/payment/result",
-    "customer-data:email": order.client.email,
-    "customer-data:full-name": order.client.name || "Cliente Orígenes Kicks",
+    "redirect-url": APP_URL + "/payment/result?tracking=" + encodeURIComponent(order.trackingCode),
+    "customer-data:email": order.customerEmail || order.client.email,
+    "customer-data:full-name": order.customerName || order.client.name || "Cliente Orígenes Kicks",
   });
 
   if (order.envio?.phone) params.set("customer-data:phone-number", order.envio.phone);

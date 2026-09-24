@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { MapPin, Clock, Phone, Camera } from 'lucide-react';
+import { PublicImage } from '@/components/ui/PublicImage';
 
 interface Store {
   id: string;
@@ -10,13 +11,6 @@ interface Store {
   city: string | null;
   phone: string | null;
   imageUrl?: string | null;
-}
-
-// después
-interface Store {
-  address: string | null;
-  city: string | null;
-  phone: string | null;
 }
 
 export const StoresShowcase: React.FC<{ stores: Store[] }> = ({ stores }) => {
@@ -47,11 +41,7 @@ export const StoresShowcase: React.FC<{ stores: Store[] }> = ({ stores }) => {
                 {/* Foto del Local */}
                 <div className="relative aspect-[4/3] overflow-hidden bg-gray-200">
                   {store.imageUrl ? (
-                    <img
-                      src={store.imageUrl}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      alt={store.name}
-                    />
+                    <PublicImage src={store.imageUrl} alt={store.name} width={1200} height={900} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" sizes="(max-width: 768px) 100vw, 1200px" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-black text-white p-12 text-center">
                       <p className="font-black uppercase italic text-sm">Próximamente foto de la sede {store.name}</p>

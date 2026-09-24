@@ -25,7 +25,12 @@ export async function confirmOrderAsSale(
 
   if (order.status !== "RECIBIDO") {
     if (order.factura) {
-      return { success: true, invoiceId: order.factura.id, alreadyConfirmed: true };
+      return {
+        success: true,
+        invoiceId: order.factura.id,
+        fullNumber: order.factura.fullNumber,
+        alreadyConfirmed: true,
+      };
     }
     throw new Error("El pedido ya no está pendiente de confirmación.");
   }
@@ -70,8 +75,8 @@ export async function confirmOrderAsSale(
       prefix,
       invoiceNumber,
       fullNumber,
-      customerName: order.client.name || "Cliente Orígenes Kicks",
-      customerEmail: order.client.email,
+      customerName: order.customerName || order.client.name || "Cliente Orígenes Kicks",
+      customerEmail: order.customerEmail || order.client.email,
       customerId: order.client.id,
       paymentMethod: order.paymentMethod || "PENDIENTE",
       subtotal,

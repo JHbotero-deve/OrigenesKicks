@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPublicOrderStatus } from '@/lib/actions';
+import { getPublicOrderStatus } from '@/lib/actions/public';
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
