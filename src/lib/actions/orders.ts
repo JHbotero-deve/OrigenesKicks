@@ -44,8 +44,8 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 
     const managerTransitions: Record<string, OrderStatus[]> = {
       RECIBIDO: ['CONFIRMADO', 'CANCELADO'],
-      CONFIRMADO: ['PROCESANDO', 'CANCELADO'],
-      PROCESANDO: ['DESPACHADO', 'CANCELADO'],
+      CONFIRMADO: ['PROCESANDO'],
+      PROCESANDO: ['DESPACHADO'],
       DESPACHADO: ['ENTREGADO'],
       ENTREGADO: [],
       CANCELADO: [],
