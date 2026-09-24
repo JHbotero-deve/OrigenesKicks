@@ -19,7 +19,6 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isDashboard = pathname.startsWith("/dashboard");
   const isUserApi = pathname === "/api/user";
-  const isAuthRedirect = pathname === "/auth/redirect";
 
   let response = NextResponse.next({ request: { headers: request.headers } });
 
@@ -42,7 +41,7 @@ export async function proxy(request: NextRequest) {
     error,
   } = await supabase.auth.getUser();
 
-  if (error && (isDashboard || isUserApi || isAuthRedirect)) {
+  if (error && (isDashboard || isUserApi)) {
     if (isUserApi) {
       return NextResponse.json({ error: "Sesión no válida" }, { status: 401 });
     }
@@ -58,9 +57,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
+  response.headers.set("Cache-Control", "private, no-store");
   return response;
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/api/user", "/auth/redirect"],
+  matcher: ["/dashboard/:path*", "/api/user"],
 };
