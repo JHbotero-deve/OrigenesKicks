@@ -1,163 +1,143 @@
 "use client";
-
-import React from 'react';
-import { useCartStore } from '@/stores/useCartStore';
-import { Button } from '@/components/ui/Button';
-import { createOrder } from '@/lib/actions';
-import { useAuth } from '@/contexts/AuthContext';
-import { ShoppingBag, Trash2, X } from 'lucide-react';
+import React from "react";
+import { useCartStore } from "@/stores/useCartStore";
+import { Button } from "@/components/ui/Button";
+import { createOrder } from "@/lib/actions";
+import { useAuth } from "@/contexts/AuthContext";
+import { ShoppingBag, Trash2, X, CheckCircle2, ShieldCheck, MapPin, CreditCard, Truck } from "lucide-react";
 
 export const CartDrawer: React.FC = () => {
   const { items, removeItem, clearCart, getTotalPrice } = useCartStore();
   const { user } = useAuth();
   const [isOpen, setIsOpen] = React.useState(false);
-  const [paymentMethod, setPaymentMethod] = React.useState('TRANSFERENCIA');
+  const [paymentMethod, setPaymentMethod] = React.useState("TRANSFERENCIA");
+  const [address, setAddress] = React.useState("");
+  const [phone, setPhone] = React.useState("");
+  const [city, setCity] = React.useState("Medellín");
+  const [neighborhood, setNeighborhood] = React.useState("");
+  const [notes, setNotes] = React.useState("");
+  const [acceptedTerms, setAcceptedTerms] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [success, setSuccess] = React.useState("");
 
   const totalPrice = getTotalPrice();
+  const requiresDelivery = paymentMethod !== "EFECTIVO";
 
-  // Datos de envío
-  const [address, setAddress] = React.useState('');
-  const [phone, setPhone] = React.useState('');
-  const [city, setCity] = React.useState('Medellín');
+  const resetCheckout = () => {
+    setAddress("");
+    setPhone("");
+    setCity("Medellín");
+    setNeighborhood("");
+    setNotes("");
+    setAcceptedTerms(false);
+    setError("");
+  };
 
   const handleCheckout = async () => {
-    if (!user) {
-      alert("Debes iniciar sesión para comprar");
-      return;
-    }
+    setError("");
+    setSuccess("");
+    if (!user) return setError("Inicia sesión antes de confirmar la compra.");
+    if (items.length === 0) return setError("El carrito está vacío.");
+    if (requiresDelivery && (!address.trim() || !phone.trim() || !city.trim())) return setError("Completa ciudad, dirección y teléfono para coordinar la entrega.");
+    if (!/^\+?[0-9\s()-]{7,20}$/.test(phone.trim())) return setError("Ingresa un número de teléfono válido.");
+    if (notes.trim().length > 500) return setError("Las observaciones no pueden superar 500 caracteres.");
+    if (!acceptedTerms) return setError("Debes aceptar las condiciones de compra para continuar.");
 
-    if (items.length === 0) return;
-
-    if (paymentMethod === 'CONTRA_ENTREGA_MEDELLIN' && (!address || !phone)) {
-      alert("Para contra-entrega necesitamos tu dirección y teléfono en Medellín");
-      return;
-    }
+    setSubmitting(true);
+    const shippingAddress = requiresDelivery ? {
+      address: neighborhood.trim() ? address.trim() + " — Barrio: " + neighborhood.trim() : address.trim(),
+      city: city.trim(),
+      phone: phone.trim(),
+    } : undefined;
 
     const res = await createOrder({
       clientId: user.id,
-      items: items.map(i => ({
-        variantId: i.variantId,
-        quantity: i.quantity,
-        unitPrice: i.price
-      })),
+      items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity, unitPrice: item.price })),
       paymentMethod,
       totalAmount: totalPrice,
-      shippingAddress: paymentMethod === 'CONTRA_ENTREGA_MEDELLIN' ? { address, city, phone } : undefined
+      shippingAddress,
+      notes: notes.trim() || undefined,
     });
 
+    setSubmitting(false);
     if (res.success) {
-      alert(`¡Pedido reservado! Tienes 24 horas para confirmar el pago. Revisa el estado de tu pedido desde tu cuenta.`);
+      setSuccess("Pedido " + (res.pedidoId?.slice(0, 8).toUpperCase() ?? "") + " creado correctamente. La reserva queda activa durante 24 horas.");
       clearCart();
-      setIsOpen(false);
-      setAddress('');
-      setPhone('');
+      resetCheckout();
     } else {
-      alert("Hubo un error: " + res.error);
+      setError(res.error ?? "No se pudo crear el pedido. Revisa los datos e inténtalo nuevamente.");
     }
   };
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="flex items-center gap-3 bg-[#1a1a1a] text-white px-6 py-2.5 rounded-2xl hover:bg-black transition-all shadow-xl active:scale-95 group relative"
-      >
-        <ShoppingBag size={18} className="text-orange-500 group-hover:rotate-12 transition-transform" />
-        <span className="text-[11px] font-black uppercase italic tracking-wider">Carrito</span>
-        {items.length > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 bg-orange-600 text-white text-[9px] rounded-full w-5 h-5 flex items-center justify-center border-2 border-white font-black shadow-lg animate-bounce">
-            {items.length}
-          </span>
-        )}
+      <button type="button" onClick={() => setIsOpen(true)} className="relative flex items-center gap-2 rounded-2xl bg-[#1a1a1a] px-4 py-2.5 text-white shadow-xl transition-all hover:bg-black active:scale-95 sm:gap-3 sm:px-6" aria-label={"Abrir carrito" + (items.length ? ", " + items.length + " productos" : "")}>
+        <ShoppingBag size={18} className="text-orange-500" />
+        <span className="text-[10px] font-black uppercase italic tracking-wider sm:text-[11px]">Carrito</span>
+        {items.length > 0 && <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-orange-600 text-[9px] font-black text-white shadow-lg">{items.length}</span>}
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsOpen(false)} />
-          <div className="relative w-full max-w-md bg-white h-full max-h-dvh shadow-xl p-4 sm:p-6 flex flex-col overflow-hidden">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">Tu Carrito</h2>
-              <button onClick={() => setIsOpen(false)}><X /></button>
-            </div>
+        <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label="Carrito y checkout">
+          <button type="button" className="absolute inset-0 bg-black/60" aria-label="Cerrar carrito" onClick={() => setIsOpen(false)} />
+          <aside className="relative flex h-dvh w-full max-w-lg flex-col overflow-hidden bg-white shadow-2xl">
+            <header className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4 sm:px-6">
+              <div><p className="text-[9px] font-black uppercase tracking-[0.22em] text-orange-600">Orígenes Kicks</p><h2 className="text-xl font-black uppercase italic tracking-tight text-gray-900">Carrito y compra</h2></div>
+              <button type="button" onClick={() => setIsOpen(false)} className="rounded-full p-2 hover:bg-gray-100" aria-label="Cerrar carrito"><X size={20} /></button>
+            </header>
 
-            <div className="flex-1 overflow-y-auto space-y-4">
-              {items.length === 0 ? (
-                <p className="text-gray-500 text-center py-10">El carrito está vacío</p>
-              ) : (
-                items.map(item => (
-                  <div key={item.variantId} className="flex items-center gap-4 border-b pb-4">
-                    {item.image && <img src={item.image} className="w-16 h-16 object-cover rounded" />}
-                    <div className="flex-1">
-                      <h4 className="font-medium">{item.name}</h4>
-                      <p className="text-xs text-gray-500">Talla: {item.size} | Color: {item.color}</p>
-                      <p className="font-bold">${item.price.toLocaleString()}</p>
+            <div className="flex-1 overflow-y-auto">
+              <section className="border-b border-gray-100 px-5 py-5 sm:px-6">
+                <div className="mb-4 flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Resumen</p><p className="text-sm font-bold text-gray-900">{items.length} producto{items.length === 1 ? "" : "s"}</p></div><span className="text-lg font-black text-gray-900">\${totalPrice.toLocaleString("es-CO")}</span></div>
+                <div className="space-y-3">
+                  {items.length === 0 ? <p className="rounded-2xl bg-gray-50 px-4 py-8 text-center text-sm font-medium text-gray-500">El carrito está vacío.</p> : items.map((item) => (
+                    <div key={item.variantId} className="flex gap-3 rounded-2xl border border-gray-100 p-3">
+                      {item.image ? <img src={item.image} alt={item.name} className="h-16 w-16 shrink-0 rounded-xl object-cover" /> : <div className="h-16 w-16 shrink-0 rounded-xl bg-gray-100" aria-hidden="true" />}
+                      <div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-gray-900">{item.name}</p><p className="mt-1 text-[10px] font-bold uppercase text-gray-400">Talla {item.size} · {item.color}</p><p className="mt-1 text-sm font-black">\${item.price.toLocaleString("es-CO")} · Cant. {item.quantity}</p></div>
+                      <button type="button" onClick={() => removeItem(item.variantId)} className="self-start rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600" aria-label={"Eliminar " + item.name}><Trash2 size={16} /></button>
                     </div>
-                    <button onClick={() => removeItem(item.variantId)} className="text-red-500"><Trash2 className="w-4 h-4" /></button>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))}
+                </div>
+              </section>
 
-            {items.length > 0 && (
-              <div className="border-t pt-4 mt-4 space-y-4">
+              {items.length > 0 && <section className="space-y-5 px-5 py-5 sm:px-6">
+                {user ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4"><p className="mb-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Cliente autenticado</p><p className="text-sm font-black text-gray-900">{user.name || "Cliente"}</p><p className="text-xs text-gray-500">{user.email}</p></div> : <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-bold text-orange-900">Inicia sesión para continuar con la compra y asociar el pedido a tu cuenta.</div>}
+
                 <div>
-                  <label className="block text-sm font-bold mb-1 uppercase italic text-[10px]">Método de Pago</label>
-                  <select
-                    className="w-full p-2.5 border-2 border-gray-200 rounded text-sm bg-white font-bold text-black focus:border-black outline-none transition-all cursor-pointer"
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                  >
-                    <option value="TRANSFERENCIA">Transferencia (Nequi/Daviplata)</option>
-                    <option value="CONTRA_ENTREGA_MEDELLIN">Pago Contra-entrega Medellín</option>
-                    <option value="EFECTIVO">Pago en Tienda Física</option>
+                  <div className="mb-3 flex items-center gap-2"><Truck size={17} className="text-orange-600" /><h3 className="text-sm font-black uppercase italic">Datos de entrega</h3></div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Ciudad" className="w-full rounded-xl border-2 border-gray-200 p-3 text-sm outline-none transition focus:border-black" /><input value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} placeholder="Barrio" className="w-full rounded-xl border-2 border-gray-200 p-3 text-sm outline-none transition focus:border-black" /></div>
+                  <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Dirección exacta y complemento" className="mt-3 w-full rounded-xl border-2 border-gray-200 p-3 text-sm outline-none transition focus:border-black" />
+                  <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="WhatsApp / teléfono de contacto" className="mt-3 w-full rounded-xl border-2 border-gray-200 p-3 text-sm outline-none transition focus:border-black" />
+                  <p className="mt-2 text-[10px] text-gray-400">Usaremos estos datos para gestionar la entrega del pedido.</p>
+                </div>
+
+                <div>
+                  <div className="mb-3 flex items-center gap-2"><CreditCard size={17} className="text-orange-600" /><h3 className="text-sm font-black uppercase italic">Forma de pago</h3></div>
+                  <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full rounded-xl border-2 border-gray-200 bg-white p-3 text-sm font-bold text-black outline-none transition focus:border-black">
+                    <option value="TRANSFERENCIA">Transferencia — Nequi / Daviplata</option><option value="CONTRA_ENTREGA_MEDELLIN">Contra-entrega — Medellín</option><option value="EFECTIVO">Pago en tienda física</option>
                   </select>
+                  <div className="mt-3 rounded-xl bg-gray-50 p-3 text-[10px] leading-relaxed text-gray-500">{paymentMethod === "CONTRA_ENTREGA_MEDELLIN" ? "El pago se realiza al recibir el pedido. La entrega se coordina con el teléfono registrado." : paymentMethod === "TRANSFERENCIA" ? "Después de reservar, el equipo valida el pedido y te indica el proceso de pago." : "La reserva queda asociada a tu cuenta para finalizarla en la tienda física."}</div>
                 </div>
 
-                {paymentMethod === 'CONTRA_ENTREGA_MEDELLIN' && (
-                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex gap-3 items-start shadow-sm">
-                      <div className="bg-green-600 text-white p-1 rounded-full shrink-0 mt-0.5">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7"></path></svg>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black uppercase text-green-800 leading-tight">Confianza Total Medellín</p>
-                        <p className="text-[9px] text-green-700 leading-tight mt-0.5 font-medium">
-                          Paga solo al recibir y verificar tus Kicks. <span className="font-bold">Sin depósitos previos</span>, seguridad 100%.
-                        </p>
-                      </div>
-                    </div>
+                <div><label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-500">Observaciones del pedido</label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} rows={3} placeholder="Apartamento, referencia de entrega o indicaciones adicionales" className="w-full resize-none rounded-xl border-2 border-gray-200 p-3 text-sm outline-none transition focus:border-black" /><p className="mt-1 text-right text-[9px] text-gray-400">{notes.length}/500</p></div>
 
-                    <input
-                      type="text"
-                      placeholder="Dirección exacta en Medellín"
-                      className="w-full p-2.5 border-2 border-green-100 rounded text-sm focus:border-green-600 outline-none transition-all placeholder:text-gray-400"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                    />
-                    <input
-                      type="text"
-                      placeholder="WhatsApp para coordinar entrega"
-                      className="w-full p-2.5 border-2 border-green-100 rounded text-sm focus:border-green-600 outline-none transition-all placeholder:text-gray-400"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                    />
-                  </div>
-                )}
-
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Total</span>
-                  <span>${totalPrice.toLocaleString()}</span>
+                <div className="rounded-2xl border border-gray-200 p-4">
+                  <div className="flex gap-3"><ShieldCheck size={20} className="mt-0.5 shrink-0 text-green-600" /><div><p className="text-xs font-black uppercase">Condiciones de compra</p><ul className="mt-2 space-y-1 text-[10px] leading-relaxed text-gray-500"><li>• Reserva durante 24 horas.</li><li>• Precio y stock se validan al confirmar.</li><li>• Datos de contacto y entrega deben ser correctos.</li><li>• Una reserva vencida puede liberar nuevamente el inventario.</li></ul></div></div>
+                  <label className="mt-4 flex cursor-pointer items-start gap-3 border-t border-gray-100 pt-4"><input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} className="mt-0.5 h-4 w-4 accent-black" /><span className="text-[11px] font-bold leading-relaxed text-gray-700">Acepto las condiciones de compra y autorizo el uso de los datos suministrados para gestionar este pedido.</span></label>
                 </div>
-                <Button className="w-full py-6 text-lg bg-black text-white font-black italic uppercase" onClick={handleCheckout}>
-                  Confirmar Reserva (24h)
-                </Button>
-                <p className="text-[10px] text-gray-400 text-center uppercase tracking-widest leading-tight">
-                  Al confirmar, tus Kicks salen de la vitrina por 24 horas.<br/>
-                  Apoya la fábrica nacional, ¡gracias por tu compra!
-                </p>
-              </div>
-            )}
-          </div>
+
+                {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-bold text-red-700">{error}</div>}
+                {success && <div role="status" className="rounded-xl border border-green-200 bg-green-50 p-4"><div className="flex gap-2"><CheckCircle2 size={18} className="shrink-0 text-green-600" /><p className="text-xs font-bold leading-relaxed text-green-800">{success}</p></div></div>}
+
+                <div className="border-t border-gray-100 pt-4">
+                  <div className="mb-3 flex items-center justify-between"><span className="text-xs font-bold uppercase text-gray-500">Total del pedido</span><span className="text-2xl font-black">\${totalPrice.toLocaleString("es-CO")}</span></div>
+                  <Button disabled={submitting} className="w-full rounded-2xl bg-black py-6 text-base font-black uppercase italic text-white hover:bg-orange-600" onClick={handleCheckout}>{submitting ? "Procesando pedido..." : "Confirmar pedido"}</Button>
+                  <p className="mt-3 flex items-center justify-center gap-2 text-center text-[9px] font-bold uppercase tracking-widest text-gray-400"><MapPin size={12} /> Compra asociada a tu cuenta</p>
+                </div>
+              </section>}
+            </div>
+          </aside>
         </div>
       )}
     </>
