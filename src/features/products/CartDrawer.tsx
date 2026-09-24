@@ -76,7 +76,7 @@ export const CartDrawer: React.FC = () => {
     if (res.success) {
       setLastTrackingCode(res.trackingCode ?? "");
       if (paymentMethod === "WOMPI" && res.pedidoId) {
-        const payment = await initiateWompiCheckout(res.pedidoId);
+        const payment = await initiateWompiCheckout(res.pedidoId, res.trackingCode);
         if (!payment.success || !payment.checkoutUrl) {
           setError(payment.error ?? "No se pudo iniciar el pago con Wompi.");
           setSubmitting(false);
