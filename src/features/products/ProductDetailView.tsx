@@ -96,7 +96,7 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
 
         <div className="flex flex-col">
           <div className="mb-12">
-            <span className="bg-yellow-400 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase italic mb-4 inline-block">
+            <span className="bg-orange-100 text-orange-800 text-[10px] font-black px-3 py-1 rounded-full uppercase italic mb-4 inline-block">
               Fábrica Nacional
             </span>
             <h1 className="text-4xl sm:text-5xl md:text-6xl break-words font-black uppercase italic tracking-tighter text-gray-900 leading-none mb-4">
@@ -175,7 +175,7 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
 
             <div className="flex flex-col gap-4">
               <Button
-                className="w-full py-10 bg-black text-white font-black italic uppercase text-xl rounded-[2.5rem] shadow-2xl hover:bg-orange-600 transition-all flex items-center justify-center gap-4"
+                className="w-full py-5 sm:py-7 lg:py-10 bg-black text-white font-black italic uppercase text-xl rounded-[2.5rem] shadow-2xl hover:bg-orange-600 transition-all flex items-center justify-center gap-4"
                 onClick={() => {
                   if (!selectedVariant || selectedVariant.stock <= 0 || !Number.isFinite(salePrice) || salePrice <= 0) return;
                   addItem({
