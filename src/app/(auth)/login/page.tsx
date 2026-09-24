@@ -103,6 +103,12 @@ export default function LoginPage() {
             <p className="text-red-600 text-[11px] font-bold uppercase text-center">{error}</p>
           )}
 
+          <div className="text-right">
+            <Link href="/forgot-password" className="text-xs font-bold text-orange-600 hover:text-orange-700 hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
