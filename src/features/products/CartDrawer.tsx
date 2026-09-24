@@ -3,6 +3,7 @@ import React from "react";
 import { useCartStore } from "@/stores/useCartStore";
 import { Button } from "@/components/ui/Button";
 import { createOrder } from "@/lib/actions";
+import { initiateWompiCheckout } from "@/lib/payments";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { ShoppingBag, Trash2, X, CheckCircle2, ShieldCheck, MapPin, CreditCard, Truck } from "lucide-react";
@@ -102,6 +103,18 @@ export const CartDrawer: React.FC = () => {
 
     setSubmitting(false);
     if (res.success) {
+      if (paymentMethod === "WOMPI" && res.pedidoId) {
+        const payment = await initiateWompiCheckout(res.pedidoId);
+        if (!payment.success || !payment.checkoutUrl) {
+          setError(payment.error ?? "No se pudo iniciar el pago con Wompi.");
+          setSubmitting(false);
+          return;
+        }
+        clearCart();
+        resetCheckout();
+        window.location.assign(payment.checkoutUrl);
+        return;
+      }
       setSuccess("Pedido " + (res.pedidoId?.slice(0, 8).toUpperCase() ?? "") + " creado correctamente. La reserva queda activa durante 24 horas.");
       clearCart();
       resetCheckout();
@@ -164,9 +177,9 @@ export const CartDrawer: React.FC = () => {
                 <div>
                   <div className="mb-3 flex items-center gap-2"><CreditCard size={17} className="text-orange-600" /><h3 className="text-sm font-black uppercase italic">Forma de pago</h3></div>
                   <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full rounded-xl border-2 border-gray-200 bg-white p-3 text-sm font-bold text-black outline-none transition focus:border-black">
-                    <option value="TRANSFERENCIA">Transferencia — Nequi / Daviplata</option><option value="CONTRA_ENTREGA_MEDELLIN">Contra-entrega — Medellín</option><option value="EFECTIVO">Pago en tienda física</option>
+                    <option value="WOMPI">Wompi — pago en línea</option><option value="TRANSFERENCIA">Transferencia — Nequi / Daviplata</option><option value="CONTRA_ENTREGA_MEDELLIN">Contra-entrega — Medellín</option><option value="EFECTIVO">Pago en tienda física</option>
                   </select>
-                  <div className="mt-3 rounded-xl bg-gray-50 p-3 text-[10px] leading-relaxed text-gray-500">{paymentMethod === "CONTRA_ENTREGA_MEDELLIN" ? "El pago se realiza al recibir el pedido. La entrega se coordina con el teléfono registrado." : paymentMethod === "TRANSFERENCIA" ? "Después de reservar, el equipo valida el pedido y te indica el proceso de pago." : "La reserva queda asociada a tu cuenta para finalizarla en la tienda física."}</div>
+                  <div className="mt-3 rounded-xl bg-gray-50 p-3 text-[10px] leading-relaxed text-gray-500">{paymentMethod === "WOMPI" ? "Serás dirigido al Checkout seguro de Wompi para completar el pago. El estado definitivo se confirma mediante webhook en el servidor." : paymentMethod === "CONTRA_ENTREGA_MEDELLIN" ? "El pago se realiza al recibir el pedido. La entrega se coordina con el teléfono registrado." : paymentMethod === "TRANSFERENCIA" ? "Después de reservar, el equipo valida el pedido y te indica el proceso de pago." : "La reserva queda asociada a tu cuenta para finalizarla en la tienda física."}</div>
                 </div>
 
                 <div><label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-500">Observaciones del pedido</label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} rows={3} placeholder="Apartamento, referencia de entrega o indicaciones adicionales" className="w-full resize-none rounded-xl border-2 border-gray-200 p-3 text-sm outline-none transition focus:border-black" /><p className="mt-1 text-right text-[9px] text-gray-400">{notes.length}/500</p></div>
