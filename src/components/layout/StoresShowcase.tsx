@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { MapPin, Clock, Phone, Camera } from 'lucide-react';
+import { PublicImage } from '@/components/ui/PublicImage';
 
 interface Store {
   id: string;
@@ -10,13 +11,6 @@ interface Store {
   city: string | null;
   phone: string | null;
   imageUrl?: string | null;
-}
-
-// después
-interface Store {
-  address: string | null;
-  city: string | null;
-  phone: string | null;
 }
 
 export const StoresShowcase: React.FC<{ stores: Store[] }> = ({ stores }) => {
