@@ -99,7 +99,7 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
             <span className="bg-yellow-400 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase italic mb-4 inline-block">
               Fábrica Nacional
             </span>
-            <h1 className="text-5xl md:text-6xl font-black uppercase italic tracking-tighter text-gray-900 leading-none mb-4">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl break-words font-black uppercase italic tracking-tighter text-gray-900 leading-none mb-4">
               {product.name}
             </h1>
             <p className="text-sm font-bold text-orange-600 uppercase tracking-widest mb-6">
