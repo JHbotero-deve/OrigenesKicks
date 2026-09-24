@@ -1,8 +1,19 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://sywrurccihbunpxljcud.supabase.co";
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_fQndGPPr7bq65EBL8N_eUg_qIza7jSX";
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "https://sywrurccihbunpxljcud.supabase.co";
+
+const SUPABASE_ANON_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "sb_publishable_fQndGPPr7bq65EBL8N_eUg_qIza7jSX";
+
+type SupabaseCookie = {
+  name: string;
+  value: string;
+  options?: CookieOptions;
+};
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -17,8 +28,8 @@ export async function proxy(request: NextRequest) {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options: CookieOptions }) => {
+      setAll(cookiesToSet: SupabaseCookie[]) {
+        cookiesToSet.forEach(({ name, value, options }) => {
           request.cookies.set({ name, value, ...options });
           response.cookies.set({ name, value, ...options });
         });
@@ -26,11 +37,16 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
   if (error && (isDashboard || isUserApi || isAuthRedirect)) {
-    if (isUserApi) return NextResponse.json({ error: "Sesión no válida" }, { status: 401 });
-    if (isDashboard) return NextResponse.redirect(new URL("/login?error=session", request.url));
+    if (isUserApi) {
+      return NextResponse.json({ error: "Sesión no válida" }, { status: 401 });
+    }
+
     return NextResponse.redirect(new URL("/login?error=session", request.url));
   }
 
