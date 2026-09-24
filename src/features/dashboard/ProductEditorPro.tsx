@@ -484,9 +484,8 @@ export const ProductEditorPro = () => {
                 </div>
               </div>
 
-              <p className="text-[10px] text-center text-gray-400 mt-8 font-medium uppercase tracking-widest">
-                "Así es como lo verán tus clientes: Profesional,
-                limpio y con el sello nacional."
+              <p className="text-[10px] text-center text-gray-600 mt-8 font-medium uppercase tracking-widest">
+                &quot;Así es como lo verán tus clientes: Profesional, limpio y con el sello nacional.&quot;
               </p>
             </div>
           ) : (
