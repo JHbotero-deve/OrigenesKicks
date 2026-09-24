@@ -52,7 +52,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[420px] bg-white rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-10 border border-gray-100">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-black italic uppercase tracking-tighter">
-            Oríg<span className="text-orange-600">Origenes Kicks</span>Kicks
+            Orígenes <span className="text-orange-600">Kicks</span>
           </h1>
           <p className="text-gray-900 text-[10px] font-bold uppercase tracking-widest mt-2">
             Ingresa a tu cuenta
