@@ -15,7 +15,7 @@ function sha256(value: string) {
   return crypto.createHash("sha256").update(value, "utf8").digest("hex");
 }
 
-export async function initiateWompiCheckout(pedidoId: string) {
+export async function initiateWompiCheckout(pedidoId: string, trackingCode?: string) {
   const auth = await requireAuthenticatedUser();
 
   if (!WOMPI_PUBLIC_KEY || !WOMPI_INTEGRITY_SECRET) {
@@ -23,8 +23,13 @@ export async function initiateWompiCheckout(pedidoId: string) {
     return { success: false, error: "El pago en línea no está disponible temporalmente." };
   }
 
-  const order = await prisma.pedido.findUnique({
-    where: { id: pedidoId },
+  const order = await prisma.pedido.findFirst({
+    where: {
+      id: pedidoId,
+      ...(auth.ok
+        ? {}
+        : { trackingCode: trackingCode?.trim().toUpperCase() || "__INVALID__" }),
+    },
     select: {
       id: true,
       trackingCode: true,
