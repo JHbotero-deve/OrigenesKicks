@@ -30,21 +30,7 @@ export default function LoginPage() {
       return;
     }
 
-    try {
-      const res = await fetch('/api/user', { cache: 'no-store' });
-      const data = await res.json().catch(() => null);
-
-      if (res.ok) {
-        const staffRoles = ['OWNER', 'ADMIN', 'SELLER', 'DELIVERY'];
-        router.push(staffRoles.includes(data?.role) ? '/dashboard' : '/products');
-      } else {
-        router.push('/products');
-      }
-    } catch {
-      router.push('/products');
-    } finally {
-      setLoading(false);
-    }
+    window.location.assign("/auth/redirect");
   };
 
   return (
