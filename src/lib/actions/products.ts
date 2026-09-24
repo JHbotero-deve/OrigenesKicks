@@ -10,13 +10,8 @@ const ProductSchema = z.object({
   description: z.string().trim().max(1000).optional(),
   basePrice: z.number().finite().positive(),
   discountPrice: z.number().finite().positive().nullable().optional(),
-  category: z.string().trim().max(80).optional(),
-  gender: z.enum(["HOMBRE","MUJER","UNISEX"]),
-  usage: z.enum(["DEPORTE","DIARIO","TRABAJO","URBANO"]),
   imageUrl: z.string().trim().url().max(1000).optional().or(z.literal("")),
-  model3dUrl: z.string().trim().url().max(1000).optional().or(z.literal("")),
   sku: z.string().trim().max(80).optional(),
-  taxRate: z.number().min(0).max(100),
   variants: z.array(z.object({
     size: z.string().trim().min(1).max(20),
     color: z.string().trim().min(1).max(60),
@@ -45,8 +40,21 @@ export async function createProduct(data: unknown) {
     slug = `${baseSlug}-${suffix++}`;
   }
 
-  const duplicateSku = input.sku ? await prisma.product.findFirst({ where: { sku: input.sku }, select: { id: true } }) : null;
-  if (duplicateSku) return { success: false, error: "El SKU del producto ya existe" };
+  const store = await prisma.store.findFirst({
+    where: { active: true },
+    select: { id: true },
+  });
+  if (!store) return { success: false, error: "No existe una tienda activa para asociar el producto" };
+
+  const variantSkus = input.variants.map((variant, index) =>
+    `${input.sku || slug}-${variant.size}-${index + 1}`
+      .toUpperCase()
+      .replace(/[^A-Z0-9-]/g, "-")
+  );
+
+  if (new Set(variantSkus).size !== variantSkus.length) {
+    return { success: false, error: "Las variantes generan SKU duplicados" };
+  }
 
   const seen = new Set<string>();
   for (const variant of input.variants) {
@@ -61,21 +69,17 @@ export async function createProduct(data: unknown) {
         name: input.name,
         slug,
         description: input.description || null,
+        price: discountPrice ?? input.basePrice,
         basePrice: input.basePrice,
         discountPrice,
-        category: input.category || null,
-        gender: input.gender,
-        usage: input.usage,
         imageUrl: input.imageUrl || null,
-        model3dUrl: input.model3dUrl || null,
-        sku: input.sku || null,
-        taxRate: input.taxRate,
         variants: {
           create: input.variants.map((variant, index) => ({
             size: variant.size,
             color: variant.color,
             stock: variant.stock,
-            sku: `${input.sku || slug}-${variant.size}-${index + 1}`.toUpperCase().replace(/[^A-Z0-9-]/g, "-"),
+            sku: variantSkus[index],
+            store: { connect: { id: store.id } },
           })),
         },
       },
