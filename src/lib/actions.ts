@@ -35,7 +35,7 @@ export async function createOrder(data: {
       return { success: false, error: "Escribe el nombre completo del cliente." };
     }
 
-    if (!dbUser && guestEmail && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(guestEmail)) {
+    if (!dbUser && guestEmail && !/^\S+@\S+\.\S+$/.test(guestEmail)) {
       return { success: false, error: "Ingresa un correo válido." };
     }
 
@@ -306,39 +306,6 @@ export async function releaseExpiredReservations() {
   }
 }
 
-export async function getPublicOrderStatus(orderCode: string) {
-  try {
-    const normalizedCode = orderCode?.trim().toUpperCase();
-    if (!normalizedCode || !/^OK-[A-F0-9]{10}$/.test(normalizedCode)) {
-      return { success: false, message: "Código de pedido inválido." };
-    }
-
-    const order = await prisma.pedido.findUnique({
-      where: { trackingCode: normalizedCode },
-      include: {
-        envio: true,
-        store: { select: { phone: true, name: true } },
-        items: { include: { variant: { include: { product: true } } } },
-      },
-    });
-
-    if (!order) return { success: false, message: "No encontramos ningún pedido con ese código." };
-
-    return {
-      success: true,
-      trackingCode: order.trackingCode,
-      status: order.status,
-      date: order.createdAt,
-      city: order.envio?.city || "Medellín",
-      storePhone: order.store?.phone || null,
-      storeName: order.store?.name || null,
-      items: order.items.map((item) => item.variant.product.name),
-    };
-  } catch (error) {
-    console.error("Error al consultar pedido público:", error);
-    return { success: false, message: "Error al consultar el sistema." };
-  }
-}
 export async function updateShippingStatus(
   shippingId: string,
   status: "PENDIENTE" | "EN_RUTA" | "ENTREGADO" | "FALLIDO" | "RETORNADO",
