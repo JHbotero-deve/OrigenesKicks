@@ -47,7 +47,8 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
     discountPrice < basePrice;
   const salePrice = hasValidDiscount && discountPrice !== null ? discountPrice : basePrice;
 
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(variants[0] ?? null);
+  const initialVariant = variants.find((variant) => variant.stock > 0) ?? variants[0] ?? null;
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(initialVariant);
   const [view3d, setView3d] = useState(false);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const availableColors = Array.from(new Set(variants.map((variant) => variant.color).filter(Boolean)));
