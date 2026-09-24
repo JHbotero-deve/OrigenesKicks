@@ -16,6 +16,7 @@ export default async function ProductDetailPage({
     .from("products")
     .select("*")
     .or(`id.eq.${id},slug.eq.${id}`)
+    .eq("active", true)
     .maybeSingle();
 
   if (productError || !product) notFound();
@@ -36,10 +37,6 @@ export default async function ProductDetailPage({
         basePrice: product.basePrice,
         discountPrice: product.discountPrice,
         imageUrl: product.image_url,
-        model3dUrl: product.model3d_url,
-        gender: product.gender,
-        category: product.category,
-        usage: product.usage,
         variants: (variants ?? []).map((variant) => ({
           id: variant.id,
           size: String(variant.size ?? ""),
