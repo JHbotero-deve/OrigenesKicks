@@ -151,7 +151,7 @@ export const CartDrawer: React.FC = () => {
                   </div>
                   <input value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} type="password" minLength={8} placeholder="Contraseña, mínimo 8 caracteres" className="mt-3 w-full rounded-xl border-2 border-orange-200 bg-white p-3 text-sm outline-none focus:border-black" />
                   <Button disabled={registering} className="mt-3 w-full rounded-xl bg-orange-600 py-4 text-xs font-black uppercase text-white hover:bg-orange-700" onClick={handleRegister}>{registering ? "Creando cuenta..." : "Crear cuenta de cliente"}</Button>
-                </div>
+                </div>}
 
                 <div>
                   <div className="mb-3 flex items-center gap-2"><Truck size={17} className="text-orange-600" /><h3 className="text-sm font-black uppercase italic">Datos de entrega</h3></div>
