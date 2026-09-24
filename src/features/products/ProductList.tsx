@@ -52,7 +52,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                   <h3 className="font-black uppercase italic text-lg leading-tight group-hover/link:text-orange-600 transition-colors mb-2">
                     {product.name}
                   </h3>
-                  <p className="text-gray-400 text-[10px] font-bold uppercase mb-4 tracking-widest">
+                  <p className="text-gray-600 text-[10px] font-bold uppercase mb-4 tracking-widest">
                     {product.category || 'Calzado Nacional'}
                   </p>
 
@@ -89,7 +89,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
 
               <div className="space-y-3 mt-4 pt-4 border-t border-gray-100">
                 <div className="flex justify-between items-center">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                  <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">
                     Tallas Nacionales
                   </p>
                   <span className="text-[8px] font-black text-orange-600 uppercase italic">
