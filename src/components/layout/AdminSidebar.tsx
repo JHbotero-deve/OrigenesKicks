@@ -1,31 +1,28 @@
 "use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   ShoppingBag,
   Package,
   Users,
-  Truck,
   History,
-  Settings,
-  Percent
-} from 'lucide-react';
+  FileText,
+} from "lucide-react";
 
 export const AdminSidebar = () => {
   const pathname = usePathname();
 
   const menuItems = [
-    { name: 'Resumen Diario', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Pedidos y Ventas', href: '/dashboard/orders', icon: ShoppingBag },
-    { name: 'Productos', href: '/dashboard/products', icon: Package },
-    { name: 'Mi Inventario', href: '/dashboard/inventory', icon: Package },
-    { name: 'Mis Proveedores', href: '/dashboard/providers', icon: Truck },
-    { name: 'Ofertas del Barrio', href: '/dashboard/offers', icon: Percent },
-    { name: 'Kardex (Auditoría)', href: '/dashboard/logs', icon: History },
-    { name: 'Mi Equipo / Roles', href: '/dashboard/users', icon: Users },
+    { name: "Resumen Diario", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Pedidos y Ventas", href: "/dashboard/orders", icon: ShoppingBag },
+    { name: "Productos", href: "/dashboard/products", icon: Package },
+    { name: "Mi Inventario", href: "/dashboard/inventory", icon: Package },
+    { name: "Reportes", href: "/dashboard/reports", icon: FileText },
+    { name: "Kardex (Auditoría)", href: "/dashboard/logs", icon: History },
+    { name: "Mi Equipo / Roles", href: "/dashboard/admin/users", icon: Users },
   ];
 
   return (
@@ -40,14 +37,15 @@ export const AdminSidebar = () => {
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
+
           return (
             <Link
               key={item.href}
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold uppercase italic transition-all ${
                 isActive
-                  ? 'bg-orange-500 text-black shadow-lg shadow-orange-500/20'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? "bg-orange-500 text-black shadow-lg shadow-orange-500/20"
+                  : "text-gray-400 hover:text-white hover:bg-white/5"
               }`}
             >
               <Icon size={18} />
@@ -60,7 +58,7 @@ export const AdminSidebar = () => {
       <div className="p-6 border-t border-white/10">
         <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3">
           <p className="text-[10px] font-black text-orange-500 uppercase mb-1">Stock Alerta</p>
-          <p className="text-xs text-white/70">5 productos bajos en stock</p>
+          <p className="text-xs text-white/70">Revisa el inventario desde Mi Inventario.</p>
         </div>
       </div>
     </aside>
