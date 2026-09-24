@@ -36,7 +36,7 @@ export default async function ProductDetailPage({
         description: product.description,
         basePrice: product.basePrice,
         discountPrice: product.discountPrice,
-        imageUrl: product.image_url,
+        imageUrl: product.imageUrl ?? null,
         variants: (variants ?? []).map((variant) => ({
           id: variant.id,
           size: String(variant.size ?? ""),
