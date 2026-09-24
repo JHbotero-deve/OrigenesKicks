@@ -3,6 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/Button";
 import { useCartStore } from "@/stores/useCartStore";
+import Link from "next/link";
 import { Zap, ShoppingBag, ShieldCheck } from "lucide-react";
 import { PublicImage } from "@/components/ui/PublicImage";
 
@@ -72,7 +73,7 @@ export const ProductCard: React.FC<Props> = ({ product }) => {
             }}>
             <ShoppingBag size={16} className="mr-2" /> Añadir al Carrito
           </Button>
-          {product.model3dUrl && <Button variant="outline" className="rounded-2xl border-2 py-4" title="Ver en 3D" aria-label="Ver producto en 3D">3D</Button>}
+          {product.model3dUrl && <Link href={"/products/" + product.id} aria-label={"Ver " + product.name + " y activar el visor 3D"}><Button type="button" variant="outline" className="rounded-2xl border-2 py-4" title="Ver en 3D">3D</Button></Link>}
         </div>
       </div>
     </div>
