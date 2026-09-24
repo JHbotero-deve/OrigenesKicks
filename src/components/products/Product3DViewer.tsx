@@ -77,62 +77,7 @@ function colorHex(color?: string | null) {
   return 0x20242c;
 }
 
-function buildSneaker(THREE: any, productColor?: string | null) {
-  const shoe = new THREE.Group();
-  const dark = new THREE.MeshStandardMaterial({ color: colorHex(productColor), roughness: 0.48 });
-  const white = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.72 });
-  const orange = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.42 });
-  const lace = new THREE.MeshStandardMaterial({ color: 0xe8e8e8, roughness: 0.6 });
-
-  const sole = new THREE.Mesh(roundedBox(THREE, 3.8, 0.48, 6.2, 0.22), white);
-  sole.position.y = -0.8;
-  shoe.add(sole);
-
-  const midsole = new THREE.Mesh(roundedBox(THREE, 3.48, 0.38, 5.8, 0.18), orange);
-  midsole.position.y = -0.48;
-  shoe.add(midsole);
-
-  const upper = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 24), dark);
-  upper.scale.set(1.72, 0.78, 2.55);
-  upper.position.set(0, 0.05, 0.05);
-  shoe.add(upper);
-
-  const toe = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 24), dark);
-  toe.scale.set(1.58, 0.62, 1.25);
-  toe.position.set(0, -0.02, 1.88);
-  shoe.add(toe);
-
-  const heel = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 20), dark);
-  heel.scale.set(1.55, 0.72, 1.08);
-  heel.position.set(0, 0.12, -1.8);
-  shoe.add(heel);
-
-  const tongue = new THREE.Mesh(roundedBox(THREE, 1.45, 0.16, 2.2, 0.08), orange);
-  tongue.position.set(0, 0.72, 0.45);
-  tongue.rotation.x = -0.25;
-  shoe.add(tongue);
-
-  for (let i = 0; i < 5; i += 1) {
-    const l = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1.18, 10), lace);
-    l.rotation.z = Math.PI / 2;
-    l.position.set(0, 0.67 - i * 0.09, 0.05 + i * 0.42);
-    shoe.add(l);
-  }
-
-  const stripe = new THREE.Mesh(roundedBox(THREE, 0.14, 0.58, 3.1, 0.06), orange);
-  stripe.position.set(1.45, 0.18, -0.05);
-  stripe.rotation.z = -0.2;
-  shoe.add(stripe);
-
-  const heelTab = new THREE.Mesh(roundedBox(THREE, 0.18, 0.72, 1.05, 0.07), orange);
-  heelTab.position.set(0, 0.28, -2.35);
-  shoe.add(heelTab);
-
-  shoe.scale.setScalar(1.05);
-  return shoe;
-}
-
-export const Product3DViewer: React.FC<Props> = ({
+ React.FC<Props> = ({
   modelUrl,
   posterUrl,
   productName,
@@ -334,6 +279,53 @@ export const Product3DViewer: React.FC<Props> = ({
       </div>
       <div className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full border border-white/60 bg-black/75 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
         Arrastra 360° · rueda para zoom
+      </div>
+    </div>
+  );
+};
+export const Product3DViewer: React.FC<Props> = ({
+  modelUrl,
+  posterUrl,
+  productName,
+  color,
+  className = "",
+}) => {
+  if (!modelUrl) {
+    return (
+      <div className={"w-full h-full min-h-[320px] bg-[#f7f7f7] rounded-3xl flex items-center justify-center p-8 " + className}>
+        <div className="max-w-sm text-center">
+          <p className="text-sm font-black uppercase tracking-widest text-gray-900">Modelo 3D no disponible</p>
+          <p className="mt-2 text-xs font-medium text-gray-500">
+            Este producto todavía no tiene un modelo 3D cargado. La tienda debe asociar un archivo GLB o GLTF real desde el catálogo.
+          </p>
+          {posterUrl && (
+            <img src={posterUrl} alt={productName || "Producto"} className="mx-auto mt-5 h-40 w-40 object-contain" />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={"w-full h-full min-h-[320px] bg-white rounded-3xl overflow-hidden relative shadow-inner " + className}>
+      <model-viewer
+        src={modelUrl}
+        poster={posterUrl || undefined}
+        alt={"Modelo 3D de " + (productName || "Calzado")}
+        auto-rotate
+        camera-controls
+        shadow-intensity="2"
+        shadow-softness="1"
+        environment-image="neutral"
+        exposure="1"
+        touch-action="pan-y"
+        style={{ width: "100%", height: "100%", backgroundColor: "transparent", cursor: "grab" }}
+      />
+      <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-black px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-white shadow-lg">
+        Orígenes Kicks · 3D
+      </div>
+      <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/60 bg-black/75 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
+        Arrastra para girar · rueda para zoom
       </div>
     </div>
   );
