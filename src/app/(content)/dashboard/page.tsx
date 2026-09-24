@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase-server";
+import prisma from "@/lib/db";
+import { requireAuthenticatedUser } from "@/lib/auth-guard";
 import {
   AlertCircle,
   ArrowUpRight,
@@ -13,7 +14,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const ACTIVE_ORDER_STATUSES = ["CONFIRMADO", "PROCESANDO", "DESPACHADO", "ENTREGADO"];
+const ACTIVE_ORDER_STATUSES = ["CONFIRMADO", "PROCESANDO", "DESPACHADO", "ENTREGADO"] as const;
 
 const money = (value: number) =>
   new Intl.NumberFormat("es-CO", {
@@ -28,10 +29,7 @@ const percent = (current: number, previous: number) => {
 };
 
 const monthLabel = (date: Date) =>
-  new Intl.DateTimeFormat("es-CO", { month: "short" })
-    .format(date)
-    .replace(".", "")
-    .toUpperCase();
+  new Intl.DateTimeFormat("es-CO", { month: "short" }).format(date).replace(".", "").toUpperCase();
 
 const formatRelativeTime = (date: Date) => {
   const minutes = Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
@@ -42,33 +40,22 @@ const formatRelativeTime = (date: Date) => {
   return `hace ${Math.floor(hours / 24)} d`;
 };
 
-type OrderRow = {
-  id: string;
-  status: string;
-  totalAmount: number;
-  createdAt: string;
-  client_id: string;
-  store_id: string | null;
-};
-
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requireAuthenticatedUser();
 
-  if (!user?.email) return null;
+  if (!auth.ok || !auth.dbUser) {
+    return (
+      <div className="rounded-[2.5rem] border border-red-100 bg-white p-8 shadow-sm">
+        <h1 className="text-2xl font-black uppercase italic text-gray-900">Sesión no disponible</h1>
+        <p className="mt-3 text-sm text-gray-500">Vuelve a iniciar sesión para cargar la información de la tienda.</p>
+      </div>
+    );
+  }
 
-  const { data: dbUser, error: userError } = await supabase
-    .from("users")
-    .select("id,name,email,role,work_store_id")
-    .eq("email", user.email)
-    .maybeSingle();
-
-  if (userError || !dbUser) return null;
-
+  const dbUser = auth.dbUser;
   const isGlobalRole = dbUser.role === "OWNER" || dbUser.role === "ADMIN";
-  const storeId = isGlobalRole ? null : dbUser.work_store_id;
+  const storeId = isGlobalRole ? null : dbUser.workStoreId;
+
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfTomorrow = new Date(startOfToday);
@@ -78,112 +65,105 @@ export default async function DashboardPage() {
   const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const startOfYearWindow = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
-  const ordersQuery = supabase
-    .from("pedidos")
-    .select("id,status,totalAmount,createdAt,client_id,store_id")
-    .gte("createdAt", startOfYearWindow.toISOString())
-    .lt("createdAt", startOfNextMonth.toISOString());
-
-  if (storeId) ordersQuery.eq("store_id", storeId);
-
-  const variantsQuery = supabase
-    .from("product_variants")
-    .select("id,stock,product_id,store_id")
-    .eq("active", true);
-
-  if (storeId) variantsQuery.eq("store_id", storeId);
-
-  const clientsQuery = supabase
-    .from("users")
-    .select("id,name,email,createdAt")
-    .eq("role", "CLIENT")
-    .gte("createdAt", startOfPreviousMonth.toISOString());
-
-  const inventoryQuery = supabase
-    .from("inventory_logs")
-    .select("id,variant_id,quantity,reason,createdAt,store_id")
-    .gte("createdAt", startOfToday.toISOString())
-    .lt("createdAt", startOfTomorrow.toISOString())
-    .order("createdAt", { ascending: false })
-    .limit(5);
-
-  if (storeId) inventoryQuery.eq("store_id", storeId);
-
-  const [{ data: orders, error: ordersError }, { data: variants, error: variantsError }, { data: clients, error: clientsError }, { data: inventory, error: inventoryError }] =
-    await Promise.all([ordersQuery, variantsQuery, clientsQuery, inventoryQuery]);
-
-  if (ordersError || variantsError || clientsError || inventoryError) {
-    console.error("Error cargando dashboard:", {
-      ordersError,
-      variantsError,
-      clientsError,
-      inventoryError,
-    });
-    return (
-      <div className="rounded-[2.5rem] border border-red-100 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-black uppercase italic text-gray-900">Dashboard no disponible</h1>
-        <p className="mt-3 text-sm text-gray-500">
-          No se pudieron cargar los datos operativos. La sesión está activa, pero la consulta de datos devolvió un error.
-        </p>
-      </div>
-    );
-  }
-
-  const allOrders = (orders ?? []) as OrderRow[];
-  const activeOrders = allOrders.filter((order) => ACTIVE_ORDER_STATUSES.includes(order.status));
-  const currentMonthSales = activeOrders
-    .filter((order) => {
-      const date = new Date(order.createdAt);
-      return date >= startOfMonth && date < startOfNextMonth;
-    })
-    .reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
-  const previousMonthSales = activeOrders
-    .filter((order) => {
-      const date = new Date(order.createdAt);
-      return date >= startOfPreviousMonth && date < startOfMonth;
-    })
-    .reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
-  const todayOrders = activeOrders.filter((order) => {
-    const date = new Date(order.createdAt);
-    return date >= startOfToday && date < startOfTomorrow;
-  }).length;
-
-  const totalStock = (variants ?? []).reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
-  const newClients = (clients ?? []).filter((client) => new Date(client.createdAt) >= startOfMonth).length;
-  const previousNewClients = (clients ?? []).filter((client) => {
-    const date = new Date(client.createdAt);
-    return date >= startOfPreviousMonth && date < startOfMonth;
-  }).length;
-
-  const clientIds = [...new Set(allOrders.map((order) => order.client_id))];
-  const variantIds = [...new Set((inventory ?? []).map((log) => log.variant_id))];
-
-  const [{ data: orderClients }, { data: inventoryVariants }] = await Promise.all([
-    clientIds.length
-      ? supabase.from("users").select("id,name").in("id", clientIds)
-      : Promise.resolve({ data: [] }),
-    variantIds.length
-      ? supabase.from("product_variants").select("id,product_id").in("id", variantIds)
-      : Promise.resolve({ data: [] }),
+  const [orders, variants, clients, inventory] = await Promise.all([
+    prisma.pedido.findMany({
+      where: {
+        createdAt: { gte: startOfYearWindow, lt: startOfNextMonth },
+        ...(storeId ? { storeId } : {}),
+      },
+      select: {
+        id: true,
+        status: true,
+        totalAmount: true,
+        createdAt: true,
+        clientId: true,
+        storeId: true,
+        client: { select: { name: true, email: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.variant.findMany({
+      where: {
+        active: true,
+        ...(storeId ? { storeId } : {}),
+      },
+      select: { id: true, stock: true },
+    }),
+    prisma.user.findMany({
+      where: {
+        role: "CLIENT",
+        createdAt: { gte: startOfPreviousMonth },
+      },
+      select: { id: true, name: true, email: true, createdAt: true },
+    }),
+    prisma.inventoryLog.findMany({
+      where: {
+        createdAt: { gte: startOfToday, lt: startOfTomorrow },
+        ...(storeId ? { storeId } : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        variantId: true,
+        quantity: true,
+        reason: true,
+        createdAt: true,
+        variant: {
+          select: {
+            product: { select: { name: true } },
+          },
+        },
+      },
+    }),
   ]);
 
-  const productIds = [...new Set((inventoryVariants ?? []).map((variant) => variant.product_id))];
-  const { data: inventoryProducts } = productIds.length
-    ? await supabase.from("products").select("id,name").in("id", productIds)
-    : { data: [] };
+  const activeOrders = orders.filter((order) =>
+    ACTIVE_ORDER_STATUSES.includes(order.status as (typeof ACTIVE_ORDER_STATUSES)[number]),
+  );
 
-  const clientMap = new Map((orderClients ?? []).map((client) => [client.id, client.name || client.email || "Cliente"]));
-  const productMap = new Map((inventoryProducts ?? []).map((product) => [product.id, product.name]));
+  const currentMonthSales = activeOrders
+    .filter((order) => order.createdAt >= startOfMonth && order.createdAt < startOfNextMonth)
+    .reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
 
-  const recentOrders = allOrders
-    .filter((order) => {
-      const date = new Date(order.createdAt);
-      return date >= startOfToday && date < startOfTomorrow;
-    })
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  const previousMonthSales = activeOrders
+    .filter((order) => order.createdAt >= startOfPreviousMonth && order.createdAt < startOfMonth)
+    .reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+
+  const todayOrders = activeOrders.filter(
+    (order) => order.createdAt >= startOfToday && order.createdAt < startOfTomorrow,
+  ).length;
+
+  const totalStock = variants.reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
+  const newClients = clients.filter((client) => client.createdAt >= startOfMonth).length;
+  const previousNewClients = clients.filter(
+    (client) => client.createdAt >= startOfPreviousMonth && client.createdAt < startOfMonth,
+  ).length;
+
+  const recentOrders = orders
+    .filter((order) => order.createdAt >= startOfToday && order.createdAt < startOfTomorrow)
     .slice(0, 5);
 
-  const variantProductMap = new Map((inventoryVariants ?? []).map((variant) => [variant.id, productMap.get(variant.product_id) || "Producto"]));
+  const activities = [
+    ...recentOrders.map((order) => ({
+      id: `order-${order.id}`,
+      type: "PEDIDO",
+      message: `${order.client.name || order.client.email || "Cliente"} · ${money(Number(order.totalAmount || 0))}`,
+      time: order.createdAt,
+      icon: order.status === "ENTREGADO" ? CheckCircle2 : Clock,
+      tone: order.status === "ENTREGADO" ? "text-green-400" : "text-orange-400",
+    })),
+    ...inventory.map((log) => ({
+      id: `inventory-${log.id}`,
+      type: "INVENTARIO",
+      message: `${log.variant.product.name} · ${Number(log.quantity) > 0 ? "+" : ""}${log.quantity} unidades`,
+      time: log.createdAt,
+      icon: Number(log.quantity) < 0 ? AlertCircle : Package,
+      tone: Number(log.quantity) < 0 ? "text-red-400" : "text-blue-400",
+    })),
+  ]
+    .sort((a, b) => b.time.getTime() - a.time.getTime())
+    .slice(0, 6);
 
   const monthStarts = Array.from({ length: 12 }, (_, index) => {
     const date = new Date(now.getFullYear(), now.getMonth() - 11 + index, 1);
@@ -192,40 +172,19 @@ export default async function DashboardPage() {
 
   const chartValues = monthStarts.map(({ start, end }) =>
     activeOrders
-      .filter((order) => {
-        const date = new Date(order.createdAt);
-        return date >= start && date < end;
-      })
+      .filter((order) => order.createdAt >= start && order.createdAt < end)
       .reduce((sum, order) => sum + Number(order.totalAmount || 0), 0),
   );
-  const maxChartValue = Math.max(...chartValues, 1);
 
-  const activities = [
-    ...recentOrders.map((order) => ({
-      id: `order-${order.id}`,
-      type: "PEDIDO",
-      message: `${clientMap.get(order.client_id) || "Cliente"} · ${money(Number(order.totalAmount || 0))}`,
-      time: new Date(order.createdAt),
-      icon: order.status === "ENTREGADO" ? CheckCircle2 : Clock,
-      tone: order.status === "ENTREGADO" ? "text-green-400" : "text-orange-400",
-    })),
-    ...(inventory ?? []).map((log) => ({
-      id: `inventory-${log.id}`,
-      type: "INVENTARIO",
-      message: `${variantProductMap.get(log.variant_id) || "Producto"} · ${Number(log.quantity) > 0 ? "+" : ""}${log.quantity} unidades`,
-      time: new Date(log.createdAt),
-      icon: Number(log.quantity) < 0 ? AlertCircle : Package,
-      tone: Number(log.quantity) < 0 ? "text-red-400" : "text-blue-400",
-    })),
-  ]
-    .sort((a, b) => b.time.getTime() - a.time.getTime())
-    .slice(0, 6);
+  const maxChartValue = Math.max(...chartValues, 1);
+  const salesPercent = percent(currentMonthSales, previousMonthSales);
+  const clientsPercent = percent(newClients, previousNewClients);
 
   const stats = [
-    { label: "Ventas del mes", value: money(currentMonthSales), change: `${percent(currentMonthSales, previousMonthSales) >= 0 ? "+" : ""}${percent(currentMonthSales, previousMonthSales)}%`, icon: TrendingUp, color: "text-orange-600", bg: "bg-orange-50" },
+    { label: "Ventas del mes", value: money(currentMonthSales), change: `${salesPercent >= 0 ? "+" : ""}${salesPercent}%`, icon: TrendingUp, color: "text-orange-600", bg: "bg-orange-50" },
     { label: "Pedidos hoy", value: String(todayOrders), change: "Hoy", icon: ShoppingCart, color: "text-blue-600", bg: "bg-blue-50" },
     { label: "Stock disponible", value: totalStock.toLocaleString("es-CO"), change: "Unidades", icon: Package, color: "text-purple-600", bg: "bg-purple-50" },
-    { label: "Clientes nuevos", value: String(newClients), change: `${percent(newClients, previousNewClients) >= 0 ? "+" : ""}${percent(newClients, previousNewClients)}%`, icon: Users, color: "text-green-600", bg: "bg-green-50" },
+    { label: "Clientes nuevos", value: String(newClients), change: `${clientsPercent >= 0 ? "+" : ""}${clientsPercent}%`, icon: Users, color: "text-green-600", bg: "bg-green-50" },
   ];
 
   return (
@@ -271,7 +230,8 @@ export default async function DashboardPage() {
           <div className="flex h-64 items-end justify-between gap-2 px-2">
             {chartValues.map((value, index) => (
               <div key={monthStarts[index].start.toISOString()} className="group flex h-full flex-1 flex-col justify-end">
-                <div className="relative w-full rounded-t-xl bg-gray-100 transition-all group-hover:bg-orange-500" style={{ height: `${Math.max((value / maxChartValue) * 100, value > 0 ? 4 : 1)}%` }} title={money(value)}>
+                <div className="relative w-full rounded-t-xl bg-gray-100 transition-all group-hover:bg-orange-500"
+                  style={{ height: `${Math.max((value / maxChartValue) * 100, value > 0 ? 4 : 1)}%` }} title={money(value)}>
                   <span className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-[8px] font-black text-white opacity-0 transition-opacity group-hover:opacity-100">{money(value)}</span>
                 </div>
                 <p className="mt-4 text-center text-[8px] font-black text-gray-300">{monthLabel(monthStarts[index].date)}</p>
@@ -285,23 +245,21 @@ export default async function DashboardPage() {
           <div className="relative z-10 space-y-5">
             {activities.length === 0 ? (
               <div className="rounded-2xl border border-white/10 px-4 py-6 text-center text-xs text-white/50">No hay actividad registrada hoy.</div>
-            ) : (
-              activities.map((activity) => {
-                const ActivityIcon = activity.icon;
-                return (
-                  <div key={activity.id} className="flex items-start gap-4 border-b border-white/10 pb-4 last:border-0">
-                    <div className={`mt-1 ${activity.tone}`}><ActivityIcon size={16} /></div>
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex items-center justify-between gap-2">
-                        <span className={`rounded-full bg-white/10 px-2 py-0.5 text-[8px] font-black ${activity.tone}`}>{activity.type}</span>
-                        <span className="text-[8px] font-bold uppercase text-white/30">{formatRelativeTime(activity.time)}</span>
-                      </div>
-                      <p className="text-[11px] font-bold uppercase tracking-tight text-white/80">{activity.message}</p>
+            ) : activities.map((activity) => {
+              const ActivityIcon = activity.icon;
+              return (
+                <div key={activity.id} className="flex items-start gap-4 border-b border-white/10 pb-4 last:border-0">
+                  <div className={`mt-1 ${activity.tone}`}><ActivityIcon size={16} /></div>
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <span className={`rounded-full bg-white/10 px-2 py-0.5 text-[8px] font-black ${activity.tone}`}>{activity.type}</span>
+                      <span className="text-[8px] font-bold uppercase text-white/30">{formatRelativeTime(activity.time)}</span>
                     </div>
+                    <p className="text-[11px] font-bold uppercase tracking-tight text-white/80">{activity.message}</p>
                   </div>
-                );
-              })
-            )}
+                </div>
+              );
+            })}
           </div>
           <a href="/dashboard/logs" className="mt-8 flex items-center justify-center text-[9px] font-black uppercase italic tracking-[0.3em] text-white/40 transition-colors hover:text-orange-500">
             Ver actividad completa <ArrowUpRight size={10} className="ml-1" />
