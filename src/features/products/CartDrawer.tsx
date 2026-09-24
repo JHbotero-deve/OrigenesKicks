@@ -21,6 +21,7 @@ export const CartDrawer: React.FC = () => {
   const [submitting, setSubmitting] = React.useState(false);
   const [customerName, setCustomerName] = React.useState("");
   const [customerEmail, setCustomerEmail] = React.useState("");
+  const [lastTrackingCode, setLastTrackingCode] = React.useState("");
   const [error, setError] = React.useState("");
   const [success, setSuccess] = React.useState("");
 
@@ -34,13 +35,15 @@ export const CartDrawer: React.FC = () => {
     setNeighborhood("");
     setNotes("");
     setAcceptedTerms(false);
+    setCustomerName("");
+    setCustomerEmail("");
     setError("");
   };
 
   const handleCheckout = async () => {
     setError("");
     setSuccess("");
-    const finalName = (dbUser?.name || customerName).trim();
+    const finalName = (dbUser?.name || customerName || "Cliente Orígenes Kicks").trim();
     const finalEmail = (user?.email || customerEmail).trim().toLowerCase();
     if (!finalName) return setError("Completa el nombre del cliente.");
     if (!finalEmail || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(finalEmail)) return setError("Ingresa un correo válido.");
@@ -70,6 +73,7 @@ export const CartDrawer: React.FC = () => {
 
     setSubmitting(false);
     if (res.success) {
+      setLastTrackingCode(res.trackingCode ?? "");
       if (paymentMethod === "WOMPI" && res.pedidoId) {
         const payment = await initiateWompiCheckout(res.pedidoId);
         if (!payment.success || !payment.checkoutUrl) {
@@ -120,6 +124,8 @@ export const CartDrawer: React.FC = () => {
                   ))}
                 </div>
               </section>
+
+              {lastTrackingCode && items.length === 0 && <section className="mx-5 my-5 rounded-3xl border-2 border-orange-200 bg-orange-50 p-6 text-center sm:mx-6"><p className="text-[10px] font-black uppercase tracking-widest text-orange-700">Pedido creado</p><p className="mt-2 text-2xl font-black tracking-widest text-black">{lastTrackingCode}</p><p className="mt-2 text-xs font-medium text-orange-950">Guarda este código. No necesitas crear una cuenta para consultar el estado.</p><a href="/posventa" className="mt-4 inline-flex rounded-xl bg-black px-5 py-3 text-[10px] font-black uppercase text-white hover:bg-orange-600">Rastrear pedido</a></section>}
 
               {items.length > 0 && <section className="space-y-5 px-5 py-5 sm:px-6">
                 {user && dbUser ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4"><p className="mb-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Cliente</p><p className="text-sm font-black text-gray-900">{dbUser.name || "Cliente"}</p><p className="text-xs text-gray-500">{user.email}</p></div> : <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
