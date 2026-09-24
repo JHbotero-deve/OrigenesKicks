@@ -3,6 +3,7 @@ import React from "react";
 import { useCartStore } from "@/stores/useCartStore";
 import { Button } from "@/components/ui/Button";
 import { createOrder } from "@/lib/actions";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { ShoppingBag, Trash2, X, CheckCircle2, ShieldCheck, MapPin, CreditCard, Truck } from "lucide-react";
 
@@ -18,6 +19,10 @@ export const CartDrawer: React.FC = () => {
   const [notes, setNotes] = React.useState("");
   const [acceptedTerms, setAcceptedTerms] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
+  const [registerName, setRegisterName] = React.useState("");
+  const [registerEmail, setRegisterEmail] = React.useState("");
+  const [registerPassword, setRegisterPassword] = React.useState("");
+  const [registering, setRegistering] = React.useState(false);
   const [error, setError] = React.useState("");
   const [success, setSuccess] = React.useState("");
 
@@ -32,6 +37,41 @@ export const CartDrawer: React.FC = () => {
     setNotes("");
     setAcceptedTerms(false);
     setError("");
+  };
+
+  const handleRegister = async () => {
+    setError("");
+    setSuccess("");
+    if (!registerName.trim() || !registerEmail.trim() || registerPassword.length < 8) {
+      setError("Completa nombre, correo y una contraseña de mínimo 8 caracteres.");
+      return;
+    }
+
+    setRegistering(true);
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: registerEmail.trim(),
+      password: registerPassword,
+      options: {
+        data: { name: registerName.trim() },
+        emailRedirectTo: window.location.origin + "/auth/callback",
+      },
+    });
+    setRegistering(false);
+
+    if (signUpError) {
+      setError(signUpError.message || "No se pudo crear la cuenta.");
+      return;
+    }
+
+    if (data.session) {
+      setRegisterName("");
+      setRegisterEmail("");
+      setRegisterPassword("");
+      setSuccess("Cuenta creada como cliente. Ya puedes continuar con el pedido.");
+      return;
+    }
+
+    setSuccess("Cuenta creada. Revisa tu correo, confirma la cuenta y luego ingresa para continuar con el pedido.");
   };
 
   const handleCheckout = async () => {
@@ -102,7 +142,16 @@ export const CartDrawer: React.FC = () => {
               </section>
 
               {items.length > 0 && <section className="space-y-5 px-5 py-5 sm:px-6">
-                {user && dbUser ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4"><p className="mb-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Cliente autenticado</p><p className="text-sm font-black text-gray-900">{dbUser.name || "Cliente"}</p><p className="text-xs text-gray-500">{user.email}</p></div> : <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-bold text-orange-900">Inicia sesión para continuar con la compra y asociar el pedido a tu cuenta.</div>}
+                {user && dbUser ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4"><p className="mb-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Cliente autenticado</p><p className="text-sm font-black text-gray-900">{dbUser.name || "Cliente"}</p><p className="text-xs text-gray-500">{user.email}</p></div> : <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
+                  <p className="text-sm font-black uppercase text-orange-950">Crear cuenta para continuar</p>
+                  <p className="mt-1 text-xs leading-relaxed text-orange-900">Primero revisa tu pedido. El registro público crea únicamente cuentas de cliente; los roles administrativos se asignan internamente.</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <input value={registerName} onChange={(e) => setRegisterName(e.target.value)} placeholder="Nombre completo" className="w-full rounded-xl border-2 border-orange-200 bg-white p-3 text-sm outline-none focus:border-black" />
+                    <input value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} type="email" placeholder="Correo" className="w-full rounded-xl border-2 border-orange-200 bg-white p-3 text-sm outline-none focus:border-black" />
+                  </div>
+                  <input value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} type="password" minLength={8} placeholder="Contraseña, mínimo 8 caracteres" className="mt-3 w-full rounded-xl border-2 border-orange-200 bg-white p-3 text-sm outline-none focus:border-black" />
+                  <Button disabled={registering} className="mt-3 w-full rounded-xl bg-orange-600 py-4 text-xs font-black uppercase text-white hover:bg-orange-700" onClick={handleRegister}>{registering ? "Creando cuenta..." : "Crear cuenta de cliente"}</Button>
+                </div>
 
                 <div>
                   <div className="mb-3 flex items-center gap-2"><Truck size={17} className="text-orange-600" /><h3 className="text-sm font-black uppercase italic">Datos de entrega</h3></div>
