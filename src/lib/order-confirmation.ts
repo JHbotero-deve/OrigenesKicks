@@ -1,10 +1,9 @@
 import "server-only";
 
-import prisma from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
 const DEFAULT_TAX_RATE = 19;
-
-type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+type TransactionClient = Prisma.TransactionClient;
 
 export async function confirmOrderAsSale(
   tx: TransactionClient,
@@ -23,42 +22,34 @@ export async function confirmOrderAsSale(
 
   if (!order) throw new Error("Pedido no encontrado.");
   if (!order.store) throw new Error("El pedido no tiene una tienda asociada.");
+
   if (order.status !== "RECIBIDO") {
-    if (order.factura) return { success: true, invoiceId: order.factura.id, alreadyConfirmed: true };
-    throw new Error("El pedido no está pendiente de confirmación.");
+    if (order.factura) {
+      return { success: true, invoiceId: order.factura.id, alreadyConfirmed: true };
+    }
+    throw new Error("El pedido ya no está pendiente de confirmación.");
   }
 
   if (order.paymentMethod === "WOMPI" && order.paymentStatus !== "APPROVED") {
     throw new Error("El pago en línea todavía no está aprobado.");
   }
 
-  const existingInvoice = order.factura;
-  if (existingInvoice) {
-    await tx.pedido.update({
-      where: { id: order.id },
-      data: { status: "CONFIRMADO", expiresAt: null },
-    });
-    return { success: true, invoiceId: existingInvoice.id, alreadyConfirmed: true };
-  }
-
-  const store = order.store;
   const updatedStore = await tx.store.update({
-    where: { id: store.id },
+    where: { id: order.store.id },
     data: { lastInvoiceNumber: { increment: 1 } },
     select: { invoicePrefix: true, lastInvoiceNumber: true },
   });
 
   const invoiceNumber = updatedStore.lastInvoiceNumber;
   const prefix = updatedStore.invoicePrefix;
-  const fullNumber = `${prefix}-${invoiceNumber}`;
+  const fullNumber = prefix + "-" + invoiceNumber;
 
   let subtotal = 0;
   let taxAmount = 0;
 
   const invoiceItems = order.items.map((item) => {
     const gross = Number(item.unitPrice) * item.quantity;
-    const rate = DEFAULT_TAX_RATE / 100;
-    const net = gross / (1 + rate);
+    const net = gross / (1 + DEFAULT_TAX_RATE / 100);
     const tax = gross - net;
     subtotal += net;
     taxAmount += tax;
@@ -105,14 +96,19 @@ export async function confirmOrderAsSale(
     await tx.inventoryLog.create({
       data: {
         variantId: item.variantId,
-        storeId: store.id,
+        storeId: order.store.id,
         changeType: "SALE",
         quantity: item.quantity,
-        reason: `Venta confirmada: Recibo ${factura.fullNumber}`,
+        reason: "Venta confirmada: Recibo " + factura.fullNumber,
         performedById,
       },
     });
   }
 
-  return { success: true, invoiceId: factura.id, fullNumber: factura.fullNumber, alreadyConfirmed: false };
+  return {
+    success: true,
+    invoiceId: factura.id,
+    fullNumber: factura.fullNumber,
+    alreadyConfirmed: false,
+  };
 }
