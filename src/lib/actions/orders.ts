@@ -65,14 +65,41 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
       return { success: false, error: 'Cambio de estado no permitido' };
     }
 
-    await prisma.pedido.update({
-      where: { id: orderId },
-      data: { status },
-    });
+    let invoice: { id: string; fullNumber: string } | null = null;
+
+    if (status === 'CONFIRMADO' && order.status === 'RECIBIDO') {
+      const result = await prisma.$transaction(async (tx) => {
+        if (order.status !== 'RECIBIDO') {
+          throw new Error('El pedido ya fue procesado.');
+        }
+
+        return confirmOrderAsSale(tx, order.id, user.id);
+      });
+
+      if (!result.success) {
+        return { success: false, error: 'No se pudo registrar la venta y generar la factura' };
+      }
+
+      invoice = {
+        id: result.invoiceId,
+        fullNumber: result.fullNumber,
+      };
+    } else {
+      await prisma.pedido.update({
+        where: { id: orderId },
+        data: { status },
+      });
+    }
 
     revalidatePath('/dashboard/store');
+    revalidatePath('/dashboard/inventory');
+    revalidatePath('/products');
 
-    return { success: true, whatsappLink: null };
+    return {
+      success: true,
+      whatsappLink: null,
+      invoice,
+    };
   } catch (error) {
     console.error('Error updating order status:', error);
     return { success: false, error: 'No se pudo actualizar el pedido' };
