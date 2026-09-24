@@ -3,12 +3,20 @@
 import React from 'react'
 
 interface ShoeViewerProps {
-  url: string;
+  url?: string | null;
   alt?: string;
   environment?: 'neutral' | 'studio' | 'city' | 'forest';
 }
 
 export function ShoeViewer({ url, alt = 'Modelo 3D de calzado', environment = 'neutral' }: ShoeViewerProps) {
+  if (!url) {
+    return (
+      <div className="w-full h-[500px] bg-gray-100 rounded-3xl flex items-center justify-center border border-gray-200">
+        <p className="text-xs font-bold text-gray-400 uppercase">Modelo 3D no disponible</p>
+      </div>
+    )
+  }
+
   return (
     <div className="relative w-full h-[500px] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-100 via-white to-gray-200 rounded-3xl overflow-hidden border border-gray-200 group shadow-inner">
       <model-viewer
@@ -24,7 +32,6 @@ export function ShoeViewer({ url, alt = 'Modelo 3D de calzado', environment = 'n
         exposure="1.2"
         touch-action="pan-y"
         camera-orbit="45deg 75deg 105%"
-        className="w-full h-full"
         style={{ width: '100%', height: '100%' }}
       >
         <div slot="poster" className="absolute inset-0 flex items-center justify-center bg-gray-100">

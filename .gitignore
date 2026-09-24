@@ -50,3 +50,4 @@ next-env.d.ts
 errores_completos.txt
 
 errores_completos.txt
+.env*

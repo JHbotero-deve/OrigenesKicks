@@ -26,16 +26,16 @@ export const ProductEditorPro = () => {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Nombre del Modelo</label>
+            <label className="block text-[10px] font-black uppercase text-gray-700 mb-1">Nombre del Modelo</label>
             <input
               type="text"
               placeholder="Ej: Jordan Retro 4 &apos;Barrio Edition&apos;"
-              className="w-full p-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold"
+              className="w-full p-4 bg-gray-500 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all font-bold"
               onChange={(e) => setProductName(e.target.value)}
             />
           </div>
 
-          <div className="relative border-2 border-dashed border-gray-200 rounded-3xl p-8 text-center hover:border-orange-500 transition-colors group cursor-pointer">
+          <div className="relative border-2 border-dashed border-gray-500 rounded-3xl p-8 text-center hover:border-orange-500 transition-colors group cursor-pointer">
             <input
               type="file"
               className="absolute inset-0 opacity-0 cursor-pointer"
@@ -58,7 +58,7 @@ export const ProductEditorPro = () => {
       </div>
 
       {/* Lado Derecho: La "Magia" (Vista Previa Estética) */}
-      <div className="flex flex-col items-center justify-center bg-gray-50 rounded-[2rem] p-8 border-2 border-dashed border-gray-200 relative overflow-hidden">
+      <div className="flex flex-col items-center justify-center bg-gray-500 rounded-[2rem] p-8 border-2 border-dashed border-gray-400 relative overflow-hidden">
         <div className="absolute top-4 left-4 flex items-center gap-1">
           <Sparkles size={14} className="text-orange-500" />
           <span className="text-[9px] font-black uppercase text-orange-600 tracking-widest italic">Simulación de Vitrina</span>
