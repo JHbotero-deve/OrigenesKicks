@@ -138,7 +138,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
 
       {quickViewProduct && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl relative border-4 border-orange-500">
+          <div className="bg-white w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl relative border-2 border-orange-500">
             <button
               onClick={() => setQuickViewProduct(null)}
               className="absolute top-6 right-6 z-50 bg-black text-white p-3 rounded-full hover:bg-orange-600 transition-all shadow-xl"
