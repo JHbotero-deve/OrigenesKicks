@@ -149,7 +149,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
             </button>
 
             <div className="grid grid-cols-1 md:grid-cols-2">
-              <div className="h-[400px] md:h-[600px] bg-gray-50 border-r border-gray-100">
+              <div className="h-[320px] sm:h-[440px] md:h-[600px] bg-gray-50 border-r border-gray-100">
                 <Product3DViewer
                   modelUrl={quickViewProduct.model3dUrl}
                   posterUrl={quickViewProduct.imageUrl}
