@@ -23,6 +23,7 @@ export async function createOrder(data: {
   paymentMethod: string;
   totalAmount: number;
   shippingAddress?: { address: string; city: string; phone: string };
+  notes?: string;
 }): Promise<{ success: boolean; pedidoId?: string; error?: string }> {
   try {
     const auth = await requireAuthenticatedUser();
@@ -41,6 +42,10 @@ export async function createOrder(data: {
     }
     if (data.items.some((item) => !Number.isInteger(item.quantity) || item.quantity <= 0)) {
       return { success: false, error: "Cantidad de producto inválida" };
+    }
+
+    if (data.notes && data.notes.trim().length > 500) {
+      return { success: false, error: "Las observaciones no pueden superar 500 caracteres" };
     }
 
     if (data.shippingAddress) {
@@ -114,6 +119,7 @@ export async function createOrder(data: {
           paymentMethod: data.paymentMethod,
           status: "RECIBIDO",
           expiresAt,
+          notes: data.notes?.trim() || null,
           items: { create: itemsWithRealPrices },
           ...(data.shippingAddress && {
             envio: {
