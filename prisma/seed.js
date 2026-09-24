@@ -22,7 +22,7 @@ async function main() {
     { id: 'prod-010', name: 'Premium Court', slug: 'premium-court', description: 'Modelo demo 3D para pruebas de catálogo.', price: 319900, basePrice: 319900, category: 'Basketball', active: true, isSpecial: false, salesCount: 5, imageUrl: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=600&q=80', sku: 'OK-PC-001', taxRate: 19, color: 'Azul', model3dUrl }
   ];
   for (const p of productos) {
-    const { color, category, sku, taxRate, ...data } = p;
+    const data = { ...p };\n    delete data.color;\n    delete data.category;\n    delete data.sku;\n    delete data.taxRate;
     await prisma.product.upsert({ where: { id: p.id }, update: data, create: data });
     for (const t of ['37','38','39','40','41','42','43','44']) {
       const sku = `${p.sku}-T${t}`;
