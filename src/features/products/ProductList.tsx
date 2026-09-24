@@ -159,7 +159,7 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                 <span className="bg-orange-100 text-orange-800 text-[9px] font-black px-3 py-1 rounded-full uppercase italic mb-4 inline-block w-fit">
                   Fábrica Nacional
                 </span>
-                <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-gray-900 leading-none mb-4">
+                <h2 className="text-2xl sm:text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-gray-900 leading-none mb-4">
                   {quickViewProduct.name}
                 </h2>
                 <p className="text-gray-500 font-medium italic mb-8 leading-tight">
