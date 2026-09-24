@@ -7,7 +7,7 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState(""); const [loading, setLoading] = useState(false); const [message, setMessage] = useState(""); const [error, setError] = useState("");
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault(); setLoading(true); setMessage(""); setError("");
-    const { error: resetError } = await getSupabaseClient().auth.resetPasswordForEmail(email.trim(), { redirectTo: window.location.origin + "/reset-password" });
+    const { error: resetError } = await getSupabaseClient().auth.resetPasswordForEmail(email.trim(), { redirectTo: window.location.origin + "/auth/callback?next=/reset-password" });
     if (resetError) setError("No fue posible enviar el correo. Verifica el correo e inténtalo de nuevo.");
     else setMessage("Si el correo está registrado, recibirás las instrucciones para recuperar tu contraseña.");
     setLoading(false);
