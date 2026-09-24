@@ -1,37 +1,19 @@
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
-import { createClient } from "@/lib/supabase-server";
+import { requireAuthenticatedUser } from "@/lib/auth-guard";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+const STAFF_ROLES = ["OWNER", "ADMIN", "SELLER", "DELIVERY"] as const;
 
-  if (!user?.email) {
-    redirect("/login");
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const auth = await requireAuthenticatedUser();
+
+  if (!auth.ok || !auth.dbUser) {
+    redirect("/login?error=required");
   }
 
-  const { data: dbUser, error } = await supabase
-    .from("users")
-    .select("role")
-    .eq("email", user.email)
-    .maybeSingle();
-
-  if (error) {
-    console.error("Error verificando el acceso al dashboard:", error);
-    redirect("/login?error=dashboard");
-  }
-
-  const staffRoles = ["OWNER", "ADMIN", "SELLER", "DELIVERY"];
-
-  if (!dbUser || !staffRoles.includes(dbUser.role)) {
+  if (!STAFF_ROLES.includes(auth.dbUser.role as (typeof STAFF_ROLES)[number])) {
     redirect("/products");
   }
 
