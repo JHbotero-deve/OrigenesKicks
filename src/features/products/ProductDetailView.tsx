@@ -49,6 +49,20 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(variants[0] ?? null);
   const [view3d, setView3d] = useState(false);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
+  const availableColors = Array.from(new Set(variants.map((variant) => variant.color).filter(Boolean)));
+  const colorHexForUi = (color: string) => {
+    const value = color.toLowerCase();
+    if (value.includes("rojo")) return "#dc2626";
+    if (value.includes("azul")) return "#2563eb";
+    if (value.includes("verde")) return "#16a34a";
+    if (value.includes("amarillo")) return "#eab308";
+    if (value.includes("blanco")) return "#f3f4f6";
+    if (value.includes("gris")) return "#6b7280";
+    if (value.includes("cafe") || value.includes("café") || value.includes("marrón") || value.includes("marron")) return "#7c4a2d";
+    if (value.includes("rosa") || value.includes("rosado")) return "#ec4899";
+    if (value.includes("naranja")) return "#f97316";
+    return "#20242c";
+  };
 
   const handleWhatsApp = () => {
     const storePhone = selectedVariant?.store?.phone?.replace(/\D/g, "");
@@ -74,6 +88,7 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
                 modelUrl={product.model3dUrl}
                 posterUrl={product.imageUrl ?? undefined}
                 productName={product.name}
+                color={selectedVariant?.color}
               />
             ) : (
               <div className="h-[360px] sm:h-[500px] lg:h-[700px] flex items-center justify-center p-12">
@@ -81,6 +96,10 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
                   src={product.imageUrl || "/placeholder-shoe.svg"}
                   alt={product.name}
                   className="w-full h-full object-contain mix-blend-multiply drop-shadow-2xl"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = "/placeholder-shoe.svg";
+                  }}
                 />
               </div>
             )}
@@ -123,6 +142,29 @@ export const ProductDetailView: React.FC<Props> = ({ product }) => {
                 Guía de Hormas
               </button>
             </div>
+            {availableColors.length > 0 && (
+              <div className="mb-6">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Colores Disponibles</p>
+                <div className="flex flex-wrap gap-3">
+                  {availableColors.map((color) => {
+                    const variantForColor = variants.find((variant) => variant.color === color);
+                    const active = selectedVariant?.color === color;
+                    return (
+                      <button
+                        type="button"
+                        key={color}
+                        onClick={() => variantForColor && setSelectedVariant(variantForColor)}
+                        className={`inline-flex items-center gap-2 rounded-full border-2 px-3 py-2 text-[10px] font-black uppercase transition-all ${active ? "border-black bg-black text-white scale-105" : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"}`}
+                      >
+                        <span className="h-4 w-4 rounded-full border border-black/10 shadow-inner" style={{ backgroundColor: colorHexForUi(color) }} />
+                        {color}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-3">
               {variants.map((v) => (
                 <button
