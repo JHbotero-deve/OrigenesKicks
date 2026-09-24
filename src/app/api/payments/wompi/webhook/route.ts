@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import { confirmOrderAsSale } from "@/lib/order-confirmation";
 
 type WompiEvent = {
   event?: string;
@@ -21,10 +22,7 @@ function getPathValue(source: unknown, path: string): unknown {
 function checksumForEvent(body: WompiEvent, secret: string) {
   const properties = body.signature?.properties ?? [];
   const values = properties.map((property) => String(getPathValue(body.data, property) ?? ""));
-  return crypto
-    .createHash("sha256")
-    .update(values.join("") + String(body.timestamp ?? "") + secret, "utf8")
-    .digest("hex");
+  return crypto.createHash("sha256").update(values.join("") + String(body.timestamp ?? "") + secret, "utf8").digest("hex");
 }
 
 function safeEqual(a: string, b: string) {
@@ -80,14 +78,31 @@ export async function POST(request: Request) {
   const allowed = new Set(["PENDING", "APPROVED", "DECLINED", "ERROR", "VOIDED"]);
   if (!allowed.has(status)) return NextResponse.json({ received: true });
 
-  await prisma.pedido.update({
-    where: { id: order.id },
-    data: {
-      paymentStatus: status,
-      paymentTransactionId: transaction.id || null,
-      ...(status === "APPROVED" ? { expiresAt: null } : {}),
-    },
-  });
+  try {
+    if (status === "APPROVED") {
+      await prisma.$transaction(async (tx) => {
+        await tx.pedido.update({
+          where: { id: order.id },
+          data: {
+            paymentStatus: "APPROVED",
+            paymentTransactionId: transaction.id || null,
+          },
+        });
+        await confirmOrderAsSale(tx, order.id, null);
+      });
+    } else {
+      await prisma.pedido.update({
+        where: { id: order.id },
+        data: {
+          paymentStatus: status,
+          paymentTransactionId: transaction.id || null,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Error procesando confirmación Wompi:", error);
+    return NextResponse.json({ error: "No se pudo registrar el pago." }, { status: 500 });
+  }
 
   return NextResponse.json({ received: true });
 }

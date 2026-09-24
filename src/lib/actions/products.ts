@@ -11,6 +11,7 @@ const ProductSchema = z.object({
   basePrice: z.number().finite().positive(),
   discountPrice: z.number().finite().positive().nullable().optional(),
   imageUrl: z.string().trim().url().max(1000).optional().or(z.literal("")),
+  model3dUrl: z.string().trim().url().max(1000).optional().or(z.literal("")),
   sku: z.string().trim().max(80).optional(),
   variants: z.array(z.object({
     size: z.string().trim().min(1).max(20),
@@ -20,7 +21,8 @@ const ProductSchema = z.object({
 });
 
 function slugify(value: string) {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
 export async function createProduct(data: unknown) {
@@ -40,16 +42,11 @@ export async function createProduct(data: unknown) {
     slug = `${baseSlug}-${suffix++}`;
   }
 
-  const store = await prisma.store.findFirst({
-    where: { active: true },
-    select: { id: true },
-  });
+  const store = await prisma.store.findFirst({ where: { active: true }, select: { id: true } });
   if (!store) return { success: false, error: "No existe una tienda activa para asociar el producto" };
 
   const variantSkus = input.variants.map((variant, index) =>
-    `${input.sku || slug}-${variant.size}-${index + 1}`
-      .toUpperCase()
-      .replace(/[^A-Z0-9-]/g, "-")
+    `${input.sku || slug}-${variant.size}-${index + 1}`.toUpperCase().replace(/[^A-Z0-9-]/g, "-")
   );
 
   if (new Set(variantSkus).size !== variantSkus.length) {
@@ -73,6 +70,7 @@ export async function createProduct(data: unknown) {
         basePrice: input.basePrice,
         discountPrice,
         imageUrl: input.imageUrl || null,
+        model3dUrl: input.model3dUrl || null,
         variants: {
           create: input.variants.map((variant, index) => ({
             size: variant.size,
@@ -87,6 +85,7 @@ export async function createProduct(data: unknown) {
     });
 
     revalidatePath("/products");
+    revalidatePath("/dashboard/products");
     revalidatePath("/dashboard/inventory");
     return { success: true, product };
   } catch (error) {

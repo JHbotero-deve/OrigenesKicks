@@ -9,19 +9,17 @@ const STAFF_ROLES = ["OWNER", "ADMIN", "SELLER", "DELIVERY"] as const;
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const auth = await requireAuthenticatedUser();
 
-  if (!auth.ok || !auth.dbUser) {
-    redirect("/login?error=required");
-  }
+  if (!auth.ok || !auth.dbUser) redirect("/login?error=required");
 
   if (!STAFF_ROLES.includes(auth.dbUser.role as (typeof STAFF_ROLES)[number])) {
     redirect("/products");
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 md:flex">
       <AdminSidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-7xl p-8">{children}</div>
+      <main className="min-w-0 flex-1 overflow-x-hidden">
+        <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">{children}</div>
       </main>
     </div>
   );

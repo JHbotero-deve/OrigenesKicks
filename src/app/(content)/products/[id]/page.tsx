@@ -1,17 +1,15 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
+import { releaseExpiredReservationsInternal } from "@/lib/reservations";
 import { ProductDetailView } from "@/features/products/ProductDetailView";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProductDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
+  await releaseExpiredReservationsInternal();
 
+  const supabase = await createClient();
   const { data: product, error: productError } = await supabase
     .from("products")
     .select("*")
@@ -37,7 +35,7 @@ export default async function ProductDetailPage({
         basePrice: product.basePrice,
         discountPrice: product.discountPrice,
         imageUrl: product.imageUrl ?? null,
-        model3dUrl: product.model3d_url ?? null,
+        model3dUrl: product.model3d_url ?? product.model3dUrl ?? null,
         variants: (variants ?? []).map((variant) => ({
           id: variant.id,
           size: String(variant.size ?? ""),

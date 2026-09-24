@@ -3,18 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  color-scheme: light;
+  --foreground: 17 17 17;
+  --background: 248 249 250;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-}
+* { box-sizing: border-box; }
 
 html, body {
   width: 100%;
@@ -22,7 +16,41 @@ html, body {
   overflow-x: hidden;
 }
 
+html { background: rgb(var(--background)); }
+
 body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-start-rgb));
+  margin: 0;
+  color: rgb(var(--foreground));
+  background: rgb(var(--background));
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+img, svg, video, canvas { max-width: 100%; }
+button, input, select, textarea { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid rgba(249, 115, 22, 0.35);
+  outline-offset: 2px;
+}
+
+@layer components {
+  .field-label {
+    @apply mb-1 block text-[10px] font-black uppercase tracking-wide text-gray-400;
+  }
+  .field-input {
+    @apply w-full rounded-2xl border-2 border-transparent bg-gray-50 p-3 text-sm font-bold text-gray-900 outline-none transition focus:border-black;
+  }
+  .meta-label {
+    @apply text-[9px] font-black uppercase tracking-widest text-gray-400;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

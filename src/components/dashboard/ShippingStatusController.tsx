@@ -1,69 +1,53 @@
-﻿"use client";
+"use client";
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { updateShippingStatus } from '@/lib/actions';
-import { Truck, CheckCircle, XCircle, Package } from 'lucide-react';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { updateShippingStatus } from "@/lib/actions";
+import { Truck, CheckCircle, XCircle, RotateCcw, Package } from "lucide-react";
 
-interface Props {
-  shippingId: string;
-  currentStatus: string;
-}
+interface Props { shippingId: string; currentStatus: string; }
 
 export const ShippingStatusController: React.FC<Props> = ({ shippingId, currentStatus }) => {
   const [loading, setLoading] = useState(false);
 
-  const changeStatus = async (newStatus: any) => {
+  const changeStatus = async (newStatus: "EN_RUTA" | "ENTREGADO" | "FALLIDO" | "RETORNADO") => {
     setLoading(true);
-    const res = await updateShippingStatus(shippingId, newStatus);
+    const result = await updateShippingStatus(shippingId, newStatus);
     setLoading(false);
-    if (res.success) {
-      window.location.reload();
-    } else {
-      alert(res.error || "Error actualizando envío");
+
+    if (!result.success) {
+      alert(result.error || "Error actualizando el envío");
+      return;
     }
+
+    window.location.reload();
   };
 
   return (
-    <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-2xl border border-gray-200">
-      <p className="w-full text-[9px] font-black text-gray-400 uppercase mb-1 tracking-widest">Actualizar Estado de Entrega</p>
-      
-      <Button 
-        onClick={() => changeStatus('EN_RUTA')}
-        disabled={loading || currentStatus === 'EN_RUTA'}
-        className={`flex items-center gap-1 px-3 py-1 rounded-lg font-black italic text-[9px] uppercase transition-all ${
-          currentStatus === 'EN_RUTA' ? 'bg-blue-600 text-white' : 'bg-white text-blue-600 border border-blue-200 hover:bg-blue-50'
-        }`}
-      >
-        <Truck size={12} /> En Ruta
+    <div className="flex flex-wrap gap-2 rounded-2xl border border-gray-200 bg-gray-50 p-3">
+      <p className="mb-1 flex w-full items-center gap-2 text-[9px] font-black uppercase tracking-widest text-gray-400">
+        <Package size={11} /> Estado de entrega
+      </p>
+
+      <Button type="button" onClick={() => changeStatus("EN_RUTA")} disabled={loading || currentStatus !== "PENDIENTE"} className={"flex items-center gap-1 rounded-lg px-3 py-2 text-[9px] font-black uppercase " + (currentStatus === "EN_RUTA" ? "bg-blue-600 text-white" : "border border-blue-200 bg-white text-blue-600")}>
+        <Truck size={12}/> En ruta
       </Button>
 
-      <Button 
-        onClick={() => changeStatus('ENTREGADO')}
-        disabled={loading || currentStatus === 'ENTREGADO'}
-        className={`flex items-center gap-1 px-3 py-1 rounded-lg font-black italic text-[9px] uppercase transition-all ${
-          currentStatus === 'ENTREGADO' ? 'bg-green-600 text-white' : 'bg-white text-green-600 border border-green-200 hover:bg-green-50'
-        }`}
-      >
-        <CheckCircle size={12} /> Entregado
+      <Button type="button" onClick={() => changeStatus("ENTREGADO")} disabled={loading || currentStatus !== "EN_RUTA"} className={"flex items-center gap-1 rounded-lg px-3 py-2 text-[9px] font-black uppercase " + (currentStatus === "ENTREGADO" ? "bg-green-600 text-white" : "border border-green-200 bg-white text-green-600")}>
+        <CheckCircle size={12}/> Entregado
       </Button>
 
-      <Button 
-        onClick={() => changeStatus('FALLIDO')}
-        disabled={loading || currentStatus === 'FALLIDO'}
-        className={`flex items-center gap-1 px-3 py-1 rounded-lg font-black italic text-[9px] uppercase transition-all ${
-          currentStatus === 'FALLIDO' ? 'bg-red-600 text-white' : 'bg-white text-red-600 border border-red-200 hover:bg-red-50'
-        }`}
-      >
-        <XCircle size={12} /> Fallido
+      <Button type="button" onClick={() => changeStatus("FALLIDO")} disabled={loading || currentStatus !== "EN_RUTA"} className="flex items-center gap-1 rounded-lg border border-red-200 bg-white px-3 py-2 text-[9px] font-black uppercase text-red-600">
+        <XCircle size={12}/> Fallido
       </Button>
 
-      {currentStatus === 'PENDIENTE' && (
-        <div className="w-full flex items-center gap-2 text-orange-600 mt-1">
-          <Package size={10} />
-          <span className="text-[8px] font-bold uppercase">Esperando despacho</span>
-        </div>
-      )}
+      <Button type="button" onClick={() => changeStatus("RETORNADO")} disabled={loading || currentStatus !== "EN_RUTA"} className="flex items-center gap-1 rounded-lg border border-orange-200 bg-white px-3 py-2 text-[9px] font-black uppercase text-orange-700">
+        <RotateCcw size={12}/> Retornado a bodega
+      </Button>
+
+      <p className="w-full text-[8px] font-bold uppercase text-gray-400">
+        Al marcar “Retornado a bodega”, el sistema devuelve automáticamente las unidades al inventario y registra el movimiento.
+      </p>
     </div>
   );
 };
