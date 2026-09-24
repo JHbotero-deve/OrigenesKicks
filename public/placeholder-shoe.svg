@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-labelledby="title desc">
+  <title id="title">Orígenes Kicks</title>
+  <desc id="desc">Marcador visual para producto sin imagen disponible</desc>
+  <rect width="800" height="800" rx="64" fill="#f3f4f6"/>
+  <circle cx="400" cy="330" r="190" fill="#111827"/>
+  <path d="M235 390c80-22 130-92 190-130 36-23 91-34 128-11 31 19 47 54 72 87 20 27 57 48 83 67l-29 63H234z" fill="#f97316"/>
+  <path d="M236 466h470v48H236z" fill="#111827"/>
+  <text x="400" y="625" text-anchor="middle" font-family="Arial,sans-serif" font-size="46" font-weight="900" fill="#111827">ORÍGENES KICKS</text>
+  <text x="400" y="675" text-anchor="middle" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="#4b5563">Imagen no disponible</text>
+</svg>
