@@ -14,7 +14,7 @@ interface ProductListProps {
 
 export const ProductList: React.FC<ProductListProps> = ({ products }) => {
   const addItem = useCartStore(state => state.addItem);
-  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [active3DProductId, setActive3DProductId] = useState<string | null>(null);
 
   return (
     <>
@@ -31,27 +31,63 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
                 </div>
               )}
 
-              <Link href={productPath} className="block group/link flex-1">
-                <div className="relative aspect-square overflow-hidden rounded-[2rem] bg-[#e5e0d7] mb-6">
-                  <img
-                    src={product.imageUrl || "/placeholder-shoe.svg"}
-                    alt={product.name}
-                    onError={(event) => {
-                      event.currentTarget.onerror = null;
-                      event.currentTarget.src = "/placeholder-shoe.svg";
-                    }}
-                    className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-700 drop-shadow-xl p-4"
-                  />
-
-                  <div className="absolute inset-0 bg-black/0 group-hover/link:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover/link:opacity-100">
-                    <div className="bg-[#f8f6f1] text-black px-6 py-3 rounded-full font-black uppercase italic text-[10px] shadow-2xl border-2 border-black flex items-center gap-2 transform -rotate-2">
-                      <Eye size={14} /> Ver en Detalle
+              <div
+                className="relative aspect-square overflow-hidden rounded-[2rem] bg-[#e5e0d7] mb-6 cursor-grab active:cursor-grabbing"
+                onClick={() => setActive3DProductId(active3DProductId === product.id ? null : product.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setActive3DProductId(active3DProductId === product.id ? null : product.id);
+                  }
+                }}
+                aria-label={`Abrir modelo 3D de ${product.name}`}
+              >
+                {active3DProductId === product.id ? (
+                  <>
+                    <Product3DViewer
+                      modelUrl={product.model3dUrl}
+                      posterUrl={product.imageUrl}
+                      productName={product.name}
+                      className="!h-full !min-h-0 rounded-[2rem]"
+                    />
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setActive3DProductId(null);
+                      }}
+                      className="absolute right-3 top-3 z-30 rounded-full bg-black/85 p-2 text-white shadow-xl hover:bg-orange-600"
+                      aria-label="Cerrar modelo 3D"
+                      title="Cerrar modelo 3D"
+                    >
+                      <X size={16} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <img
+                      src={product.imageUrl || "/placeholder-shoe.svg"}
+                      alt={product.name}
+                      onError={(event) => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = "/placeholder-shoe.svg";
+                      }}
+                      className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-700 drop-shadow-xl p-4"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all duration-300 hover:bg-black/10 hover:opacity-100">
+                      <div className="bg-[#f8f6f1] text-black px-5 py-3 rounded-full font-black uppercase italic text-[10px] shadow-2xl border-2 border-black flex items-center gap-2">
+                        <Rotate3d size={15} /> Tocar para girar en 3D
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </>
+                )}
+              </div>
 
+              <Link href={productPath} className="block flex-1">
                 <div className="px-2">
-                  <h3 className="font-black uppercase italic text-lg leading-tight group-hover/link:text-orange-600 transition-colors mb-2">
+                  <h3 className="font-black uppercase italic text-lg leading-tight hover:text-orange-600 transition-colors mb-2">
                     {product.name}
                   </h3>
                   <p className="text-gray-600 text-[10px] font-bold uppercase mb-4 tracking-widest">
@@ -78,14 +114,17 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
               </Link>
 
               <button
-                  onClick={() => setQuickViewProduct(product)}
-                  className="absolute bottom-[110px] right-8 bg-orange-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-xl hover:bg-black transition-all z-20"
-                  title="Ver modelo 3D"
-                  aria-label={`Ver ${product.name} en 3D`}
-                  type="button"
-                >
-                  <Rotate3d size={20} />
-                </button>
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setActive3DProductId(active3DProductId === product.id ? null : product.id);
+                }}
+                className="absolute bottom-[110px] right-8 bg-orange-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-xl hover:bg-black transition-all z-20"
+                title="Ver modelo 3D"
+                aria-label={`Ver ${product.name} en 3D`}
+                type="button"
+              >
+                <Rotate3d size={20} />
+              </button>
 
               <div className="space-y-3 mt-4 pt-4 border-t border-[#d3cdc2]">
                 <div className="flex justify-between items-center">
@@ -136,46 +175,6 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
         })}
       </div>
 
-      {quickViewProduct && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-[#f1eee7] w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl relative border-2 border-orange-500">
-            <button
-              onClick={() => setQuickViewProduct(null)}
-              className="absolute top-6 right-6 z-50 bg-black text-white p-3 rounded-full hover:bg-orange-600 transition-all shadow-xl"
-              type="button"
-              aria-label="Cerrar vista 3D"
-            >
-              <X size={24} />
-            </button>
-
-            <div className="grid grid-cols-1 md:grid-cols-2">
-              <div className="h-[320px] sm:h-[440px] md:h-[600px] bg-[#e5e0d7] border-r border-[#d3cdc2]">
-                <Product3DViewer
-                  modelUrl={quickViewProduct.model3dUrl}
-                  posterUrl={quickViewProduct.imageUrl}
-                  productName={quickViewProduct.name}
-                />
-              </div>
-              <div className="p-5 sm:p-8 md:p-5 sm:p-8 md:p-10 flex flex-col justify-center min-w-0 bg-[#f1eee7]">
-                <span className="bg-orange-100 text-orange-800 text-[9px] font-black px-3 py-1 rounded-full uppercase italic mb-4 inline-block w-fit">
-                  Fábrica Nacional
-                </span>
-                <h2 className="text-2xl sm:text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-gray-900 leading-none mb-4">
-                  {quickViewProduct.name}
-                </h2>
-                <p className="text-gray-600 font-medium italic mb-8 leading-tight">
-                  Interactúa con el modelo 3D a la izquierda. Gíralo y revisa el detalle del producto.
-                </p>
-                <Link href={`/products/${quickViewProduct.id}`} className="w-full">
-                  <Button className="w-full py-6 bg-black text-white font-black uppercase italic text-xs rounded-2xl flex items-center justify-center gap-3">
-                    <ShoppingBag size={18} /> Ver tallas y Comprar
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };
