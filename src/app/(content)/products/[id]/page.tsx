@@ -1,13 +1,16 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
-import { releaseExpiredReservationsInternal } from "@/lib/reservations";
+import { releaseExpiredReservationsSafe } from "@/lib/reservations";
 import { ProductDetailView } from "@/features/products/ProductDetailView";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  await releaseExpiredReservationsInternal();
+  const { id: rawId } = await params;
+  const id = decodeURIComponent(rawId);
+  if (!/^[\w-]{1,120}$/.test(id)) notFound();
+
+  await releaseExpiredReservationsSafe();
 
   const supabase = await createClient();
   const { data: product, error: productError } = await supabase

@@ -4,14 +4,14 @@ import { SpecialOffersSection } from "@/features/products/SpecialOffersSection";
 import { StoresShowcase } from "@/components/layout/StoresShowcase";
 import { PublicityStand } from "@/components/layout/PublicityStand";
 import { createClient } from "@/lib/supabase-server";
-import { releaseExpiredReservationsInternal } from "@/lib/reservations";
+import { releaseExpiredReservationsSafe } from "@/lib/reservations";
 
 export const dynamic = "force-dynamic";
 
 type Product = Record<string, any>;
 
 export default async function ProductsPage() {
-  await releaseExpiredReservationsInternal();
+  await releaseExpiredReservationsSafe();
 
   const supabase = await createClient();
   const [

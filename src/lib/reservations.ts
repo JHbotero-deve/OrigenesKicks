@@ -2,6 +2,22 @@ import "server-only";
 
 import prisma from "@/lib/db";
 
+/**
+ * Versión tolerante a fallos para usar al renderizar páginas públicas:
+ * si la base de datos (Prisma) no está disponible, la vitrina debe seguir cargando.
+ */
+export async function releaseExpiredReservationsSafe() {
+  try {
+    return await releaseExpiredReservationsInternal();
+  } catch (error) {
+    console.error(
+      "[reservations] No se pudieron liberar reservas vencidas:",
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
+}
+
 export async function releaseExpiredReservationsInternal() {
   const now = new Date();
 
