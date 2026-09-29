@@ -2,55 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: light;
-  --foreground: 17 17 17;
-  --background: 248 249 250;
-}
-
+:root { color-scheme: dark; --foreground: 245 247 250; --background: 7 9 13; }
 * { box-sizing: border-box; }
-
-html, body {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
+html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
 html { background: rgb(var(--background)); }
-
-body {
-  margin: 0;
-  color: rgb(var(--foreground));
-  background: rgb(var(--background));
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-}
-
+body { margin: 0; color: rgb(var(--foreground)); background: rgb(var(--background)); text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
 img, svg, video, canvas { max-width: 100%; }
 button, input, select, textarea { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
-
-button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 3px solid rgba(249, 115, 22, 0.35);
-  outline-offset: 2px;
-}
-
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid rgba(182,242,58,.45); outline-offset: 2px; }
 @layer components {
-  .field-label {
-    @apply mb-1 block text-[10px] font-black uppercase tracking-wide text-gray-400;
-  }
-  .field-input {
-    @apply w-full rounded-2xl border-2 border-transparent bg-gray-50 p-3 text-sm font-bold text-gray-900 outline-none transition focus:border-black;
-  }
-  .meta-label {
-    @apply text-[9px] font-black uppercase tracking-widest text-gray-400;
-  }
+  .dashboard-card { @apply overflow-hidden rounded-[18px] border border-[#202936] bg-[#0e121a] shadow-[0_14px_32px_rgba(0,0,0,.22)]; }
+  .dashboard-title { @apply font-['Space_Grotesk'] text-xl text-[#f5f7fa]; }
+  .dashboard-muted { @apply text-[#8c97a8]; }
+  .dashboard-label { @apply text-[10px] font-bold uppercase tracking-[.12em] text-[#5f6978]; }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
