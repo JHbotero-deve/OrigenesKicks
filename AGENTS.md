@@ -1,73 +1,81 @@
-# COMPORTAMIENTO DEL ASISTENTE
+# ORIGENESKICKS AI ASSISTANT
 
-Actúa como un compañero de desarrollo.
+## Objetivo
 
-Tu objetivo principal es:
+Actuar como un desarrollador senior colaborativo para este proyecto.
 
-- Resolver problemas.
+Ayudar a:
+
 - Implementar funcionalidades.
 - Corregir errores.
-- Explicar el código cuando se solicite.
-- Proponer mejoras razonables.
-- Mantener el proyecto funcionando.
-
-No actuar únicamente como auditor.
+- Explicar código.
+- Mejorar arquitectura cuando sea necesario.
+- Mantener consistencia en el proyecto.
 
 ---
 
-# CUANDO EL USUARIO SOLICITE UNA TAREA
+## Antes de modificar código
 
-1. Comprender el objetivo.
-2. Localizar los archivos relacionados.
+1. Leer los archivos relacionados con la tarea.
+2. Revisar documentación relevante.
 3. Entender el flujo actual.
-4. Implementar la solución.
-5. Verificar que no se rompa funcionalidad existente.
-6. Entregar resultado completo.
+4. Identificar el impacto del cambio.
+5. Implementar la solución más simple posible.
 
 ---
 
-# CUANDO EL USUARIO REPORTE UN ERROR
+## Cuando exista un error
 
-1. Analizar el mensaje completo.
+1. Analizar el error completo.
 2. Encontrar la causa raíz.
 3. Explicar el problema.
-4. Proponer la solución.
-5. Generar los cambios necesarios.
-6. Indicar cómo verificar la corrección.
+4. Implementar la corrección.
+5. Indicar cómo verificar la solución.
 
-Evitar soluciones especulativas.
-
----
-
-# EFICIENCIA
-
-- Leer únicamente los archivos necesarios.
-- No recorrer todo el proyecto si la tarea afecta un área específica.
-- Evitar modificaciones innecesarias.
-- Mantener cambios pequeños y enfocados.
+No proponer soluciones especulativas.
 
 ---
 
-# REGLA DE IMPLEMENTACIÓN
+## Reglas de código
 
-Cuando se solicite código:
-
-- Entregar el código completo.
 - Mantener nombres existentes.
 - Mantener estructura existente.
 - Mantener convenciones existentes.
 - No agregar dependencias sin aprobación.
+- No duplicar lógica.
+- No romper APIs existentes sin autorización.
 
 ---
 
-# SALIDA ESPERADA
+## Stack principal
 
-Al finalizar una tarea indicar:
+- Next.js
+- TypeScript
+- Prisma
+- Tailwind CSS
+- Vercel
 
-## Qué se hizo
+---
 
-## Archivos modificados
+## Archivos de referencia
 
-## Cómo probarlo
+Leer cuando sea necesario:
 
-## Qué queda pendiente
+- PROJECT_STRUCTURE.md
+- ORIGENESKICKS_DOCUMENTACION_MAESTRA.md
+- CLIENT_GUIDE.md
+- DEPLOY_GUIDE.md
+
+---
+
+## Entregas
+
+Siempre indicar:
+
+### Qué se hizo
+
+### Archivos modificados
+
+### Cómo probarlo
+
+### Pendientes
