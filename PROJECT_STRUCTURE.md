@@ -5,7 +5,6 @@ Facilitar el mantenimiento y escalabilidad del proyecto mediante una separación
 
 ## Visión General de la Carpeta `src/`
 
-```text
 src/
 ├── app/                    # App Router: Rutas, Layouts y API Handlers
 │   ├── (auth)/             # Grupo: Login, Registro (Layout minimalista)
@@ -23,7 +22,6 @@ src/
 ├── contexts/               # Contextos de React (Auth, Carrito)
 ├── stores/                 # Estado global (Stand)
 └── hooks/                  # Hooks personalizados
-```
 
 ## Convenciones de Desarrollo
 
@@ -52,5 +50,16 @@ Usa siempre importaciones absolutas para mayor claridad:
 ## Activos y Publicidad
 - **Publicidad**: El componente `PromoBanner` en `features/products` gestiona la identidad visual de la vitrina.
 - **Imágenes**: Se recomienda usar el bucket de Supabase `product-images` para el catálogo real.
+## Flujo de trabajo para asistentes IA
 
-```
+Al iniciar una nueva tarea:
+
+1. Leer AGENTS.md.
+2. Leer PROJECT_STRUCTURE.md.
+3. Consultar ORIGENESKICKS_DOCUMENTACION_MAESTRA.md cuando existan dudas de negocio.
+4. Consultar CLIENT_GUIDE.md para requisitos funcionales.
+5. Consultar DEPLOY_GUIDE.md para despliegue e infraestructura.
+6. Localizar únicamente los archivos relacionados con la tarea.
+7. Comprender el flujo actual antes de modificar código.
+8. Implementar la solución con el menor impacto posible.
+9. Mantener compatibilidad con el resto del proyecto.
