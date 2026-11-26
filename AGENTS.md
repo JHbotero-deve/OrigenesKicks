@@ -201,3 +201,12 @@ No inventar endpoints.
 No inventar configuraciones.
 
 Comprender primero. Implementar después.
+
+Al comenzar una nueva conversación:
+
+1. Leer AGENTS.md.
+2. Leer PROJECT_STRUCTURE.md.
+3. Leer ORIGENESKICKS_DOCUMENTACION_MAESTRA.md.
+4. Detectar estructura de carpetas.
+5. Detectar stack tecnológico.
+6. Mantener el contexto del proyecto durante toda la sesión.
